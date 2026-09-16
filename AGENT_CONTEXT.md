@@ -180,3 +180,20 @@ pending changes and let the user choose whether they should become a separate
 commit or be incorporated into the current HEAD. Never assume an amend,
 squash, merge, or history rewrite. For the current update, the user selected
 a **separate commit**.
+
+### 2026-09-16 — Local source-material library
+
+The user provided a ZIP and standalone learning materials in `~/Downloads`
+and asked for curriculum-relevant items to be selected, renamed, and
+organized in the masterclass folder.
+
+- Local library: `~/masterclass/source-materials/library/`
+- Trackable catalog: `~/masterclass/source-materials/README.md`
+- The imported library is Git-ignored by default because it contains
+  third-party books and code; do not push it without explicit user direction.
+- Use these resources selectively for daily lessons. Cite exact chapter/page
+  ranges instead of assigning whole books.
+- Kernel/driver books may contain outdated APIs; verify examples against the
+  current kernel documentation and source.
+- The archive's nested Git metadata, swap files, executables, object files,
+  shared libraries, and crash dumps were excluded.

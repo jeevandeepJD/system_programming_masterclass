@@ -1,0 +1,7 @@
+# Locally imported third-party books and lab collections.
+# Keep the catalog in source-materials/README.md under version control.
+/source-materials/library/
+
+# Python-generated caches.
+__pycache__/
+*.pyc
