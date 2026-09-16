@@ -1,0 +1,69 @@
+WEEK 1 DIAGRAM — voltage -> bit -> pattern -> meaning
+=======================================================
+
+LAYER 1: Physical (continuous, analog, noisy)
+----------------------------------------------
+  Voltage on a wire over time, e.g. a CPU's internal signal line:
+
+  5.0V  ┤                    ╭─╮
+        │                    │ │        ╭──╮
+  3.3V  ┤ HIGH band ─────────┤ ├────────┤  ├─────  <- "1" region
+        │                    │ │        │  │
+  1.65V ┤ - - - - - - - - - -│-│- - - - │- │- - -  <- undefined/forbidden
+        │                    │ │        │  │            zone (noise margin)
+  0.8V  ┤ LOW band ──────────╯ ╰────────╯  ╰─────  <- "0" region
+        │
+  0.0V  ┼───────────────────────────────────────── time
+             0    1    0    0    1    1    0
+
+  KEY IDEA: nothing about electricity is naturally "0 or 1". Voltage is a
+  continuous, noisy, analog quantity. Digital logic WORKS because circuits
+  are deliberately engineered to snap any voltage in a wide "high" band to
+  a clean logical 1, and any voltage in a wide "low" band to a clean
+  logical 0 -- with a forbidden gap between them. That gap is what makes
+  the signal resistant to noise: small fluctuations (thermal noise,
+  crosstalk, power-supply ripple) don't flip 0<->1 because they'd have to
+  jump the ENTIRE forbidden gap to do it.
+
+LAYER 2: Logical (discrete, exact)
+------------------------------------
+  Once past the LAYER-1 threshold circuits, the messy analog voltage is
+  gone. From here on, everything is EXACTLY 0 or EXACTLY 1. No "almost".
+
+        0    1    0    0    1    1    0    <- a single bit, one at a time
+
+LAYER 3: Pattern (bits grouped together)
+-------------------------------------------
+  A single bit only answers a yes/no question. Group bits together and
+  you get 2^n distinguishable PATTERNS:
+
+        1 bit  -> 2 patterns    (0, 1)
+        2 bits -> 4 patterns    (00, 01, 10, 11)
+        8 bits -> 256 patterns  (00000000 .. 11111111)   <- one BYTE
+       64 bits -> 2^64 patterns                          <- one WORD (x86-64)
+
+        Example byte:  0 1 0 0 0 1 1 0
+                       (this is just a PATTERN so far -- no meaning yet)
+
+LAYER 4: Meaning (interpretation / encoding -- chosen by agreement, not physics)
+-----------------------------------------------------------------------------------
+  The SAME pattern "01000110" means something completely different
+  depending on what encoding/context you (or the running program) decide
+  to interpret it as:
+
+        01000110  --[unsigned integer encoding]-->        70
+        01000110  --[ASCII text encoding]------->         'F'
+        01000110  --[x86 opcode byte]------------>   part of an ADD-family instruction
+        01000110  --[1-bit-per-pixel bitmap row]-->   . X . . . X X .   (a tiny image row)
+
+  KEY IDEA: the hardware only ever stores/moves PATTERNS (Layer 3). It has
+  no idea what any pattern "means". MEANING is a human/software agreement
+  about how to interpret a pattern -- imposed from outside, at Layer 4.
+  This is exactly why the Week 1 mastery checkpoint asks you to explain how
+  one pattern can be a number, a character, an instruction, OR a pixel:
+  it's the same bits, four different agreed-upon interpretations.
+
+FULL CHAIN
+------------
+  physical voltage  -->  clean bit (0/1)  -->  pattern (byte/word)  -->  meaning (number/char/instruction/pixel)
+     (continuous)          (discrete)            (combinatorial)           (interpretation, chosen by convention)

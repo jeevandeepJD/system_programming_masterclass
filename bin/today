@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# Daily masterclass driver.
+#
+#   today              -> build + open today's lesson PDF, and open today's challenge
+#   today lesson       -> only the lesson PDF
+#   today challenge    -> only the challenge page
+#   today list         -> list all lessons/challenges so far
+#
+# Lessons live in   ~/masterclass/daily/lessons/YYYY-MM-DD-*.md
+# PDFs are built to ~/masterclass/daily/pdf/
+# Challenges live in ~/masterclass/daily/challenges/YYYY-MM-DD-*.html
+
+set -euo pipefail
+
+MC="$HOME/masterclass"
+DATE="${MC_DATE:-$(date +%F)}"
+CURSOR="$(find "$HOME/.cursor-server/bin" -path '*/remote-cli/cursor' -print -quit 2>/dev/null || true)"
+
+open_in_editor() {
+    [ -n "$CURSOR" ] && "$CURSOR" "$1" >/dev/null 2>&1 && echo "  opened in editor: $(basename "$1")" \
+        || echo "  (cursor CLI unavailable) path: $1"
+}
+
+do_lesson() {
+    local md
+    md="$(ls "$MC"/daily/lessons/"$DATE"-*.md 2>/dev/null | head -n1 || true)"
+    if [ -z "$md" ]; then
+        echo "No lesson markdown for $DATE in $MC/daily/lessons/"
+        echo "Ask the agent to write today's lesson first."
+        return 1
+    fi
+    echo "Lesson: $(basename "$md")"
+    python3 "$MC/bin/build_lesson.py" "$md" --no-open
+    open_in_editor "$MC/daily/pdf/$(basename "${md%.md}").pdf"
+}
+
+PORT="${MC_PORT:-8731}"
+
+do_challenge() {
+    local html
+    html="$(ls "$MC"/daily/challenges/"$DATE"-*.html 2>/dev/null | head -n1 || true)"
+    if [ -z "$html" ]; then
+        echo "No challenge for $DATE."
+        return 1
+    fi
+    echo "Challenge: $(basename "$html")"
+
+    # This box is usually driven remotely (no local DISPLAY), so instead of
+    # launching a browser on the VM we serve the page on a local port --
+    # Cursor/VS Code remote forwards it to the browser on your own machine.
+    if ! ss -ltn 2>/dev/null | grep -q ":$PORT "; then
+        nohup python3 -m http.server "$PORT" --bind 127.0.0.1 \
+            --directory "$MC/daily/challenges" >/tmp/mc_challenge_server.log 2>&1 &
+        sleep 0.4
+        echo "  started local server on port $PORT"
+    else
+        echo "  server already running on port $PORT"
+    fi
+
+    echo
+    echo "  ==> http://localhost:$PORT/$(basename "$html")"
+    echo
+    echo "  (if the link does not open, run:  cursor --help  or just paste the URL"
+    echo "   into your browser -- the port is forwarded by the remote session)"
+    [ -n "$CURSOR" ] && "$CURSOR" "$html" >/dev/null 2>&1 || true
+}
+
+case "${1:-all}" in
+    lesson)    do_lesson ;;
+    challenge) do_challenge ;;
+    list)
+        echo "== lessons =="   ; ls -1 "$MC"/daily/lessons    2>/dev/null || true
+        echo "== pdfs =="      ; ls -1 "$MC"/daily/pdf        2>/dev/null || true
+        echo "== challenges ==" ; ls -1 "$MC"/daily/challenges 2>/dev/null || true
+        ;;
+    all)       do_lesson; echo; do_challenge ;;
+    *)         sed -n '2,12p' "$0" ;;
+esac

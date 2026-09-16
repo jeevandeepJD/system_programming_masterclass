@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bit Lab — Week 1 · Day 2 Challenge</title>
+<style>
+  :root {
+    --bg: #0f1520;
+    --panel: #172131;
+    --panel2: #1e2b3f;
+    --line: #2c3c55;
+    --fg: #dce6f2;
+    --dim: #8aa0bd;
+    --accent: #4da3ff;
+    --ok: #3ddc84;
+    --bad: #ff6b6b;
+    --warn: #ffc857;
+    --mono: "DejaVu Sans Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.55;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: linear-gradient(180deg, #101827 0%, #101827ee 100%);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 22px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  }
+  header h1 { font-size: 17px; margin: 0; color: #fff; font-weight: 650; }
+  header .sub { font-size: 12px; color: var(--dim); }
+  .scorebox {
+    margin-left: auto; font-family: var(--mono); font-size: 13px;
+    background: var(--panel2); border: 1px solid var(--line);
+    padding: 6px 14px; border-radius: 8px;
+  }
+  .scorebox b { color: var(--ok); }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 22px 80px; }
+  section {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 22px;
+  }
+  section > h2 {
+    margin: 0 0 4px; font-size: 16px; color: var(--accent);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .tag {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em;
+    background: #24344b; color: var(--dim); border: 1px solid var(--line);
+    padding: 2px 8px; border-radius: 20px; text-transform: uppercase;
+  }
+  .tag.chal { background: #2a2237; color: var(--warn); border-color: #4a3c22; }
+  .lede { color: var(--dim); font-size: 13.5px; margin: 6px 0 18px; }
+  code, .mono { font-family: var(--mono); }
+  code {
+    background: #0c1220; border: 1px solid var(--line);
+    padding: 1px 5px; border-radius: 4px; font-size: 12.5px;
+  }
+
+  /* ---- voltage meter ---- */
+  .voltwrap { display: grid; grid-template-columns: 1fr 250px; gap: 26px; align-items: center; }
+  @media (max-width: 760px) { .voltwrap { grid-template-columns: 1fr; } }
+  .meter {
+    position: relative; height: 230px; border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--line);
+    background: linear-gradient(to top,
+      #12281c 0%, #12281c 24%,
+      #2a2010 24%, #2a2010 61%,
+      #10243a 61%, #10243a 100%);
+  }
+  .band { position: absolute; left: 0; right: 0; font-family: var(--mono); font-size: 11px;
+          padding: 3px 8px; color: var(--dim); }
+  .band.low  { bottom: 0; height: 24%; border-top: 1px dashed #2f6b45; }
+  .band.mid  { bottom: 24%; height: 37%; }
+  .band.high { bottom: 61%; height: 39%; border-bottom: 1px dashed #2e5c88; }
+  .needle {
+    position: absolute; left: 0; right: 0; height: 0;
+    border-top: 2px solid #fff; transition: bottom .08s linear;
+  }
+  .needle::after {
+    content: attr(data-v); position: absolute; right: 6px; top: -18px;
+    font-family: var(--mono); font-size: 12px; color: #fff;
+    background: #000a; padding: 0 6px; border-radius: 4px;
+  }
+  .noiseband {
+    position: absolute; left: 0; right: 0; background: #ffffff18;
+    border-top: 1px dotted #fff6; border-bottom: 1px dotted #fff6;
+    transition: bottom .08s linear;
+  }
+  .readout { font-family: var(--mono); font-size: 13px; }
+  .readout .big { font-size: 40px; line-height: 1.1; font-weight: 700; }
+  .readout .big.one { color: var(--accent); }
+  .readout .big.zero { color: var(--ok); }
+  .readout .big.err { color: var(--bad); font-size: 26px; }
+  label.ctl { display: block; font-size: 12.5px; color: var(--dim); margin: 14px 0 4px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  /* ---- bit toggles ---- */
+  .bits { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 14px; }
+  .bitcol { text-align: center; }
+  .bitcol .w { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+  .bit {
+    width: 52px; height: 58px; border-radius: 9px; cursor: pointer; user-select: none;
+    font-family: var(--mono); font-size: 24px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    background: #101a28; color: #40566f; border: 1px solid var(--line);
+    transition: all .12s;
+  }
+  .bit:hover { border-color: var(--accent); }
+  .bit.on { background: #12365c; color: #7cc4ff; border-color: var(--accent);
+            box-shadow: 0 0 0 1px #4da3ff55, 0 0 14px #4da3ff30 inset; }
+  .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .view {
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px;
+  }
+  .view .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); }
+  .view .v { font-family: var(--mono); font-size: 19px; margin-top: 3px; word-break: break-all; }
+  .pixrow { font-family: var(--mono); font-size: 17px; letter-spacing: 3px; }
+
+  /* ---- quiz ---- */
+  .q { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px;
+       padding: 14px 16px; margin-bottom: 12px; }
+  .q .prompt { font-size: 14px; margin-bottom: 10px; }
+  .q .prompt .mono { color: var(--warn); font-size: 15px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  input[type=text] {
+    font-family: var(--mono); font-size: 14px; padding: 7px 10px; border-radius: 7px;
+    background: #0c1220; color: var(--fg); border: 1px solid var(--line); width: 170px;
+  }
+  input[type=text]:focus { outline: none; border-color: var(--accent); }
+  input[type=text].ok { border-color: var(--ok); }
+  input[type=text].bad { border-color: var(--bad); }
+  .hintlbl { font-family: var(--mono); font-size: 11.5px; color: var(--dim); }
+  button {
+    font: inherit; font-size: 13px; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+    background: #17304d; border: 1px solid var(--accent); color: #cfe6ff;
+  }
+  button:hover { background: #1d3d63; }
+  button.ghost { background: transparent; border-color: var(--line); color: var(--dim); }
+  button.ghost:hover { background: #1b2635; color: var(--fg); }
+  .fb { font-family: var(--mono); font-size: 12.5px; margin-top: 8px; min-height: 18px; }
+  .fb.ok { color: var(--ok); }
+  .fb.bad { color: var(--bad); }
+  .fb.info { color: var(--dim); }
+  .goalpill {
+    display: inline-block; font-family: var(--mono); font-size: 12px;
+    background: #2a2237; color: var(--warn); border: 1px solid #4a3c22;
+    padding: 3px 10px; border-radius: 20px; margin: 0 6px 6px 0;
+  }
+  .goalpill.done { background: #12281c; color: var(--ok); border-color: #2f6b45; }
+  .goalpill.done::before { content: "\2713  "; }
+  ul.tight { margin: 8px 0; padding-left: 20px; }
+  ul.tight li { margin: 3px 0; font-size: 13.5px; }
+  .final {
+    text-align: center; padding: 26px; border: 1px dashed var(--line); border-radius: 12px;
+    background: #131c2a;
+  }
+  .final .score { font-family: var(--mono); font-size: 34px; font-weight: 700; color: var(--accent); }
+  .muted { color: var(--dim); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Bit Lab</h1>
+    <div class="sub">Week 1 · Day 2 challenge — voltage, bits, patterns, meaning</div>
+  </div>
+  <div class="scorebox">score <b id="score">0</b> / <span id="maxscore">0</span></div>
+</header>
+
+<main>
+
+<!-- ============ 1. VOLTAGE ============ -->
+<section>
+  <h2>1. Voltage is a range <span class="tag">explore</span></h2>
+  <p class="lede">
+    Drag the voltage. Then add noise and watch what the receiving gate decides.
+    This is Layer 1 → Layer 2 of the lesson diagram, live.
+  </p>
+  <div class="voltwrap">
+    <div class="meter" id="meter">
+      <div class="band high">HIGH band → reads as 1 &nbsp;(≥ 2.0 V)</div>
+      <div class="band mid">FORBIDDEN / noise margin &nbsp;(0.8 – 2.0 V)</div>
+      <div class="band low">LOW band → reads as 0 &nbsp;(≤ 0.8 V)</div>
+      <div class="noiseband" id="noiseband"></div>
+      <div class="needle" id="needle" data-v="0.00 V"></div>
+    </div>
+    <div>
+      <div class="readout">
+        <div class="k muted">gate decides</div>
+        <div class="big zero" id="decision">0</div>
+        <div id="decisionwhy" class="muted"></div>
+      </div>
+      <label class="ctl">Nominal voltage: <span class="mono" id="vlabel">0.00 V</span></label>
+      <input type="range" id="volt" min="0" max="330" value="0">
+      <label class="ctl">Noise amplitude: ±<span class="mono" id="nlabel">0.00 V</span></label>
+      <input type="range" id="noise" min="0" max="150" value="0">
+    </div>
+  </div>
+  <div class="fb info" id="voltfb">
+    Try this: set noise to ±0.50 V and sweep the voltage. Notice the signal is still
+    read correctly almost everywhere — that is the noise margin doing its job.
+    Now push noise past ±1.20 V and sweep again.
+  </div>
+</section>
+
+<!-- ============ 2. PATTERN EXPLORER ============ -->
+<section>
+  <h2>2. One pattern, many meanings <span class="tag">explore</span></h2>
+  <p class="lede">
+    Click bits to toggle them. The pattern (Layer 3) never "means" anything by itself —
+    every box below is a different Layer 4 interpretation of the <em>same</em> eight bits.
+  </p>
+  <div class="bits" id="bits"></div>
+  <div class="views">
+    <div class="view"><div class="k">binary</div><div class="v mono" id="v-bin">00000000</div></div>
+    <div class="view"><div class="k">unsigned decimal</div><div class="v" id="v-dec">0</div></div>
+    <div class="view"><div class="k">hexadecimal</div><div class="v" id="v-hex">0x00</div></div>
+    <div class="view"><div class="k">signed (two's compl.)</div><div class="v" id="v-sig">0</div></div>
+    <div class="view"><div class="k">ASCII character</div><div class="v" id="v-asc">NUL</div></div>
+    <div class="view"><div class="k">as 1bpp pixel row</div><div class="v pixrow" id="v-pix">. . . . . . . .</div></div>
+  </div>
+  <div class="fb info">
+    The signed view is a preview of Week 2. Notice it only differs from unsigned once
+    bit 7 is set — and notice <em>nothing in the bits themselves</em> tells you which reading is correct.
+  </div>
+</section>
+
+<!-- ============ 3. CHALLENGE A ============ -->
+<section>
+  <h2>3. Challenge A — conversion drill <span class="tag chal">10 points</span></h2>
+  <p class="lede">
+    Ten questions, no calculator. Type binary as 8 bits (e.g. <code>01001101</code>),
+    hex as two digits (<code>4d</code> or <code>0x4D</code> both fine).
+  </p>
+  <div id="drill"></div>
+  <div class="row">
+    <button id="drillcheck">Check answers</button>
+    <button class="ghost" id="drillnew">New set</button>
+  </div>
+  <div class="fb" id="drillfb"></div>
+</section>
+
+<!-- ============ 4. CHALLENGE B ============ -->
+<section>
+  <h2>4. Challenge B — encoding detective <span class="tag chal">6 points</span></h2>
+  <p class="lede">
+    Use the bit toggles in section 2 to satisfy each goal. They tick off automatically
+    the moment the pattern is right — so you are driving the encoding backwards,
+    from desired meaning to required bits.
+  </p>
+  <div id="goals"></div>
+  <div class="fb info" id="goalfb">Goals remaining: <span id="goalsleft">6</span></div>
+</section>
+
+<!-- ============ 5. CHALLENGE C ============ -->
+<section>
+  <h2>5. Challenge C — reasoning questions <span class="tag chal">4 points</span></h2>
+  <p class="lede">These are the ones that matter. Answer from understanding, not recall.</p>
+  <div id="reason"></div>
+  <div class="row"><button id="reasoncheck">Check answers</button></div>
+  <div class="fb" id="reasonfb"></div>
+</section>
+
+<!-- ============ FINAL ============ -->
+<section class="final">
+  <div class="muted">total</div>
+  <div class="score"><span id="finalscore">0</span> / <span id="finalmax">20</span></div>
+  <div class="muted" id="verdict">Work through the three challenges above.</div>
+  <hr style="border:none;border-top:1px solid var(--line);margin:18px 0">
+  <div style="text-align:left">
+    <strong>Then close the loop (this is the part that counts):</strong>
+    <ul class="tight">
+      <li>Say the Week 1 mastery checkpoint answer out loud, without notes:
+          <em>"why can the same bit pattern be a number, character, instruction, or pixel?"</em></li>
+      <li>Reproduce the five-interpretations lab in a terminal (<code>xxd</code>, <code>od</code>,
+          <code>objdump -D -b binary -m i386:x86-64</code>).</li>
+      <li>Fill in your own Week 1 row in the .docx tracker — dates, hours, honest confidence /5.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<script>
+"use strict";
+
+/* ---------------- scoring ---------------- */
+const MAX = { drill: 10, goals: 6, reason: 4 };
+const earned = { drill: 0, goals: 0, reason: 0 };
+const TOTAL_MAX = MAX.drill + MAX.goals + MAX.reason;
+document.getElementById("maxscore").textContent = TOTAL_MAX;
+document.getElementById("finalmax").textContent = TOTAL_MAX;
+
+function refreshScore() {
+  const s = earned.drill + earned.goals + earned.reason;
+  document.getElementById("score").textContent = s;
+  document.getElementById("finalscore").textContent = s;
+  const v = document.getElementById("verdict");
+  const pct = s / TOTAL_MAX;
+  if (s === 0)        v.textContent = "Work through the three challenges above.";
+  else if (pct < 0.5) v.textContent = "Getting there — revisit the lesson sections you stumbled on.";
+  else if (pct < 0.8) v.textContent = "Solid. Re-read the parts you missed, then retry the drill.";
+  else if (pct < 1)   v.textContent = "Strong grasp. One or two gaps left to close.";
+  else                v.textContent = "Full marks — now do the verbal explanation and the terminal lab.";
+}
+
+/* ---------------- 1. voltage meter ---------------- */
+const VMAX = 3.3, HI = 2.0, LO = 0.8;
+const volt = document.getElementById("volt");
+const noise = document.getElementById("noise");
+const needle = document.getElementById("needle");
+const noiseband = document.getElementById("noiseband");
+
+function updateVolt() {
+  const v = volt.value / 100;
+  const n = noise.value / 100;
+  document.getElementById("vlabel").textContent = v.toFixed(2) + " V";
+  document.getElementById("nlabel").textContent = n.toFixed(2) + " V";
+
+  needle.style.bottom = (v / VMAX * 100) + "%";
+  needle.dataset.v = v.toFixed(2) + " V";
+
+  const lo = Math.max(0, v - n), hi = Math.min(VMAX, v + n);
+  noiseband.style.bottom = (lo / VMAX * 100) + "%";
+  noiseband.style.height = ((hi - lo) / VMAX * 100) + "%";
+
+  const d = document.getElementById("decision");
+  const why = document.getElementById("decisionwhy");
+  // With noise the instantaneous value can land anywhere in [lo, hi].
+  const entirelyHigh = lo >= HI;      // whole range safely in HIGH band
+  const entirelyLow  = hi <= LO;      // whole range safely in LOW band
+  const reachesHigh  = hi >= HI;
+  const reachesLow   = lo <= LO;
+
+  d.classList.remove("one", "zero", "err");
+  if (entirelyHigh) {
+    d.textContent = "1"; d.classList.add("one");
+    why.textContent = "whole noise range stays inside the HIGH band → reliably read as 1";
+  } else if (entirelyLow) {
+    d.textContent = "0"; d.classList.add("zero");
+    why.textContent = "whole noise range stays inside the LOW band → reliably read as 0";
+  } else if (reachesHigh && reachesLow) {
+    d.textContent = "0/1"; d.classList.add("err");
+    why.textContent = "noise spans the entire margin — the bit can flip randomly. This is real bit corruption.";
+  } else if (!reachesHigh && !reachesLow) {
+    d.textContent = "???"; d.classList.add("err");
+    why.textContent = "signal trapped in the forbidden zone — gate output undefined / metastable";
+  } else {
+    d.textContent = reachesHigh ? "1?" : "0?"; d.classList.add("err");
+    why.textContent = "marginal: mostly readable, but noise dips into the forbidden zone → intermittent glitches";
+  }
+}
+volt.addEventListener("input", updateVolt);
+noise.addEventListener("input", updateVolt);
+updateVolt();
+
+/* ---------------- 2. bit toggles ---------------- */
+let byte = 0;
+const bitsEl = document.getElementById("bits");
+for (let i = 7; i >= 0; i--) {
+  const col = document.createElement("div");
+  col.className = "bitcol";
+  const b = document.createElement("div");
+  b.className = "bit"; b.textContent = "0"; b.dataset.i = i;
+  b.addEventListener("click", () => { byte ^= (1 << i); renderByte(); });
+  const w = document.createElement("div");
+  w.className = "w"; w.textContent = "2^" + i + "=" + (1 << i);
+  col.appendChild(b); col.appendChild(w); bitsEl.appendChild(col);
+}
+
+const ASCII_NAMES = { 0:"NUL",7:"BEL",8:"BS",9:"TAB",10:"LF",13:"CR",27:"ESC",32:"SPACE",127:"DEL" };
+function asciiOf(n) {
+  if (ASCII_NAMES[n]) return ASCII_NAMES[n];
+  if (n < 32) return "ctrl-" + String.fromCharCode(64 + n);
+  if (n > 126) return "(non-ASCII, >127)";
+  return "'" + String.fromCharCode(n) + "'";
+}
+
+function renderByte() {
+  const bin = byte.toString(2).padStart(8, "0");
+  bitsEl.querySelectorAll(".bit").forEach(el => {
+    const on = (byte >> +el.dataset.i) & 1;
+    el.textContent = on ? "1" : "0";
+    el.classList.toggle("on", !!on);
+  });
+  document.getElementById("v-bin").textContent = bin;
+  document.getElementById("v-dec").textContent = byte;
+  document.getElementById("v-hex").textContent = "0x" + byte.toString(16).toUpperCase().padStart(2, "0");
+  document.getElementById("v-sig").textContent = (byte > 127 ? byte - 256 : byte);
+  document.getElementById("v-asc").textContent = asciiOf(byte);
+  document.getElementById("v-pix").textContent = bin.split("").map(c => c === "1" ? "#" : ".").join(" ");
+  checkGoals();
+}
+
+/* ---------------- 3. challenge A: conversion drill ---------------- */
+const drillEl = document.getElementById("drill");
+let drillItems = [];
+
+function randByte() { return Math.floor(Math.random() * 256); }
+function normHex(s) { return s.trim().toLowerCase().replace(/^0x/, "").replace(/^0+(?=.)/, ""); }
+function normBin(s) { return s.trim().replace(/^0b/, "").replace(/\s+/g, ""); }
+
+function makeDrill() {
+  drillItems = [];
+  drillEl.innerHTML = "";
+  const kinds = ["d2bh", "d2bh", "d2bh", "h2d", "h2d", "b2d", "b2d", "d2bh", "h2d", "b2d"];
+  kinds.forEach((kind, idx) => {
+    const n = randByte();
+    const q = document.createElement("div");
+    q.className = "q";
+    const item = { kind, n, inputs: [] };
+
+    if (kind === "d2bh") {
+      q.innerHTML = `<div class="prompt">${idx + 1}. Convert decimal <span class="mono">${n}</span>
+        to binary and hex.</div>`;
+      const row = document.createElement("div"); row.className = "row";
+      const bi = document.createElement("input"); bi.type = "text"; bi.placeholder = "8-bit binary";
+      const hi = document.createElement("input"); hi.type = "text"; hi.placeholder = "hex";
+      row.append(bi, hi); q.appendChild(row);
+      item.inputs = [bi, hi];
+      item.check = () => normBin(bi.value) === n.toString(2).padStart(8, "0")
+                      && normHex(hi.value) === n.toString(16);
+    } else if (kind === "h2d") {
+      const h = n.toString(16).toUpperCase().padStart(2, "0");
+      q.innerHTML = `<div class="prompt">${idx + 1}. What is hex <span class="mono">0x${h}</span>
+        in decimal?</div>`;
+      const row = document.createElement("div"); row.className = "row";
+      const di = document.createElement("input"); di.type = "text"; di.placeholder = "decimal";
+      row.append(di); q.appendChild(row);
+      item.inputs = [di];
+      item.check = () => parseInt(di.value.trim(), 10) === n;
+    } else {
+      const b = n.toString(2).padStart(8, "0");
+      q.innerHTML = `<div class="prompt">${idx + 1}. What is binary <span class="mono">${b}</span>
+        in decimal?</div>`;
+      const row = document.createElement("div"); row.className = "row";
+      const di = document.createElement("input"); di.type = "text"; di.placeholder = "decimal";
+      row.append(di); q.appendChild(row);
+      item.inputs = [di];
+      item.check = () => parseInt(di.value.trim(), 10) === n;
+    }
+    drillEl.appendChild(q);
+    drillItems.push(item);
+  });
+  document.getElementById("drillfb").textContent = "";
+  document.getElementById("drillfb").className = "fb";
+}
+
+document.getElementById("drillcheck").addEventListener("click", () => {
+  let right = 0;
+  drillItems.forEach(it => {
+    const ok = it.check();
+    if (ok) right++;
+    it.inputs.forEach(i => { i.classList.toggle("ok", ok); i.classList.toggle("bad", !ok); });
+  });
+  earned.drill = right;
+  refreshScore();
+  const fb = document.getElementById("drillfb");
+  fb.textContent = `${right} / 10 correct.` + (right === 10
+    ? "  Clean sweep — the algorithm is becoming automatic."
+    : "  Redo the wrong ones by hand (divide by 2 / by 16, collect remainders) before checking again.");
+  fb.className = "fb " + (right === 10 ? "ok" : right >= 6 ? "info" : "bad");
+});
+document.getElementById("drillnew").addEventListener("click", makeDrill);
+makeDrill();
+
+/* ---------------- 4. challenge B: encoding detective ---------------- */
+const GOALS = [
+  { id: "g1", text: "Make the byte read as ASCII 'K'",              test: b => b === 75 },
+  { id: "g2", text: "Make the byte equal 0xC8",                     test: b => b === 0xC8 },
+  { id: "g3", text: "Make the pixel row show # . # . # . # .",      test: b => b === 0b10101010 },
+  { id: "g4", text: "Make the signed value exactly −128",           test: b => b === 128 },
+  { id: "g5", text: "Make the largest value one byte can hold",     test: b => b === 255 },
+  { id: "g6", text: "Set only bit 6 (worth 64) and nothing else",   test: b => b === 64 },
+];
+const goalsEl = document.getElementById("goals");
+const goalDone = {};
+GOALS.forEach(g => {
+  const el = document.createElement("span");
+  el.className = "goalpill"; el.id = g.id; el.textContent = g.text;
+  goalsEl.appendChild(el);
+  goalDone[g.id] = false;
+});
+function checkGoals() {
+  let done = 0;
+  GOALS.forEach(g => {
+    if (g.test(byte)) goalDone[g.id] = true;
+    if (goalDone[g.id]) { document.getElementById(g.id).classList.add("done"); done++; }
+  });
+  earned.goals = done;
+  document.getElementById("goalsleft").textContent = GOALS.length - done;
+  const fb = document.getElementById("goalfb");
+  fb.className = "fb " + (done === GOALS.length ? "ok" : "info");
+  if (done === GOALS.length) fb.innerHTML = "All goals hit — you just drove four different encodings backwards to the same 8 wires.";
+  refreshScore();
+}
+
+/* ---------------- 5. challenge C: reasoning ---------------- */
+const REASON = [
+  {
+    prompt: "A wire is permanently tied to ground (always 0). How many <em>bits of information</em> does reading it give you?",
+    placeholder: "a number",
+    check: s => /^0$|^zero$|^none$/i.test(s.trim()),
+    explain: "Zero. There was no uncertainty to resolve — storage capacity ≠ information content."
+  },
+  {
+    prompt: "How many bits do you need to represent decimal <span class='mono'>500</span>?",
+    placeholder: "a number",
+    check: s => parseInt(s.trim(), 10) === 9,
+    explain: "9 bits (500 = 111110100b). 8 bits only reaches 255."
+  },
+  {
+    prompt: "Why does one hex digit map to exactly 4 bits, while one decimal digit maps to no fixed number of bits? Answer with the key number.",
+    placeholder: "e.g. 16 = 2^4",
+    check: s => /16\s*=?\s*2\s*\^?\s*4|2\^4|power of (two|2)/i.test(s),
+    explain: "Because 16 = 2⁴ exactly, so each hex digit is an independent nibble. 10 is not a power of 2."
+  },
+  {
+    prompt: "The bytes <span class='mono'>46 41 44 45</span> are text, an integer, instructions, and pixels all at once. What determines which one they 'are'?",
+    placeholder: "one word is enough",
+    check: s => /interpret|encoding|convention|context|agreement|reader|software|how.*read/i.test(s),
+    explain: "The interpretation applied by whatever reads them. Meaning is Layer 4 — supplied by convention, not by the hardware."
+  },
+];
+const reasonEl = document.getElementById("reason");
+const reasonInputs = [];
+REASON.forEach((r, i) => {
+  const q = document.createElement("div");
+  q.className = "q";
+  q.innerHTML = `<div class="prompt">${i + 1}. ${r.prompt}</div>`;
+  const row = document.createElement("div"); row.className = "row";
+  const inp = document.createElement("input");
+  inp.type = "text"; inp.placeholder = r.placeholder; inp.style.width = "260px";
+  row.appendChild(inp); q.appendChild(row);
+  const ex = document.createElement("div"); ex.className = "fb info"; ex.style.display = "none";
+  ex.textContent = r.explain; q.appendChild(ex);
+  reasonEl.appendChild(q);
+  reasonInputs.push({ inp, ex, r });
+});
+document.getElementById("reasoncheck").addEventListener("click", () => {
+  let right = 0;
+  reasonInputs.forEach(({ inp, ex, r }) => {
+    const ok = r.check(inp.value);
+    if (ok) right++;
+    inp.classList.toggle("ok", ok); inp.classList.toggle("bad", !ok);
+    ex.style.display = "block";
+  });
+  earned.reason = right;
+  refreshScore();
+  const fb = document.getElementById("reasonfb");
+  fb.textContent = `${right} / 4 correct — explanations shown above each box.`;
+  fb.className = "fb " + (right === 4 ? "ok" : right >= 2 ? "info" : "bad");
+});
+
+renderByte();
+refreshScore();
+</script>
+</body>
+</html>

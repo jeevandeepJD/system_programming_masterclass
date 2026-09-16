@@ -1,0 +1,38 @@
+WEEK 1 HANDS-ON WORK — Decimal / Binary / Hexadecimal Conversions
+==================================================================
+
+Instructions:
+For each decimal value below, write its binary (8-bit, zero-padded — use
+more bits if the value doesn't fit in 8 bits) and hexadecimal representation.
+Do this BY HAND first (that's the point — build the mental algorithm).
+Then check yourself with: python3 check_conversions.py
+
+  1.   13
+  2.   47
+  3.   128
+  4.   255
+  5.   9
+  6.   200
+  7.   64
+  8.   1
+  9.   17
+ 10.   99
+ 11.   250
+ 12.   6
+ 13.   33
+ 14.   111
+ 15.   222
+ 16.   88
+ 17.   150
+ 18.   3
+ 19.   77
+ 20.   240
+ 21.   500     <-- doesn't fit in 8 bits; how many bits DOES it need?
+ 22.   1024    <-- power of 2; notice what its binary looks like
+ 23.   4095    <-- one less than a power of 2; notice what ITS binary looks like
+ 24.   0
+ 25.   170     <-- 0b10101010, a nice alternating pattern worth noticing
+
+Bonus (do this one purely in your head, no pen): what is 0xFF in decimal?
+What is 0b1111 in decimal? Why do hex digits map so cleanly to 4-bit
+groups, but decimal digits don't map cleanly to any fixed number of bits?
