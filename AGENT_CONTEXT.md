@@ -39,6 +39,23 @@ After every user suggestion, correction, preference, or planning update:
 Do not claim that a preference is saved unless the relevant Markdown file was
 actually updated.
 
+## Personal GitHub backup
+
+The `~/masterclass` folder is a git repo with remote `jdssh`:
+
+`git@github.com:jeevandeepJD/system_programming_masterclass.git`
+
+After a **major milestone** (completed week, mastery checkpoint, or similarly
+durable learning snapshot), commit the relevant masterclass files if needed
+and push to `jdssh` for personal reference:
+
+```bash
+git -C ~/masterclass push jdssh master
+```
+
+Do not push every small lesson edit. Do not push secrets, private keys, or
+unrelated home-directory files.
+
 ## Curriculum authority
 
 - The `.docx` tracker is the source of truth for sequence and scope.
@@ -133,6 +150,12 @@ terminal work, or another suitable format; interactivity is optional.
 
 The user requested natural, engaging, easy-to-understand notes rather than
 monotonic or bland textbook prose.
+
+### 2026-09-16 — Personal GitHub backup
+
+The user linked `~/masterclass` to
+`git@github.com:jeevandeepJD/system_programming_masterclass.git` (remote
+`jdssh`) and asked to push after major milestones for personal reference.
 
 ### 2026-09-16 — Persistent update framework
 
