@@ -162,3 +162,21 @@ The user linked `~/masterclass` to
 The user requested a Markdown context/framework file that records every
 suggestion and update. This file was created as the append-only operational
 decision log. Future agents must update it after each such instruction.
+
+### 2026-09-16 — Git repository linked
+
+The user reported that the `masterclass` folder is now linked to their Git
+repository. Treat lesson sources, challenges, tracker artifacts, context
+files, and supporting scripts as version-controlled work. Do not create
+commits, push changes, rewrite history, or modify remotes unless the user
+explicitly asks.
+
+### 2026-09-16 — Daily Git publication workflow
+
+The user requested that all relevant daily generated material be pushed:
+lesson Markdown, rendered PDFs, optional challenges, exercises, scripts, and
+context updates. Before publishing each daily batch, show or determine the
+pending changes and let the user choose whether they should become a separate
+commit or be incorporated into the current HEAD. Never assume an amend,
+squash, merge, or history rewrite. For the current update, the user selected
+a **separate commit**.
