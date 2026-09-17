@@ -267,3 +267,31 @@ artifacts are sequence-based, Days 4–7 were prepared to complete a seven-day
 preview together with existing Days 1–3. Prepared future lessons must not
 move the learner's resume point automatically. `DAILY_PROGRESS.md` should
 separate **current resume point** from **prepared next lessons**.
+
+### 2026-09-17 — Historical problem-solving path to the modern CPU
+
+The user wants more than descriptions of modern components. Lessons must
+reconstruct the questions, constraints, and reasoning that led from early
+calculation to modern computers:
+
+- why humans wanted calculation to be mechanized;
+- how counting tools, mechanical calculators, punched media, Boolean algebra,
+  telegraphy, relays, vacuum tubes, transistors, and integrated circuits each
+  solved a limitation of the previous approach;
+- how arithmetic circuits emerge from switches and logic;
+- why storage, a clock, control, and conditional behavior are needed;
+- why stored programs and instruction sets exist;
+- how a CPU performs simple calculations through datapath and control;
+- how machine instructions, assembly, compilers, operating systems, and
+  applications build on that machinery.
+
+Every lesson should state the point of the current topic and connect it to the
+end-to-end path. Historical material should explain engineering motivation,
+not become a detached list of names and dates. Where historical attribution
+is nuanced, avoid simplistic “one person invented the computer” stories.
+
+Also preserve an important precision: a conventional computer does not
+literally “think.” It executes physical state transitions according to
+circuits and encoded instructions. Higher-level reasoning and AI emerge from
+software, algorithms, learned parameters, and enormous compositions of those
+simple operations.

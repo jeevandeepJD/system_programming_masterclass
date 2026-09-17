@@ -319,12 +319,112 @@ Connect the foundations to familiar work:
 - Overflow reasoning matters when sizes, offsets, page counts, and allocation
   lengths are calculated.
 
-None of those are separate tricks. They are the same Week-2-style idea:
+None of those are separate tricks. They express the same foundational idea:
 patterns become useful when a precise interpretation is applied.
 
 ---
 
-## 11. Completion rubric
+## 11. Where this is taking us: from calculation to a CPU
+
+We can now state what is still missing.
+
+Bits give us representation. Boolean operations let circuits transform those
+bits. An adder gives us one useful transformation. But a calculator wired to
+perform one operation is not yet a general-purpose computer.
+
+To reach a CPU, designers had to solve several additional problems:
+
+### 1. Where do inputs and intermediate results live?
+
+We need storage elements—eventually registers and memory—so one operation can
+use the result of an earlier operation.
+
+### 2. How does the machine choose among operations?
+
+An arithmetic and logic unit may support ADD, AND, OR, compare, and shifts.
+A control mechanism must select the desired path.
+
+### 3. How does it know what happens next?
+
+Early machines might be rewired or controlled by switches, plugboards,
+punched cards, or paper tape. That works, but setup is slow and the control
+sequence remains physically separate from ordinary data.
+
+### 4. What if instructions are encoded as patterns too?
+
+This is the stored-program leap. Give operations numeric codes, store those
+codes in addressable memory, and build control circuitry that repeatedly:
+
+```text
+fetch instruction pattern from memory
+        ↓
+decode which operation it requests
+        ↓
+select registers and ALU function
+        ↓
+execute and store result
+        ↓
+advance or change the next-instruction address
+```
+
+The Manchester “Baby” demonstrated execution of a program from writable
+electronic memory in 1948. Historical credit for the stored-program idea is
+distributed across multiple people and projects; what matters technically is
+the new abstraction: **instructions and data can both be encoded bit
+patterns held in memory.**
+
+### 5. Where does an instruction set come from?
+
+CPU designers define an ISA: a contract assigning instruction meanings to
+encodings and defining visible registers, operations, and behavior.
+
+```text
+bit pattern in memory           ISA rule             requested operation
+---------------------     +   -------------     →    -------------------
+instruction encoding          decoder contract       add, load, branch...
+```
+
+The specification is a document/contract. The bytes are stored in memory.
+The decoder and execution machinery are implemented physically in the CPU.
+Do not collapse those three locations into “the instruction set is stored in
+the processor.”
+
+### Does the computer think?
+
+At this physical level, no mysterious thinking occurs. Gates respond to input
+states, registers preserve states, and control circuitry causes an encoded
+sequence of transitions.
+
+Complex behavior arises because:
+
+- simple operations compose into algorithms,
+- algorithms manipulate rich representations,
+- software layers build abstractions,
+- and modern AI combines enormous computation with learned parameters.
+
+Calling the final behavior “reasoning” may be useful at a higher level, but it
+does not replace the lower-level causal story. This course will keep both
+levels visible.
+
+Our next major construction path is therefore:
+
+```text
+transistor as switch
+    → logic gate
+    → combinational circuits
+    → adder and ALU
+    → latch/register
+    → control and clock
+    → instruction encoding
+    → fetch/decode/execute
+    → minimal CPU
+```
+
+We will build every arrow rather than jumping to the finished processor.
+
+---
+
+## 12. Completion rubric
 
 You are ready for the next topic when you can:
 
@@ -353,6 +453,12 @@ confidence.
 - Current Linux kernel `include/linux/bits.h`,
   `include/linux/bitfield.h`, and overflow helpers as modern examples of these
   foundations. Their APIs will be studied in context later.
+- Computer History Museum, “The Stored Program,” including the Manchester
+  “Baby” and its 1948 stored-program demonstration:
+  <https://www.computerhistory.org/revolution/birth-of-the-computer/4/87>
+- Nokia Bell Labs, history of the transistor and its original
+  communications-engineering motivation:
+  <https://www.bell-labs.com/about/awards/1956-nobel-prize-physics/>
 
 **After you work through Day 7:** share your results and questions. The next
 lesson will be generated from the evidence—either a targeted repair day or

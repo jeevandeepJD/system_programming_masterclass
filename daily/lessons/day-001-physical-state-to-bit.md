@@ -11,6 +11,51 @@ States, Bits, and Information
 
 ---
 
+## Why this day exists
+
+Modern computers hide their ancestry well. You press a key, launch a process,
+or submit work to a GPU cluster; nowhere on the screen do you see the old
+problem that started the journey:
+
+> How can a physical object preserve a fact and transform it according to a
+> repeatable rule?
+
+Long before electronics, calculation was human labor. People used fingers,
+tallies, counting boards, and abaci because external physical state reduces
+the burden on memory. A moved bead remembers a partial result so the person
+does not have to.
+
+Mechanical calculators pushed the same idea further. Pascal’s seventeenth-
+century calculator used interlocking wheels to perform addition and
+subtraction. Leibniz pursued a stepped mechanism capable of multiplication and
+division. Babbage later designed machines in which storage, arithmetic, and
+control were increasingly distinct mechanisms.
+
+These machines did not fail because their inventors lacked the idea of
+computation. Their central difficulty was implementation: precision gears are
+slow, wear out, occupy space, and become painfully complicated when thousands
+of states must interact.
+
+Electronic computers are one answer to that physical-engineering problem.
+Before studying what a CPU does, we need to know what its circuits are
+manipulating. That is why the course begins with **state** rather than with C
+syntax or an instruction diagram.
+
+The path we are starting is:
+
+```text
+physical state
+    → reliable symbols
+    → logic and arithmetic
+    → stored intermediate results
+    → controlled sequence of operations
+    → CPU
+```
+
+Today handles the first two arrows. Later lessons will earn the rest.
+
+---
+
 ## 1. Start before binary: what is computation?
 
 Suppose a system begins in one physical state and, according to some rule,
@@ -452,3 +497,16 @@ than memorizing past it.
 **Next:** Day 2 — **From Voltage to Meaning**: quantify the noise-margin
 trade-off, define information and encoding precisely, and interpret one fixed
 bit pattern as a number, character, instruction, and pixel.
+
+---
+
+## Historical references
+
+- Charles Petzold, *Code*, Chapters 1–9, develops the path from human codes
+  and switches to binary representation.
+- IBM, “The punched card tabulator,” describes Hollerith’s later use of
+  physical holes and electrical contacts to mechanize census data:
+  <https://www.ibm.com/history/punched-card-tabulator>
+- Computer History Museum, “Computers Timeline,” provides context for the
+  later transition from mechanical to relay and electronic computation:
+  <https://www.computerhistory.org/timeline/computers/>

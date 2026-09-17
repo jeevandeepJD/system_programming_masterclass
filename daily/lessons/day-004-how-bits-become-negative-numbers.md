@@ -9,6 +9,40 @@ Numbers and Bitwise Reasoning
 >
 > The honest answer is: **show me the interpretation rule.**
 
+## Why negative representation became a machine-design problem
+
+Human notation gets a separate minus symbol almost for free. A machine does
+not. Every extra symbol needs a physical state, a detector, and rules for how
+arithmetic machinery responds to it.
+
+Early mechanical calculators made this cost visible. A wheel naturally cycles
+through a fixed set of positions. When it moves past its final digit, it wraps
+around and carries into the next wheel. Designers learned to exploit
+complement arithmetic because subtraction could then be transformed into
+addition plus discarded carry—much easier than building an entirely separate
+physical process for every signed case.
+
+Binary hardware inherits the same circular structure:
+
+```text
+decimal wheel:  ... 8 → 9 → 0 → 1 ...
+8-bit register: ... 254 → 255 → 0 → 1 ...
+```
+
+Two’s complement was not chosen because its bit patterns look intuitive.
+It won because it fits fixed-width arithmetic machinery:
+
+- one representation for zero,
+- addition and subtraction through the same adder,
+- simple sign testing,
+- and straightforward widening through sign extension.
+
+This lesson is one step toward the CPU’s arithmetic unit. Before we build an
+adder from gates, we need to understand the encoding that lets one adder serve
+both positive and negative calculations.
+
+---
+
 ## 1. Begin with the problem, not two’s complement
 
 Days 1–3 established that bits have no inherent meaning. That idea now becomes
@@ -390,6 +424,9 @@ you can derive the mapping.
 - Bryant and O’Hallaron, *Computer Systems: A Programmer’s Perspective*,
   3rd ed., Chapter 2, §2.2 “Integer Representations.”
 - Charles Petzold, *Code*, Chapter 13, “But What About Subtraction?”
+- Computer History Museum, “Computers Timeline,” for the progression from
+  mechanical arithmetic to relay calculators:
+  <https://www.computerhistory.org/timeline/computers/>
 
 **Next:** Day 5 turns individual bits into controls: masks, AND, OR, XOR, NOT,
 shifts, and the register-field patterns used throughout kernel and driver

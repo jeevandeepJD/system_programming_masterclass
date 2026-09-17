@@ -9,6 +9,54 @@ Numbers and Bitwise Reasoning
 > a control panel: one bit enables DMA, another reports an error, and three
 > neighboring bits choose an operating mode.
 
+## The surprising bridge: abstract logic became wiring
+
+In the nineteenth century, George Boole developed an algebra of logical
+statements. Variables could represent alternatives such as true/false, and
+operations corresponding to AND, OR, and NOT combined them.
+
+For decades this looked more like pure mathematics than a recipe for a
+computer.
+
+Telephone networks changed the setting. Their engineers already controlled
+connections with electromechanical relays: current in a coil moved a physical
+contact, opening or closing another circuit.
+
+In his 1937 MIT master’s thesis, Claude Shannon showed systematically that
+Boolean algebra could describe and simplify relay switching networks. A
+closed/open circuit could represent a logical alternative; series contacts
+behaved like AND, parallel paths like OR, and inverted contacts like NOT.
+Similar ideas were also developed independently, so this is not a
+single-genius creation story—but Shannon’s treatment became enormously
+influential.
+
+Suddenly an abstract logical expression could become a physical circuit:
+
+```text
+Boolean expression
+        ↓
+switching arrangement
+        ↓
+output voltage/state
+```
+
+George Stibitz’s relay-based Model K adder, also built in 1937, demonstrated
+that relay switching could perform binary arithmetic. The missing bridge
+between “logic on paper” and “calculation in machinery” had become concrete.
+
+The bitwise operations in today’s C code are descendants of that bridge. When
+you write:
+
+```c
+status & ERROR_MASK
+```
+
+you are using Boolean algebra to ask a question about selected physical
+states. A modern CPU executes it with transistor gates rather than telephone
+relays, but the logical relationship survives unchanged.
+
+---
+
 ## 1. Stop treating every bit pattern as one big number
 
 Consider an eight-bit hardware register:
@@ -398,6 +446,11 @@ Do not answer with only C syntax. Draw the register, mask, and result.
 - Current Linux kernel headers, particularly `include/linux/bits.h` and
   `include/linux/bitfield.h`, for the modern shape of `BIT`, `GENMASK`,
   `FIELD_GET`, and `FIELD_PREP`.
+- Computer History Museum, “How Do Digital Computers ‘Think’?” for Boole,
+  Shannon’s relay-circuit work, and switching logic:
+  <https://www.computerhistory.org/revolution/digital-logic/12/269>
+- Computer History Museum, 1937 timeline entry for George Stibitz’s Model K
+  relay adder: <https://www.computerhistory.org/timeline/1937/>
 
 **Next:** Day 6 asks what happens when arithmetic produces a mathematical
 answer that does not fit: unsigned wraparound, signed overflow, carry,

@@ -22,7 +22,9 @@ The authoritative curriculum remains
 
 These lessons are available as a seven-day preview, but **prepared does not
 mean completed**. The resume point remains Day 3 until learner evidence is
-recorded.
+recorded. All seven lessons now include the historical problem being solved
+and an explicit bridge toward arithmetic circuits, stored instructions, and
+the CPU.
 
 ### Day 4 — How Can Bits Become a Negative Number?
 

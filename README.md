@@ -8,6 +8,12 @@ The learning loop is:
 
 > **question → learn enough → predict → build/run → observe → explain → connect**
 
+The course also follows the historical problem-solving path: counting and
+mechanical calculation → codes and punched media → Boolean logic and
+switching → relays and electronic switches → arithmetic and memory circuits →
+stored instructions → CPU and instruction sets. History is used to explain
+why each abstraction became necessary, not as a list of dates to memorize.
+
 ## Resume here
 
 Open [`DAILY_PROGRESS.md`](DAILY_PROGRESS.md). It records the current lesson,

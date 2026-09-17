@@ -8,6 +8,47 @@ Numbers and Bitwise Reasoning
 > An eight-bit adder computes `255 + 1`. Mathematics says 256. The register
 > says 0. Did the hardware make a mistake?
 
+## Why arithmetic has a boundary at all
+
+Pure mathematics does not run out of integer digits. Physical machinery does.
+
+A mechanical calculator has a finite number of wheels. A relay calculator has
+a finite number of relay groups. An electronic computer has finite registers
+and finite wires feeding its adder. Every additional bit costs components,
+space, propagation time, and energy.
+
+The switching technology changed dramatically:
+
+```text
+mechanical contacts
+    → electromechanical relays
+    → vacuum tubes
+    → transistors
+    → integrated circuits containing many transistors
+```
+
+Each transition improved some combination of speed, size, reliability, and
+power. Relays physically moved and were slow. Vacuum tubes switched
+electronically but were large, hot, and failure-prone. Bell Labs researchers
+were looking for a smaller, lower-power solid-state replacement for telephone
+relays and tubes when Bardeen, Brattain, and Shockley produced the first
+working point-contact transistor in 1947.
+
+The transistor eventually made millions and then billions of switching
+elements practical on one chip—but it did not make width free. A CPU designer
+must still choose register and datapath widths.
+
+That is why overflow exists:
+
+> The mathematical answer is being forced back into a finite physical
+> representation.
+
+Flags are the CPU’s way of preserving facts that the truncated result bits
+alone cannot tell us, such as whether an unsigned carry or signed overflow
+occurred.
+
+---
+
 ## 1. Arithmetic happens inside a width
 
 On paper, integers can grow as large as we like. Hardware registers have a
@@ -390,6 +431,10 @@ Then explain:
   3rd ed., Chapter 2, §§2.2–2.3 on integer representations and arithmetic.
 - ISO C semantics as reflected by GCC documentation for integer overflow,
   `-fsanitize=undefined`, and `__builtin_add_overflow`.
+- Nokia Bell Labs, “The transistor: 75 years since the famed Nokia Bell Labs
+  invention changed the world,” for the telephone-network motivation and the
+  1947 point-contact transistor:
+  <https://www.bell-labs.com/institute/blog/the-transistor-75-years-since-the-famed-nokia-bell-labs-invention-changed-the-world/>
 
 **Next:** Day 7 combines signed interpretation, masks, fields, overflow, and
 extension into one final topic-level mastery exercise.

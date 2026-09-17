@@ -40,6 +40,45 @@ That line is the spine of this foundation. Today we test every arrow.
 
 ---
 
+## What this foundation made possible
+
+Suppose you want a machine to add two numbers. Saying “build an adder” skips
+several prerequisites:
+
+1. The numbers need a physical representation.
+2. The representation must survive noise and imperfect components.
+3. Each possible input pattern must produce a repeatable output pattern.
+4. Intermediate results must remain available for the next step.
+5. Some mechanism must decide which operation happens next.
+
+Days 1 and 2 solve only the first two items—but without them, the rest cannot
+even be specified.
+
+This is also how the historical path unfolded. Punched-card tabulators could
+encode and count facts, but they were not yet general-purpose CPUs. Relay
+calculators could wire switching paths for arithmetic, but changing the task
+often meant changing wiring or control media. Electronic switching made
+operations faster, while stored programs eventually made the sequence of
+operations itself ordinary encoded information.
+
+The CPU we are heading toward is therefore not one magical invention. It is a
+stack of solved problems:
+
+```text
+representation
+  + logic
+  + arithmetic
+  + memory
+  + control
+  + stored instructions
+  = a programmable processor
+```
+
+Today’s mastery test checks that the first layer is firm enough to carry the
+next one.
+
+---
+
 ## 2. Why retrieval comes before rereading
 
 Rereading feels smooth because the answer is visible. That feeling can be
@@ -359,6 +398,9 @@ from a filename or calendar date.
   pages 18, 24, 80, and 199).
 - Patt and Patel, *Introduction to Computing Systems*, 2nd ed., Chapter 2,
   “Bits, Data Types, and Operations,” book pages 21–36.
+- Computer History Museum, “The Stored Program,” for the problem of replacing
+  laborious machine setup with instructions held in memory:
+  <https://www.computerhistory.org/revolution/birth-of-the-computer/4/87>
 
 The mastery exercises are original to this course and are designed around the
 authoritative curriculum tracker.

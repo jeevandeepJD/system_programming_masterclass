@@ -54,6 +54,44 @@ That is today’s question.
 
 ---
 
+## Why this question appeared before computers
+
+Encoding was not invented for electronic computers. Humans needed ways to
+carry meaning across distance, time, and physical limitations long before a
+CPU existed.
+
+- A writing system maps marks to language.
+- Morse code maps short and long signals to characters.
+- Braille maps raised-dot patterns to letters, numbers, and control marks.
+- Jacquard looms used punched cards to select weaving operations.
+- Hollerith used hole positions on cards to encode census facts that machines
+  could count and sort.
+
+The recurring insight was powerful: **separate the meaning from the physical
+carrier**. A hole can mean age group in one card format, a weaving operation
+in another, or part of a program in a later computer.
+
+Hollerith’s 1890 Census system makes the transition especially visible. A
+clerk encoded facts as holes. In the reader, a pin passing through a hole
+closed an electrical circuit; no hole meant no circuit. A social fact such as
+age or occupation had become a physical yes/no pattern that machinery could
+process.
+
+That is the intellectual bridge to software:
+
+```text
+fact in the world
+    → agreed encoding
+    → physical pattern
+    → machine reads pattern
+    → operation selected by interpretation
+```
+
+A modern instruction stream uses faster storage and a far richer encoding,
+but the pattern/meaning separation is the same.
+
+---
+
 ## 1. Pattern first, meaning second
 
 Imagine eight physical storage elements. Each is in one of two stable states:
@@ -423,6 +461,9 @@ ready for Day 3’s mastery workshop.
   openings occur at PDF pages 18, 24, 80, and 199.
 - Yale N. Patt and Sanjay J. Patel, *Introduction to Computing Systems*,
   2nd ed., Chapter 2, “Bits, Data Types, and Operations,” book pages 21–36.
+- IBM, “The punched card tabulator,” on Hollerith’s use of hole/no-hole
+  patterns and electrical contacts for the 1890 Census:
+  <https://www.ibm.com/history/punched-card-tabulator>
 
 These references supply examples and structure; the explanations and Linux
 lab here are synthesized specifically for the masterclass tracker.
