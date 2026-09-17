@@ -1,8 +1,7 @@
-# Week 1 · Day 2 — The Bits Stay Still; the Meaning Changes
+# Day 2 — The Bits Stay Still; the Meaning Changes
 
-**Date:** Wednesday, 16 September 2026
-
-**Tracker position:** Stage 1 · Week 1 — Electricity, States, Bits, and Information
+**Curriculum alignment:** Stage 1 — Foundations of Computation · Electricity,
+States, Bits, and Information
 
 **Target time:** ~2 hours (≈45 minutes reading, ≈75 minutes experimenting)
 
@@ -309,8 +308,8 @@ od -An -tu4 bits_demo.bin
 ```
 
 On this x86-64 machine it prints `1162101062`. The byte order matters because
-x86 is little-endian. Endianness belongs formally to Week 13, so record the
-observation without turning today into an endianness lecture.
+x86 is little-endian. Endianness appears later in the curriculum, so record
+the observation without turning today into an endianness lecture.
 
 ### Ask an instruction decoder
 
@@ -346,7 +345,7 @@ The file never changed. Only the interpretation did.
 
 ---
 
-## 7. Why this matters beyond Week 1
+## 7. Why this matters beyond today
 
 This is not merely a cute ASCII trick.
 
@@ -386,7 +385,7 @@ program and encoding should interpret them.
    ```
 
 4. Use the interactive Bit Lab:
-   `~/masterclass/daily/challenges/2026-09-16-bit-lab.html`
+   `~/masterclass/daily/challenges/day-002-bit-lab.html`
 5. Rewrite the explanation in
    `~/masterclass/tracker/week01/why_binary_is_practical.md`
    in your own words.
@@ -412,7 +411,7 @@ physical state → logical bit → bit pattern → interpretation → meaning
 ```
 
 If you can explain every arrow and reproduce the Linux observation, you are
-ready for Day 3’s Week 1 mastery workshop.
+ready for Day 3’s mastery workshop.
 
 ---
 
@@ -428,6 +427,5 @@ ready for Day 3’s Week 1 mastery workshop.
 These references supply examples and structure; the explanations and Linux
 lab here are synthesized specifically for the masterclass tracker.
 
-**Next:** Day 3 — test Week 1 by predicting, converting, observing, drawing,
-and explaining. We will not enter signed numbers until Week 1’s foundation is
-stable.
+**Next:** Day 3 — test this foundation by predicting, converting, observing,
+drawing, and explaining. We will not enter signed numbers until it is stable.

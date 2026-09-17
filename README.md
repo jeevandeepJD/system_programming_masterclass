@@ -16,8 +16,8 @@ unfinished evidence, and exact next action.
 Current curriculum position:
 
 - Stage 1 — Foundations of Computation
-- Week 1 — Electricity, States, Bits, and Information
-- Day 3 — Week 1 mastery workshop
+- Topic — Electricity, States, Bits, and Information
+- Day 3 — Mastery Workshop
 
 ## Repository map
 
@@ -31,7 +31,7 @@ Current curriculum position:
 │   ├── lessons/              editable Markdown lessons
 │   ├── pdf/                  rendered daily lesson PDFs
 │   └── challenges/           optional HTML, Python, coding, or lab exercises
-├── tracker/                  week-specific exercises and evidence
+├── tracker/                  topic-specific exercises and evidence
 ├── source-materials/
 │   ├── README.md             catalog of selected references
 │   └── library/              local third-party library; Git-ignored
@@ -43,14 +43,15 @@ Current curriculum position:
 ## Sources of truth
 
 1. `Systems_Engineering_Masterclass_Curriculum_Tracker.docx` controls the
-   66-week curriculum sequence, objectives, exercises, and mastery checks.
+   curriculum sequence, objectives, exercises, and mastery checks. Its
+   original week labels describe ordering, not calendar deadlines.
 2. `DAILY_PROGRESS.md` records where the learner actually stopped.
 3. `AGENT_CONTEXT.md` records teaching preferences and operational decisions.
 4. `MASTERCLASS.md` preserves detailed history and prior discoveries.
 
 ## Daily use
 
-Build and open the lesson for the current date:
+Build and open the latest lesson:
 
 ```bash
 ~/masterclass/bin/today lesson
@@ -72,7 +73,13 @@ Build a particular lesson manually:
 
 ```bash
 python3 ~/masterclass/bin/build_lesson.py \
-  ~/masterclass/daily/lessons/YYYY-MM-DD-lesson-name.md
+  ~/masterclass/daily/lessons/day-NNN-lesson-name.md
+```
+
+Select an earlier day:
+
+```bash
+MC_DAY=2 ~/masterclass/bin/today lesson
 ```
 
 ## Completion standard

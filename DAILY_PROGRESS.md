@@ -10,15 +10,15 @@ The authoritative curriculum remains
 ## Current resume point
 
 - **Stage:** 1 — Foundations of Computation
-- **Week:** 1 — Electricity, States, Bits, and Information
-- **Current lesson:** Day 3 — Week 1 mastery workshop
-- **Week status:** In progress; mastery not yet self-confirmed
+- **Topic:** Electricity, States, Bits, and Information
+- **Current lesson:** Day 3 — Mastery Workshop
+- **Topic status:** In progress; mastery not yet self-confirmed
 - **Next action:** Read Day 3, run the terminal mastery challenge, reproduce
   the one-byte Linux experiment, and report weak areas/questions
-- **Do not advance yet:** Week 2 begins only after the learner assesses the
-  Week 1 checkpoint
+- **Do not advance yet:** Day 4 begins the next topic only after the learner
+  assesses this checkpoint
 
-## Week 1 mastery target
+## Current mastery target
 
 Explain, without notes:
 
@@ -33,41 +33,41 @@ Required evidence:
 - [ ] Draw physical state → logical bit → pattern → interpretation → meaning
 - [ ] Reproduce the Linux one-pattern/multiple-interpretations experiment
 - [ ] Explain the mastery checkpoint aloud without notes
-- [ ] Record confidence, hours, status, and reflection in the `.docx` tracker
+- [ ] Record confidence, time spent, status, and reflection here
 
 ## Daily log
 
-### 2026-09-15 — Week 1, Day 1
+### Day 1 — From Physical State to a Bit
 
-- Lesson: `daily/lessons/2026-09-15-week01-day01-physical-state-to-bit.md`
-- PDF: `daily/pdf/2026-09-15-week01-day01-physical-state-to-bit.pdf`
+- Lesson: `daily/lessons/day-001-physical-state-to-bit.md`
+- PDF: `daily/pdf/day-001-physical-state-to-bit.pdf`
 - Focus: physical state, continuous voltage, threshold ranges, noise margin,
   bits, and `2ⁿ` patterns
 - Learner evidence reported: not yet recorded
 - Resume note: Day 2 explicitly retrieves and extends these ideas
 
-### 2026-09-16 — Week 1, Day 2
+### Day 2 — The Bits Stay Still; the Meaning Changes
 
-- Lesson: `daily/lessons/2026-09-16-week01-day02-bits-patterns-meaning.md`
-- PDF: `daily/pdf/2026-09-16-week01-day02-bits-patterns-meaning.pdf`
-- Challenge: `daily/challenges/2026-09-16-bit-lab.html`
+- Lesson: `daily/lessons/day-002-bits-patterns-meaning.md`
+- PDF: `daily/pdf/day-002-bits-patterns-meaning.pdf`
+- Challenge: `daily/challenges/day-002-bit-lab.html`
 - Focus: pattern versus meaning, encoding, information, hexadecimal, and one
   pattern interpreted multiple ways on Linux
 - Learner evidence reported: not yet recorded
 - Resume note: complete Day 2 experiments before treating Day 3 as assessment
 
-### 2026-09-17 — Week 1, Day 3
+### Day 3 — Mastery Workshop
 
-- Lesson: `daily/lessons/2026-09-17-week01-day03-mastery-workshop.md`
-- PDF: `daily/pdf/2026-09-17-week01-day03-mastery-workshop.pdf`
-- Challenge: `daily/challenges/2026-09-17-week01-mastery.py`
+- Lesson: `daily/lessons/day-003-mastery-workshop.md`
+- PDF: `daily/pdf/day-003-mastery-workshop.pdf`
+- Challenge: `daily/challenges/day-003-mastery.py`
 - Focus: retrieval, conversion, prediction, Linux observation, drawing, and
-  Week 1 mastery explanation
+  mastery explanation
 - Learner evidence reported: pending
 - Exact next step: run:
 
   ```bash
-  python3 ~/masterclass/daily/challenges/2026-09-17-week01-mastery.py
+  python3 ~/masterclass/daily/challenges/day-003-mastery.py
   ```
 
 ## Session update template
@@ -75,7 +75,7 @@ Required evidence:
 Copy this block after each study session:
 
 ```markdown
-### YYYY-MM-DD — Week N, Day N
+### Day N — Lesson title
 
 - Lesson sections completed:
 - Challenge/lab completed:

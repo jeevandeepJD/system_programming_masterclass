@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Week 1 mastery challenge: conversions plus prediction-based reasoning."""
+"""Day 3 mastery challenge: conversions plus prediction-based reasoning."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def ask(prompt: str, expected: set[str], explanation: str) -> bool:
 
 
 def main() -> None:
-    print("Week 1 mastery challenge")
+    print("Day 3 mastery challenge")
     print("========================")
     print("Predict first. Do not use a calculator.\n")
 
@@ -64,7 +64,7 @@ def main() -> None:
     print("2. Explain aloud why binary is physically practical.")
     print("3. Explain how 01000110 can be 70, 'F', an instruction byte, or pixels.")
     print("4. Record any weak arrow or uncertain phrase in your Why? notebook.")
-    print("\nDo not mark Week 1 complete based only on the numeric score.")
+    print("\nDo not mark this topic complete based only on the numeric score.")
 
 
 if __name__ == "__main__":

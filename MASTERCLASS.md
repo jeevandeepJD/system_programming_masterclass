@@ -1545,8 +1545,10 @@ The user explicitly chose this daily operating model:
    week into one response. Preserve the first-principles, WHY-before-HOW
    teaching style.
 3. Save the lesson source under `~/masterclass/daily/lessons/`.
-4. Render a dated PDF under `~/masterclass/daily/pdf/` and display/open that
-   PDF in the editor for the user to study.
+4. Render a sequence-numbered `day-NNN-*` PDF under
+   `~/masterclass/daily/pdf/` and display/open it in the editor. Do not put
+   dates or week numbers in daily artifact names; skipped calendar days must
+   not create gaps in the learning sequence.
 5. After the reading, provide hands-on reinforcement appropriate to the topic.
    This is optional per concept, not a mandatory HTML deliverable. Choose the
    most useful format:
@@ -1588,8 +1590,8 @@ read—not monotonic, bland, or like a mechanically generated textbook.
 Current daily artifacts and exact resume state are indexed in
 `~/masterclass/DAILY_PROGRESS.md`.
 
-Current position is **Week 1, Day 3 — Mastery Workshop**. Day 2 was
-regenerated as an explicit continuation of Day 1. Day 3 consolidates and tests
-Week 1; its existence does not complete the week. Use the learner's answers,
-observations, and questions to decide whether to revisit a weak link or begin
-Week 2.
+Current position is **Day 3 — Mastery Workshop**, aligned with the first
+curriculum topic. Day 2 was regenerated as an explicit continuation of Day 1.
+Day 3 consolidates and tests that foundation; its existence does not complete
+the topic. Use the learner's answers, observations, and questions to decide
+whether to revisit a weak link or begin signed numbers.

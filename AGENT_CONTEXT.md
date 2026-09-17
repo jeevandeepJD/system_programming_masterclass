@@ -60,7 +60,9 @@ unrelated home-directory files.
 ## Curriculum authority
 
 - The `.docx` tracker is the source of truth for sequence and scope.
-- The course restarted from Week 1 on 15 September 2026.
+- The course restarted from the first curriculum topic.
+- Tracker week labels define curriculum order only; they are not deadlines or
+  assumptions about how many calendar days the learner studies.
 - Earlier out-of-order work remains useful historical evidence but does not
   automatically complete tracker weeks.
 - A week advances through understanding and evidence, not elapsed time.
@@ -73,7 +75,7 @@ For each study day:
 
 1. Create a focused lesson as Markdown under:
    `~/masterclass/daily/lessons/`
-2. Render a dated PDF under:
+2. Render a sequence-numbered PDF under:
    `~/masterclass/daily/pdf/`
 3. Open the PDF in the editor.
 4. When useful, create reinforcement under:
@@ -127,8 +129,8 @@ Use exercises to expose gaps rather than merely generate a score.
 ## Current checkpoint
 
 - Stage 1 — Foundations of Computation
-- Week 1 — Electricity, States, Bits, and Information
-- Current daily position: Week 1, Day 3 mastery workshop
+- Topic — Electricity, States, Bits, and Information
+- Current daily position: Day 3 — Mastery Workshop
 - Day 1, Day 2, and Day 3 lesson PDFs exist.
 - Day 2 has an optional interactive Bit Lab.
 - Day 3 has a terminal mastery challenge.
@@ -245,5 +247,15 @@ provides the repository entry point and directs readers to that tracker.
 
 The user requested Day 2 be regenerated with explicit continuity from Day 1,
 and requested Day 3. Day 2 now retrieves Day 1's voltage-to-bit model before
-introducing encoding and meaning. Day 3 is a Week 1 mastery workshop rather
-than an automatic jump to Week 2, because progression depends on evidence.
+introducing encoding and meaning. Day 3 is a mastery workshop rather than an
+automatic jump to the next topic, because progression depends on evidence.
+
+### 2026-09-17 — Sequence-only daily progression
+
+The user may skip calendar days and requested that daily study artifacts use
+only a continuous day count. Daily lessons, PDFs, and challenges now use
+`day-NNN-*` names with no dates or week numbers. The launcher opens the
+highest available day by default and accepts `MC_DAY=N` for an earlier day.
+The curriculum tracker still controls topic order, but its week labels are
+not a schedule. Progress displays should show **Day N + current topic**, not a
+date or study-week number.

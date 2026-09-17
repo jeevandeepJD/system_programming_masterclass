@@ -1,7 +1,8 @@
-# Week 1 · Day 1 — From Physical State to a Bit
+# Day 1 — From Physical State to a Bit
 
-**Date:** Tuesday, 15 September 2026  
-**Tracker position:** Stage 1 — Foundations of Computation · **Week 1: Electricity, States, Bits, and Information**  
+**Curriculum alignment:** Stage 1 — Foundations of Computation · Electricity,
+States, Bits, and Information
+
 **Target time:** ~90 minutes (≈45 min reading, ≈45 min observation and explanation)
 
 > Today’s goal is not to memorize binary notation. It is to answer the more

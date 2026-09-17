@@ -1,20 +1,37 @@
 #!/usr/bin/env bash
 # Daily masterclass driver.
 #
-#   today              -> build + open today's lesson PDF, and open today's challenge
+#   today              -> build + open the latest lesson and challenge
 #   today lesson       -> only the lesson PDF
 #   today challenge    -> only the challenge page
 #   today list         -> list all lessons/challenges so far
 #
-# Lessons live in   ~/masterclass/daily/lessons/YYYY-MM-DD-*.md
+# Select another day with MC_DAY=2 today lesson.
+#
+# Lessons live in   ~/masterclass/daily/lessons/day-NNN-*.md
 # PDFs are built to ~/masterclass/daily/pdf/
-# Challenges live in ~/masterclass/daily/challenges/YYYY-MM-DD-*.html
+# Challenges live in ~/masterclass/daily/challenges/day-NNN-*
 
 set -euo pipefail
 
 MC="$HOME/masterclass"
-DATE="${MC_DATE:-$(date +%F)}"
 CURSOR="$(find "$HOME/.cursor-server/bin" -path '*/remote-cli/cursor' -print -quit 2>/dev/null || true)"
+
+resolve_day() {
+    if [ -n "${MC_DAY:-}" ]; then
+        printf 'day-%03d' "$((10#$MC_DAY))"
+        return
+    fi
+
+    local latest
+    latest="$(ls "$MC"/daily/lessons/day-*.md 2>/dev/null | sort -V | tail -n1 || true)"
+    if [ -z "$latest" ]; then
+        return 1
+    fi
+    basename "$latest" | grep -oE '^day-[0-9]+'
+}
+
+DAY="$(resolve_day)"
 
 open_in_editor() {
     [ -n "$CURSOR" ] && "$CURSOR" "$1" >/dev/null 2>&1 && echo "  opened in editor: $(basename "$1")" \
@@ -23,10 +40,9 @@ open_in_editor() {
 
 do_lesson() {
     local md
-    md="$(ls "$MC"/daily/lessons/"$DATE"-*.md 2>/dev/null | head -n1 || true)"
+    md="$(ls "$MC"/daily/lessons/"$DAY"-*.md 2>/dev/null | head -n1 || true)"
     if [ -z "$md" ]; then
-        echo "No lesson markdown for $DATE in $MC/daily/lessons/"
-        echo "Ask the agent to write today's lesson first."
+        echo "No lesson markdown for $DAY in $MC/daily/lessons/"
         return 1
     fi
     echo "Lesson: $(basename "$md")"
@@ -38,9 +54,9 @@ PORT="${MC_PORT:-8731}"
 
 do_challenge() {
     local challenge
-    challenge="$(ls "$MC"/daily/challenges/"$DATE"-* 2>/dev/null | head -n1 || true)"
+    challenge="$(ls "$MC"/daily/challenges/"$DAY"-* 2>/dev/null | head -n1 || true)"
     if [ -z "$challenge" ]; then
-        echo "No challenge for $DATE."
+        echo "No challenge for $DAY."
         return 1
     fi
     echo "Challenge: $(basename "$challenge")"

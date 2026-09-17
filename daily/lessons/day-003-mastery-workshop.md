@@ -1,8 +1,7 @@
-# Week 1 · Day 3 — Mastery Workshop
+# Day 3 — Mastery Workshop
 
-**Date:** Thursday, 17 September 2026
-
-**Tracker position:** Stage 1 · Week 1 — Electricity, States, Bits, and Information
+**Curriculum alignment:** Stage 1 — Foundations of Computation · Electricity,
+States, Bits, and Information
 
 **Target time:** ~90 minutes (≈20 minutes retrieval, ≈50 minutes practical work, ≈20 minutes explanation)
 
@@ -37,7 +36,7 @@ PHYSICS             ABSTRACTION          REPRESENTATION       INTERPRETATION
 voltage/charge  →   logical 0 or 1   →   bit pattern      →   useful meaning
 ```
 
-That line is the spine of Week 1. Today we test every arrow.
+That line is the spine of this foundation. Today we test every arrow.
 
 ---
 
@@ -231,7 +230,7 @@ The Day 2 HTML Bit Lab is useful for visual exploration. Today’s challenge is
 a small terminal program with randomized conversion input:
 
 ```bash
-python3 ~/masterclass/daily/challenges/2026-09-17-week01-mastery.py
+python3 ~/masterclass/daily/challenges/day-003-mastery.py
 ```
 
 It tests five objectively checkable items, then asks for the parts software
@@ -243,7 +242,7 @@ meaning.
 
 ---
 
-## 8. The Week 1 mastery checkpoint
+## 8. The mastery checkpoint
 
 The tracker asks:
 
@@ -310,7 +309,7 @@ all four views before running them.
 
 ---
 
-## 10. Decide honestly whether Week 1 is complete
+## 10. Decide honestly whether this foundation is complete
 
 Use this rubric:
 
@@ -364,6 +363,6 @@ from a filename or calendar date.
 The mastery exercises are original to this course and are designed around the
 authoritative curriculum tracker.
 
-**Next step depends on evidence:** if Week 1 is stable, begin Week 2 with
+**Next step depends on evidence:** if this foundation is stable, Day 4 begins
 signed-number motivation and two’s complement. If not, Day 4 will target the
 specific weak link instead of repeating the whole lesson.
