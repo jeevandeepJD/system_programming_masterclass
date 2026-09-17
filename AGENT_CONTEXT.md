@@ -25,7 +25,8 @@ Before creating or continuing a lesson:
 2. Read the current checkpoint in `MASTERCLASS.md`.
 3. Consult the relevant week in the authoritative `.docx` tracker.
 4. Inspect existing daily lessons and challenges to avoid repetition.
-5. Continue from demonstrated understanding, not merely from the calendar.
+5. Read `DAILY_PROGRESS.md` for the exact resume point and unfinished work.
+6. Continue from demonstrated understanding, not merely from the calendar.
 
 After every user suggestion, correction, preference, or planning update:
 
@@ -127,9 +128,10 @@ Use exercises to expose gaps rather than merely generate a score.
 
 - Stage 1 — Foundations of Computation
 - Week 1 — Electricity, States, Bits, and Information
-- Current daily position: Week 1, Day 2
-- Day 1 and Day 2 lesson PDFs exist.
+- Current daily position: Week 1, Day 3 mastery workshop
+- Day 1, Day 2, and Day 3 lesson PDFs exist.
 - Day 2 has an optional interactive Bit Lab.
+- Day 3 has a terminal mastery challenge.
 - Do not advance until the learner has read/attempted the material and shared
   questions or evidence.
 
@@ -230,3 +232,18 @@ details. Include source links and the relevant version/date in daily notes
 when freshness matters. Do not browse merely to replace timeless
 first-principles explanations; browse when recency or verification adds real
 value.
+
+### 2026-09-17 — Daily resume tracker and repository README
+
+The user requested a daily tracker so study can resume exactly where it
+stopped. `DAILY_PROGRESS.md` is now the concise source of truth for the
+current daily position, pending evidence, questions, and next action. Update
+it after every completed or interrupted study session. The root `README.md`
+provides the repository entry point and directs readers to that tracker.
+
+### 2026-09-17 — Day 2 continuity and Day 3 generation
+
+The user requested Day 2 be regenerated with explicit continuity from Day 1,
+and requested Day 3. Day 2 now retrieves Day 1's voltage-to-bit model before
+introducing encoding and meaning. Day 3 is a Week 1 mastery workshop rather
+than an automatic jump to Week 2, because progression depends on evidence.

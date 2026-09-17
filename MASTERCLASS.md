@@ -1585,15 +1585,11 @@ read—not monotonic, bland, or like a mechanically generated textbook.
 - Enthusiasm should come from the ideas and discoveries, not from excessive
   exclamation marks or artificial praise.
 
-Current daily artifact:
-- Lesson source:
-  `~/masterclass/daily/lessons/2026-09-16-week01-day02-bits-patterns-meaning.md`
-- Lesson PDF:
-  `~/masterclass/daily/pdf/2026-09-16-week01-day02-bits-patterns-meaning.pdf`
-- Optional interactive challenge:
-  `~/masterclass/daily/challenges/2026-09-16-bit-lab.html`
+Current daily artifacts and exact resume state are indexed in
+`~/masterclass/DAILY_PROGRESS.md`.
 
-Current position remains **Week 1, Day 2**. The user is expected to read the
-PDF and attempt the challenge/lab; do not advance solely because the files
-exist. Use their answers, observations, and questions to decide whether to
-consolidate Week 1 or proceed to the next daily lesson.
+Current position is **Week 1, Day 3 — Mastery Workshop**. Day 2 was
+regenerated as an explicit continuation of Day 1. Day 3 consolidates and tests
+Week 1; its existence does not complete the week. Use the learner's answers,
+observations, and questions to decide whether to revisit a weak link or begin
+Week 2.

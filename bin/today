@@ -37,13 +37,29 @@ do_lesson() {
 PORT="${MC_PORT:-8731}"
 
 do_challenge() {
-    local html
-    html="$(ls "$MC"/daily/challenges/"$DATE"-*.html 2>/dev/null | head -n1 || true)"
-    if [ -z "$html" ]; then
+    local challenge
+    challenge="$(ls "$MC"/daily/challenges/"$DATE"-* 2>/dev/null | head -n1 || true)"
+    if [ -z "$challenge" ]; then
         echo "No challenge for $DATE."
         return 1
     fi
-    echo "Challenge: $(basename "$html")"
+    echo "Challenge: $(basename "$challenge")"
+
+    case "$challenge" in
+      *.py)
+        echo
+        echo "  Run in a terminal:"
+        echo "  python3 $challenge"
+        echo
+        open_in_editor "$challenge"
+        return
+        ;;
+      *.html) ;;
+      *)
+        open_in_editor "$challenge"
+        return
+        ;;
+    esac
 
     # This box is usually driven remotely (no local DISPLAY), so instead of
     # launching a browser on the VM we serve the page on a local port --
@@ -58,11 +74,11 @@ do_challenge() {
     fi
 
     echo
-    echo "  ==> http://localhost:$PORT/$(basename "$html")"
+    echo "  ==> http://localhost:$PORT/$(basename "$challenge")"
     echo
     echo "  (if the link does not open, run:  cursor --help  or just paste the URL"
     echo "   into your browser -- the port is forwarded by the remote session)"
-    [ -n "$CURSOR" ] && "$CURSOR" "$html" >/dev/null 2>&1 || true
+    [ -n "$CURSOR" ] && "$CURSOR" "$challenge" >/dev/null 2>&1 || true
 }
 
 case "${1:-all}" in
