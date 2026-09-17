@@ -18,6 +18,42 @@ The authoritative curriculum remains
 - **Do not advance yet:** Day 4 begins the next topic only after the learner
   assesses this checkpoint
 
+## Prepared next lessons
+
+These lessons are available as a seven-day preview, but **prepared does not
+mean completed**. The resume point remains Day 3 until learner evidence is
+recorded.
+
+### Day 4 — How Can Bits Become a Negative Number?
+
+- Lesson: `daily/lessons/day-004-how-bits-become-negative-numbers.md`
+- PDF: `daily/pdf/day-004-how-bits-become-negative-numbers.pdf`
+- Focus: signed magnitude, one's complement, two's complement, ranges, and
+  the same-adder insight
+
+### Day 5 — Bits as Switches
+
+- Lesson: `daily/lessons/day-005-bitwise-tools-and-register-masks.md`
+- PDF: `daily/pdf/day-005-bitwise-tools-and-register-masks.pdf`
+- Challenge: `daily/challenges/day-005-register-mask-lab.c`
+- Focus: AND, OR, XOR, NOT, shifts, masks, packed fields, and register
+  read-modify-write reasoning
+
+### Day 6 — When the Answer Does Not Fit
+
+- Lesson: `daily/lessons/day-006-overflow-sign-extension-and-flags.md`
+- PDF: `daily/pdf/day-006-overflow-sign-extension-and-flags.pdf`
+- Challenge: `daily/challenges/day-006-overflow-lab.c`
+- Focus: fixed-width arithmetic, unsigned wraparound, signed overflow, carry
+  versus overflow, promotions, and sign extension
+
+### Day 7 — Mastering Signed Bits
+
+- Lesson: `daily/lessons/day-007-signed-bits-mastery-workshop.md`
+- PDF: `daily/pdf/day-007-signed-bits-mastery-workshop.pdf`
+- Focus: integrated interpretation, register decoding, arithmetic, extension,
+  C experiments, and mastery explanation
+
 ## Current mastery target
 
 Explain, without notes:

@@ -259,3 +259,11 @@ highest available day by default and accepts `MC_DAY=N` for an earlier day.
 The curriculum tracker still controls topic order, but its week labels are
 not a schedule. Progress displays should show **Day N + current topic**, not a
 date or study-week number.
+
+### 2026-09-17 — Seven-lesson preview
+
+The user asked to see notes covering a full week-like span. Since daily
+artifacts are sequence-based, Days 4–7 were prepared to complete a seven-day
+preview together with existing Days 1–3. Prepared future lessons must not
+move the learner's resume point automatically. `DAILY_PROGRESS.md` should
+separate **current resume point** from **prepared next lessons**.
