@@ -197,3 +197,36 @@ organized in the masterclass folder.
   current kernel documentation and source.
 - The archive's nested Git metadata, swap files, executables, object files,
   shared libraries, and crash dumps were excluded.
+
+### 2026-09-17 — Use source materials while preparing notes
+
+The user explicitly approved referring to the organized source-material
+library when preparing daily lessons. For each lesson:
+
+- begin with the authoritative tracker objective, not a book's chapter order;
+- consult the most relevant local book or lab collection;
+- synthesize explanations in the masterclass's natural mentor tone rather
+  than copying source text;
+- cite the book and exact chapter/page range when a lesson materially relies
+  on it;
+- cross-check time-sensitive Linux/kernel details against current official
+  documentation or source;
+- continue using experiments and observed behavior as evidence rather than
+  treating a book as unquestionable authority.
+
+### 2026-09-17 — Source materials are flexible, not strict
+
+The local books and labs are optional references, not curriculum constraints.
+If they are outdated, incomplete, unclear, or conflict with current practice,
+use up-to-date internet sources instead. Prefer primary sources such as:
+
+- current Linux kernel documentation and source,
+- current architecture/vendor manuals,
+- standards, RFCs, and official project documentation,
+- maintained upstream repositories and release notes.
+
+Clearly distinguish stable foundational concepts from version-specific
+details. Include source links and the relevant version/date in daily notes
+when freshness matters. Do not browse merely to replace timeless
+first-principles explanations; browse when recency or verification adds real
+value.
