@@ -1,5 +1,12 @@
 # Systems Engineering Masterclass
 
+> **Experimental branch:** `experiment/accelerated-foundations`
+>
+> This branch compresses the original seven narrow foundation lessons into
+> two approximately three-hour units and begins Boolean logic on Day 3. The
+> original format remains unchanged on `master` until the learner approves
+> this experiment.
+
 A first-principles, experiment-driven path from physical state and digital
 logic to CPUs, C, operating systems, the Linux kernel, drivers,
 virtualization, distributed systems, cloud platforms, and AI infrastructure.
@@ -23,7 +30,7 @@ Current curriculum position:
 
 - Stage 1 — Foundations of Computation
 - Topic — Electricity, States, Bits, and Information
-- Day 3 — Mastery Workshop
+- Evaluation point — Accelerated Day 1
 
 ## Repository map
 

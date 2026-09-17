@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 3 — Logic Gate Lab</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #081018;
+    --panel: #101c29;
+    --panel2: #152537;
+    --line: #294158;
+    --text: #e8f0f7;
+    --muted: #94a9bc;
+    --cyan: #55d6e8;
+    --blue: #69a7ff;
+    --amber: #ffc766;
+    --green: #55df9a;
+    --red: #ff7185;
+    --off: #354b60;
+    --shadow: 0 18px 44px #0008;
+    --mono: "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at 12% 0%, #12324a 0, transparent 28rem),
+      radial-gradient(circle at 92% 22%, #1a2942 0, transparent 30rem),
+      var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+
+  button, select { font: inherit; }
+  button:focus-visible, select:focus-visible {
+    outline: 3px solid #55d6e866;
+    outline-offset: 2px;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 13px max(18px, calc((100vw - 1120px) / 2));
+    border-bottom: 1px solid #294158cc;
+    background: #081018e8;
+    backdrop-filter: blur(14px);
+  }
+  .brand { min-width: 210px; }
+  .brand strong { display: block; font-size: 15px; letter-spacing: .01em; }
+  .brand span { color: var(--muted); font-size: 12px; }
+  .progress-track {
+    flex: 1;
+    height: 7px;
+    border-radius: 10px;
+    background: #1a2a39;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+    transition: width .25s ease;
+  }
+  .score {
+    min-width: 100px;
+    text-align: right;
+    font: 700 13px var(--mono);
+    color: var(--green);
+  }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 30px 18px 80px; }
+  .hero {
+    display: grid;
+    grid-template-columns: 1.35fr .65fr;
+    gap: 18px;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 780px) {
+    .hero { grid-template-columns: 1fr; }
+    .topbar { gap: 10px; }
+    .brand span { display: none; }
+  }
+  .hero-copy, .hero-card, section {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: linear-gradient(145deg, #122131eb, #0d1925f2);
+    box-shadow: var(--shadow);
+  }
+  .hero-copy { padding: 30px; }
+  .eyebrow {
+    color: var(--cyan);
+    font: 700 11px var(--mono);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  h1 {
+    margin: 8px 0 10px;
+    font-size: clamp(27px, 4vw, 44px);
+    line-height: 1.08;
+    letter-spacing: -.035em;
+  }
+  .hero p { color: var(--muted); max-width: 68ch; margin: 0; }
+  .hero-card {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+  }
+  .rule {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .rule b {
+    flex: 0 0 26px;
+    display: grid;
+    place-items: center;
+    height: 26px;
+    border-radius: 50%;
+    color: #07131b;
+    background: var(--cyan);
+    font: 800 12px var(--mono);
+  }
+
+  section { padding: 24px; margin: 20px 0; }
+  .section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  h2 { margin: 0 0 5px; font-size: 20px; letter-spacing: -.015em; }
+  .section-head p { margin: 0; color: var(--muted); font-size: 13px; }
+  .badge {
+    flex: 0 0 auto;
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--amber);
+    background: #2b2519;
+    font: 700 10px var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .gate-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .tab, .control, .answer, .primary, .secondary {
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    color: var(--text);
+    background: #152638;
+    cursor: pointer;
+    transition: transform .12s, border-color .12s, background .12s;
+  }
+  .tab:hover, .control:hover, .answer:hover, .primary:hover, .secondary:hover {
+    border-color: var(--cyan);
+    transform: translateY(-1px);
+  }
+  .tab { padding: 8px 14px; font: 700 12px var(--mono); }
+  .tab.active {
+    background: #143c4a;
+    border-color: var(--cyan);
+    color: #bff8ff;
+  }
+
+  .explorer {
+    display: grid;
+    grid-template-columns: minmax(330px, 1.15fr) minmax(280px, .85fr);
+    gap: 18px;
+  }
+  @media (max-width: 800px) { .explorer { grid-template-columns: 1fr; } }
+  .circuit, .table-card, .builder-card, .challenge-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #0b1722;
+    overflow: hidden;
+  }
+  .circuit {
+    min-height: 330px;
+    padding: 26px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .signal-row {
+    display: grid;
+    grid-template-columns: 84px 1fr 112px 1fr 84px;
+    align-items: center;
+    min-height: 150px;
+  }
+  @media (max-width: 560px) {
+    .signal-row { grid-template-columns: 68px 1fr 90px 1fr 68px; }
+  }
+  .inputs { display: flex; flex-direction: column; gap: 28px; }
+  .switch-wrap { text-align: center; }
+  .switch-label, .out-label {
+    color: var(--muted);
+    font: 700 11px var(--mono);
+    margin-bottom: 5px;
+  }
+  .toggle {
+    width: 62px;
+    height: 34px;
+    padding: 3px;
+    border: 1px solid #3c566d;
+    border-radius: 20px;
+    background: #162839;
+    cursor: pointer;
+  }
+  .toggle i {
+    display: block;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--off);
+    transition: transform .18s, background .18s, box-shadow .18s;
+  }
+  .toggle.on i {
+    transform: translateX(28px);
+    background: var(--cyan);
+    box-shadow: 0 0 18px #55d6e899;
+  }
+  .toggle-value { margin-top: 4px; font: 800 14px var(--mono); }
+  .wire {
+    height: 3px;
+    background: var(--off);
+    box-shadow: 0 0 0 transparent;
+    transition: background .16s, box-shadow .16s;
+  }
+  .wire.hot { background: var(--cyan); box-shadow: 0 0 10px #55d6e888; }
+  .gate-shape {
+    height: 86px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--blue);
+    border-radius: 12px 40px 40px 12px;
+    background: #112942;
+    box-shadow: inset 0 0 25px #69a7ff14;
+    font: 800 14px var(--mono);
+    letter-spacing: .04em;
+  }
+  .gate-shape.not { border-radius: 12px 42px 42px 12px; }
+  .output-node {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: auto;
+    border: 2px solid var(--off);
+    border-radius: 50%;
+    color: var(--muted);
+    background: #111d28;
+    font: 800 24px var(--mono);
+    transition: all .18s;
+  }
+  .output-node.on {
+    color: #062217;
+    border-color: var(--green);
+    background: var(--green);
+    box-shadow: 0 0 26px #55df9a88;
+  }
+  .gate-description {
+    margin: 18px 0 0;
+    color: var(--muted);
+    text-align: center;
+    font-size: 13px;
+  }
+  .gate-description strong { color: var(--text); }
+
+  .table-card { padding: 18px; }
+  .table-title {
+    margin-bottom: 11px;
+    color: var(--muted);
+    font: 700 11px var(--mono);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); }
+  th, td { padding: 12px; text-align: center; border-bottom: 1px solid #22384c; }
+  th { color: var(--muted); font-size: 11px; }
+  td { font-weight: 700; }
+  tr.current td {
+    color: #d8fbff;
+    background: #163746;
+  }
+  tr:last-child td { border-bottom: 0; }
+  .physical-note {
+    margin-top: 16px;
+    padding: 12px;
+    border-left: 3px solid var(--amber);
+    color: var(--muted);
+    background: #251f15;
+    font-size: 12px;
+  }
+
+  .builder {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 760px) { .builder { grid-template-columns: 1fr; } }
+  .builder-card { padding: 20px; }
+  .builder-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .builder-controls label {
+    color: var(--muted);
+    font: 700 10px var(--mono);
+    text-transform: uppercase;
+  }
+  select {
+    width: 100%;
+    margin-top: 5px;
+    padding: 9px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    color: var(--text);
+    background: #132638;
+  }
+  .mini-toggles { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+  .control { padding: 9px 13px; font: 700 12px var(--mono); }
+  .control.on { color: #09221a; border-color: var(--green); background: var(--green); }
+  .expression {
+    padding: 18px;
+    border: 1px solid #31506b;
+    border-radius: 12px;
+    background: #0a131d;
+    color: var(--cyan);
+    text-align: center;
+    font: 700 clamp(14px, 3vw, 20px) var(--mono);
+  }
+  .expression-result {
+    margin-top: 12px;
+    color: var(--muted);
+    text-align: center;
+    font-size: 13px;
+  }
+  .law-box {
+    display: grid;
+    gap: 12px;
+    height: 100%;
+    align-content: center;
+  }
+  .law-line {
+    padding: 13px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #122233;
+    font: 700 13px var(--mono);
+  }
+  .law-line.match { border-color: var(--green); }
+  .law-state { float: right; color: var(--green); }
+
+  .challenge-card { padding: 22px; }
+  .challenge-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--muted);
+    font: 700 11px var(--mono);
+  }
+  .question {
+    min-height: 90px;
+    display: grid;
+    place-items: center;
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #0a151f;
+    text-align: center;
+    font: 700 clamp(16px, 3vw, 22px) var(--mono);
+  }
+  .answer-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .answer { padding: 16px; font: 800 22px var(--mono); }
+  .answer.chosen.correct { border-color: var(--green); background: #173b2c; }
+  .answer.chosen.wrong { border-color: var(--red); background: #3b1a24; }
+  .answer:disabled { cursor: default; transform: none; opacity: .75; }
+  .feedback {
+    min-height: 64px;
+    margin-top: 15px;
+    padding: 13px 15px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: var(--muted);
+    background: #0b1620;
+    font-size: 13px;
+  }
+  .feedback.good { color: #caffdf; border-color: #2c7654; background: #102c21; }
+  .feedback.bad { color: #ffd0d7; border-color: #814052; background: #301721; }
+  .next-row { display: flex; justify-content: flex-end; margin-top: 12px; }
+  .primary, .secondary { padding: 10px 18px; }
+  .primary { border-color: var(--cyan); background: #174052; }
+  .secondary { background: transparent; color: var(--muted); }
+  .hidden { display: none !important; }
+
+  .finish {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 22px;
+    align-items: center;
+  }
+  .finish-score {
+    display: grid;
+    place-items: center;
+    width: 130px;
+    height: 130px;
+    border: 7px solid var(--cyan);
+    border-radius: 50%;
+    background: #102536;
+    font: 800 25px var(--mono);
+  }
+  .finish h3 { margin: 0 0 6px; }
+  .finish p { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+  @media (max-width: 560px) {
+    .finish { grid-template-columns: 1fr; text-align: center; }
+    .finish-score { margin: auto; }
+  }
+
+  .mastery {
+    border-color: #43627c;
+    background: linear-gradient(145deg, #14283a, #101c29);
+  }
+  .mastery blockquote {
+    margin: 14px 0;
+    padding: 16px 20px;
+    border-left: 3px solid var(--cyan);
+    color: #d9f7fb;
+    background: #0c1924;
+    font-size: 16px;
+  }
+  .checklist {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 9px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  @media (max-width: 620px) { .checklist { grid-template-columns: 1fr; } }
+  .checklist div::before { content: "□"; color: var(--amber); margin-right: 9px; }
+  code { color: var(--amber); font-family: var(--mono); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <strong>Logic Gate Lab</strong>
+    <span>Day 3 · predict → switch → observe → explain</span>
+  </div>
+  <div class="progress-track" aria-label="Challenge progress">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+  <div class="score"><span id="score">0</span> / <span id="maxScore">12</span></div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">Offline interactive challenge</div>
+      <h1>Turn physical choices into logical rules.</h1>
+      <p>
+        Explore six gates, watch the active truth-table row, combine functions,
+        verify De Morgan's laws, then predict outputs for a score. Challenge
+        answers remain hidden until each attempt.
+      </p>
+    </div>
+    <div class="hero-card">
+      <div class="rule"><b>1</b><span>Say your prediction before moving a switch.</span></div>
+      <div class="rule"><b>2</b><span>Use the explorer to test the physical rule.</span></div>
+      <div class="rule"><b>3</b><span>Explain why the output followed from the arrangement.</span></div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Gate explorer</h2>
+        <p>Choose a gate, toggle its inputs, and watch the matching truth-table row.</p>
+      </div>
+      <span class="badge">explore</span>
+    </div>
+
+    <div class="gate-tabs" id="gateTabs" role="tablist" aria-label="Gate type"></div>
+
+    <div class="explorer">
+      <div class="circuit">
+        <div class="signal-row">
+          <div class="inputs">
+            <div class="switch-wrap">
+              <div class="switch-label">INPUT A</div>
+              <button class="toggle" id="toggleA" aria-label="Toggle input A" aria-pressed="false"><i></i></button>
+              <div class="toggle-value" id="valueA">0</div>
+            </div>
+            <div class="switch-wrap" id="inputBWrap">
+              <div class="switch-label">INPUT B</div>
+              <button class="toggle" id="toggleB" aria-label="Toggle input B" aria-pressed="false"><i></i></button>
+              <div class="toggle-value" id="valueB">0</div>
+            </div>
+          </div>
+          <div class="wire" id="wireIn"></div>
+          <div class="gate-shape" id="gateShape">AND</div>
+          <div class="wire" id="wireOut"></div>
+          <div>
+            <div class="out-label">OUTPUT Y</div>
+            <div class="output-node" id="outputNode">0</div>
+          </div>
+        </div>
+        <p class="gate-description" id="gateDescription"></p>
+      </div>
+
+      <div class="table-card">
+        <div class="table-title">Live truth table</div>
+        <table>
+          <thead id="truthHead"></thead>
+          <tbody id="truthBody"></tbody>
+        </table>
+        <div class="physical-note" id="physicalNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Expression bench</h2>
+        <p>Compose two gates and compare equivalent structures.</p>
+      </div>
+      <span class="badge">build</span>
+    </div>
+
+    <div class="builder">
+      <div class="builder-card">
+        <div class="builder-controls">
+          <label>First gate
+            <select id="firstGate">
+              <option>AND</option><option>OR</option><option>XOR</option>
+              <option>NAND</option><option>NOR</option>
+            </select>
+          </label>
+          <label>Join with C
+            <select id="secondGate">
+              <option>AND</option><option>OR</option><option>XOR</option>
+              <option>NAND</option><option>NOR</option>
+            </select>
+          </label>
+          <label>Final output
+            <select id="finalInvert">
+              <option value="no">direct</option>
+              <option value="yes">invert</option>
+            </select>
+          </label>
+        </div>
+        <div class="mini-toggles">
+          <button class="control" data-bit="A">A = 0</button>
+          <button class="control" data-bit="B">B = 0</button>
+          <button class="control" data-bit="C">C = 0</button>
+        </div>
+        <div class="expression" id="expression"></div>
+        <div class="expression-result" id="expressionResult"></div>
+      </div>
+
+      <div class="builder-card law-box">
+        <div class="table-title">De Morgan comparator</div>
+        <div class="law-line">
+          ¬(A ∧ B) = ¬A ∨ ¬B
+          <span class="law-state" id="law1"></span>
+        </div>
+        <div class="law-line">
+          ¬(A ∨ B) = ¬A ∧ ¬B
+          <span class="law-state" id="law2"></span>
+        </div>
+        <p class="physical-note">
+          Toggle A and B through all four combinations. Matching once is an
+          example; matching on every possible row establishes equivalence for
+          two Boolean inputs.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="challengeSection">
+    <div class="section-head">
+      <div>
+        <h2>Prediction challenge</h2>
+        <p>First attempts earn points. No answer is shown before you choose 0 or 1.</p>
+      </div>
+      <span class="badge">12 points</span>
+    </div>
+
+    <div class="challenge-card" id="challengeCard">
+      <div class="challenge-meta">
+        <span id="roundLabel">ROUND 1 OF 12</span>
+        <span id="streakLabel">STREAK 0</span>
+      </div>
+      <div class="question" id="question"></div>
+      <div class="answer-row">
+        <button class="answer" data-answer="0">0</button>
+        <button class="answer" data-answer="1">1</button>
+      </div>
+      <div class="feedback" id="feedback">
+        Commit to a prediction. The explanation appears only after your attempt.
+      </div>
+      <div class="next-row">
+        <button class="primary hidden" id="nextQuestion">Next prediction</button>
+      </div>
+    </div>
+
+    <div class="challenge-card finish hidden" id="finishCard">
+      <div class="finish-score"><span id="finishScore">0/12</span></div>
+      <div>
+        <h3 id="finishTitle">Prediction set complete</h3>
+        <p id="finishMessage"></p>
+        <button class="secondary" id="retryChallenge">Try a fresh set</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="mastery">
+    <div class="section-head">
+      <div>
+        <h2>Close the loop aloud</h2>
+        <p>Your score is evidence of prediction skill, not proof of mastery.</p>
+      </div>
+      <span class="badge">mastery</span>
+    </div>
+    <blockquote>
+      How can a physical circuit implement a Boolean function without
+      understanding it?
+    </blockquote>
+    <div class="checklist">
+      <div>Start with physical voltage ranges.</div>
+      <div>Name the role of transistor arrangement.</div>
+      <div>Connect conducting paths to the output bit.</div>
+      <div>Connect all input cases to a truth table.</div>
+      <div>Separate deterministic behavior from understanding.</div>
+      <div>Draw NAND-only NOT, AND, and OR.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const gateDefs = {
+  NOT: {
+    unary: true,
+    fn: a => 1 - a,
+    sentence: "NOT produces the opposite logical state.",
+    physical: "Physical intuition: a complementary path drives HIGH when A is LOW and drives LOW when A is HIGH."
+  },
+  AND: {
+    fn: (a, b) => a & b,
+    sentence: "AND is 1 only when every input is 1.",
+    physical: "Physical intuition: two normally open contacts in series. Either open contact breaks the only path."
+  },
+  OR: {
+    fn: (a, b) => a | b,
+    sentence: "OR is 1 when at least one input is 1.",
+    physical: "Physical intuition: contacts in parallel. Either closed branch can complete a path."
+  },
+  XOR: {
+    fn: (a, b) => a ^ b,
+    sentence: "XOR is 1 when the two inputs differ.",
+    physical: "Physical intuition: combine the mutually exclusive paths A AND NOT B, and NOT A AND B."
+  },
+  NAND: {
+    fn: (a, b) => 1 - (a & b),
+    sentence: "NAND is 0 only when every input is 1.",
+    physical: "CMOS intuition: series pull-down devices can pull LOW only when both inputs are HIGH."
+  },
+  NOR: {
+    fn: (a, b) => 1 - (a | b),
+    sentence: "NOR is 1 only when every input is 0.",
+    physical: "CMOS intuition: parallel pull-down devices let either HIGH input pull the output LOW."
+  }
+};
+
+let explorerGate = "AND";
+let inputA = 0;
+let inputB = 0;
+
+const gateTabs = document.getElementById("gateTabs");
+Object.keys(gateDefs).forEach(name => {
+  const button = document.createElement("button");
+  button.className = "tab";
+  button.textContent = name;
+  button.setAttribute("role", "tab");
+  button.addEventListener("click", () => {
+    explorerGate = name;
+    renderExplorer();
+  });
+  gateTabs.appendChild(button);
+});
+
+function setToggle(button, value) {
+  button.classList.toggle("on", !!value);
+  button.setAttribute("aria-pressed", String(!!value));
+}
+
+document.getElementById("toggleA").addEventListener("click", () => {
+  inputA ^= 1;
+  renderExplorer();
+});
+document.getElementById("toggleB").addEventListener("click", () => {
+  inputB ^= 1;
+  renderExplorer();
+});
+
+function renderExplorer() {
+  const def = gateDefs[explorerGate];
+  const y = def.unary ? def.fn(inputA) : def.fn(inputA, inputB);
+
+  gateTabs.querySelectorAll(".tab").forEach(button => {
+    const active = button.textContent === explorerGate;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+
+  setToggle(document.getElementById("toggleA"), inputA);
+  setToggle(document.getElementById("toggleB"), inputB);
+  document.getElementById("valueA").textContent = inputA;
+  document.getElementById("valueB").textContent = inputB;
+  document.getElementById("inputBWrap").classList.toggle("hidden", !!def.unary);
+
+  const shape = document.getElementById("gateShape");
+  shape.textContent = explorerGate;
+  shape.classList.toggle("not", !!def.unary);
+  document.getElementById("wireIn").classList.toggle("hot", !!(inputA || (!def.unary && inputB)));
+  document.getElementById("wireOut").classList.toggle("hot", !!y);
+
+  const output = document.getElementById("outputNode");
+  output.textContent = y;
+  output.classList.toggle("on", !!y);
+  document.getElementById("gateDescription").innerHTML =
+    `<strong>${def.sentence}</strong> Current result: Y = ${y}.`;
+  document.getElementById("physicalNote").textContent = def.physical;
+
+  const head = document.getElementById("truthHead");
+  const body = document.getElementById("truthBody");
+  head.innerHTML = def.unary ? "<tr><th>A</th><th>Y</th></tr>" : "<tr><th>A</th><th>B</th><th>Y</th></tr>";
+  body.innerHTML = "";
+
+  const rows = def.unary ? [[0], [1]] : [[0,0], [0,1], [1,0], [1,1]];
+  rows.forEach(values => {
+    const result = def.unary ? def.fn(values[0]) : def.fn(values[0], values[1]);
+    const current = def.unary
+      ? values[0] === inputA
+      : values[0] === inputA && values[1] === inputB;
+    const tr = document.createElement("tr");
+    if (current) tr.className = "current";
+    tr.innerHTML = def.unary
+      ? `<td>${values[0]}</td><td>${result}</td>`
+      : `<td>${values[0]}</td><td>${values[1]}</td><td>${result}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+const builderBits = { A: 0, B: 0, C: 0 };
+document.querySelectorAll(".control[data-bit]").forEach(button => {
+  button.addEventListener("click", () => {
+    const bit = button.dataset.bit;
+    builderBits[bit] ^= 1;
+    renderBuilder();
+  });
+});
+["firstGate", "secondGate", "finalInvert"].forEach(id => {
+  document.getElementById(id).addEventListener("change", renderBuilder);
+});
+
+function binaryGate(name, a, b) {
+  return gateDefs[name].fn(a, b);
+}
+
+function renderBuilder() {
+  const { A, B, C } = builderBits;
+  const first = document.getElementById("firstGate").value;
+  const second = document.getElementById("secondGate").value;
+  const invert = document.getElementById("finalInvert").value === "yes";
+  const p = binaryGate(first, A, B);
+  const beforeInvert = binaryGate(second, p, C);
+  const y = invert ? 1 - beforeInvert : beforeInvert;
+
+  document.querySelectorAll(".control[data-bit]").forEach(button => {
+    const value = builderBits[button.dataset.bit];
+    button.textContent = `${button.dataset.bit} = ${value}`;
+    button.classList.toggle("on", !!value);
+  });
+
+  const firstSymbol = {AND:"∧", OR:"∨", XOR:"⊕", NAND:"NAND", NOR:"NOR"}[first];
+  const secondSymbol = {AND:"∧", OR:"∨", XOR:"⊕", NAND:"NAND", NOR:"NOR"}[second];
+  const left = ["NAND", "NOR"].includes(first)
+    ? `${first}(A,B)`
+    : `(A ${firstSymbol} B)`;
+  const joined = ["NAND", "NOR"].includes(second)
+    ? `${second}(${left},C)`
+    : `(${left} ${secondSymbol} C)`;
+  document.getElementById("expression").textContent = `Y = ${invert ? "¬" : ""}${joined}`;
+  document.getElementById("expressionResult").textContent =
+    `first stage = ${p}  →  before final inversion = ${beforeInvert}  →  Y = ${y}`;
+
+  const l1a = 1 - (A & B);
+  const l1b = (1 - A) | (1 - B);
+  const l2a = 1 - (A | B);
+  const l2b = (1 - A) & (1 - B);
+  document.getElementById("law1").textContent = `${l1a} = ${l1b} ✓`;
+  document.getElementById("law2").textContent = `${l2a} = ${l2b} ✓`;
+}
+
+const simpleQuestions = [
+  { text: "AND(0, 0)", answer: 0, why: "AND needs every input HIGH; neither input is HIGH." },
+  { text: "AND(1, 1)", answer: 1, why: "Both required inputs are HIGH, so AND produces 1." },
+  { text: "OR(0, 1)", answer: 1, why: "OR needs at least one HIGH input; B supplies it." },
+  { text: "OR(0, 0)", answer: 0, why: "Neither parallel condition is active." },
+  { text: "XOR(1, 0)", answer: 1, why: "XOR reports 1 because the inputs differ." },
+  { text: "XOR(1, 1)", answer: 0, why: "XOR rejects equal inputs, including two HIGH inputs." },
+  { text: "NAND(1, 1)", answer: 0, why: "AND is 1 for this row; NAND inverts it to 0." },
+  { text: "NAND(0, 1)", answer: 1, why: "The inputs are not both 1, so NAND stays 1." },
+  { text: "NOR(0, 0)", answer: 1, why: "OR is 0 only here; NOR inverts that result." },
+  { text: "NOR(1, 0)", answer: 0, why: "One HIGH input makes OR 1, which NOR inverts." },
+  { text: "NOT(0)", answer: 1, why: "NOT produces the opposite state." },
+  { text: "NOT(1)", answer: 0, why: "NOT turns HIGH into LOW." }
+];
+
+const composedQuestions = [
+  {
+    text: "(1 XOR 0) AND 1",
+    answer: 1,
+    why: "First, 1 XOR 0 = 1 because the inputs differ. Then 1 AND 1 = 1."
+  },
+  {
+    text: "(1 AND 1) XOR 1",
+    answer: 0,
+    why: "First, 1 AND 1 = 1. Then 1 XOR 1 = 0 because equal inputs cancel."
+  },
+  {
+    text: "NOT(0 OR 1)",
+    answer: 0,
+    why: "0 OR 1 = 1, and NOT 1 = 0. This is a NOR operation."
+  },
+  {
+    text: "NOT(1 AND 0)",
+    answer: 1,
+    why: "1 AND 0 = 0, and NOT 0 = 1. This is a NAND operation."
+  },
+  {
+    text: "(NOT 1) OR (NOT 0)",
+    answer: 1,
+    why: "NOT 1 = 0 and NOT 0 = 1; 0 OR 1 = 1."
+  },
+  {
+    text: "(1 OR 0) AND (NOT 1)",
+    answer: 0,
+    why: "The left side is 1, but NOT 1 is 0; AND therefore produces 0."
+  },
+  {
+    text: "NAND(NAND(1,1), NAND(1,1))",
+    answer: 1,
+    why: "Each inner NAND gives 0. NAND(0,0) gives 1; this construction restores AND."
+  },
+  {
+    text: "NAND(NAND(0,0), NAND(1,1))",
+    answer: 1,
+    why: "The inner results are 1 and 0. Their NAND is 1; this is the NAND-only OR construction."
+  },
+  {
+    text: "Sum bit when adding 1 + 1",
+    answer: 0,
+    why: "The half-adder Sum is XOR: 1 XOR 1 = 0. A separate Carry output becomes 1."
+  },
+  {
+    text: "Carry bit when adding 1 + 1",
+    answer: 1,
+    why: "The half-adder Carry is AND: both inputs are 1."
+  },
+  {
+    text: "(0 XOR 1) AND (NOT 0)",
+    answer: 1,
+    why: "0 XOR 1 = 1 and NOT 0 = 1, so the final AND gives 1."
+  },
+  {
+    text: "NOR(NOR(0,1), NOR(0,1))",
+    answer: 1,
+    why: "Each inner NOR gives 0. NOR(0,0) gives 1; tying inputs effectively inverts."
+  }
+];
+
+let challengeSet = [];
+let questionIndex = 0;
+let challengeScore = 0;
+let streak = 0;
+let answered = false;
+
+function shuffle(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; --i) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function startChallenge() {
+  challengeSet = [
+    ...shuffle(simpleQuestions).slice(0, 6),
+    ...shuffle(composedQuestions).slice(0, 6)
+  ];
+  challengeSet = shuffle(challengeSet);
+  questionIndex = 0;
+  challengeScore = 0;
+  streak = 0;
+  document.getElementById("score").textContent = "0";
+  document.getElementById("challengeCard").classList.remove("hidden");
+  document.getElementById("finishCard").classList.add("hidden");
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const item = challengeSet[questionIndex];
+  document.getElementById("roundLabel").textContent = `ROUND ${questionIndex + 1} OF 12`;
+  document.getElementById("streakLabel").textContent = `STREAK ${streak}`;
+  document.getElementById("question").textContent = item.text;
+  const feedback = document.getElementById("feedback");
+  feedback.textContent = "Commit to a prediction. The explanation appears only after your attempt.";
+  feedback.className = "feedback";
+  document.getElementById("nextQuestion").classList.add("hidden");
+  document.querySelectorAll(".answer").forEach(button => {
+    button.disabled = false;
+    button.classList.remove("chosen", "correct", "wrong");
+  });
+  document.getElementById("progressFill").style.width = `${questionIndex / 12 * 100}%`;
+}
+
+document.querySelectorAll(".answer").forEach(button => {
+  button.addEventListener("click", () => {
+    if (answered) return;
+    answered = true;
+    const guess = Number(button.dataset.answer);
+    const item = challengeSet[questionIndex];
+    const correct = guess === item.answer;
+    button.classList.add("chosen", correct ? "correct" : "wrong");
+    document.querySelectorAll(".answer").forEach(b => { b.disabled = true; });
+
+    if (correct) {
+      challengeScore++;
+      streak++;
+    } else {
+      streak = 0;
+    }
+
+    document.getElementById("score").textContent = challengeScore;
+    document.getElementById("streakLabel").textContent = `STREAK ${streak}`;
+    const feedback = document.getElementById("feedback");
+    feedback.textContent = `${correct ? "Correct." : `Not this time—the output is ${item.answer}.`} ${item.why}`;
+    feedback.className = `feedback ${correct ? "good" : "bad"}`;
+    const next = document.getElementById("nextQuestion");
+    next.textContent = questionIndex === 11 ? "See result" : "Next prediction";
+    next.classList.remove("hidden");
+    document.getElementById("progressFill").style.width = `${(questionIndex + 1) / 12 * 100}%`;
+  });
+});
+
+document.getElementById("nextQuestion").addEventListener("click", () => {
+  if (!answered) return;
+  if (questionIndex < 11) {
+    questionIndex++;
+    showQuestion();
+  } else {
+    finishChallenge();
+  }
+});
+
+function finishChallenge() {
+  document.getElementById("challengeCard").classList.add("hidden");
+  document.getElementById("finishCard").classList.remove("hidden");
+  document.getElementById("finishScore").textContent = `${challengeScore}/12`;
+  const title = document.getElementById("finishTitle");
+  const message = document.getElementById("finishMessage");
+  if (challengeScore === 12) {
+    title.textContent = "Every prediction matched.";
+    message.textContent = "Now explain the physical-circuit mastery question aloud without using gate names as unexplained magic.";
+  } else if (challengeScore >= 9) {
+    title.textContent = "Strong prediction model.";
+    message.textContent = "Rebuild the missed rows from each gate's one-sentence rule, then try a fresh set.";
+  } else {
+    title.textContent = "Useful gaps exposed.";
+    message.textContent = "Return to the explorer, derive each missed gate from its rule, and retry without memorizing isolated cells.";
+  }
+}
+
+document.getElementById("retryChallenge").addEventListener("click", startChallenge);
+
+renderExplorer();
+renderBuilder();
+startChallenge();
+</script>
+</body>
+</html>

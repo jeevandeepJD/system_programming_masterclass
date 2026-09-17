@@ -1,14 +1,14 @@
 /*
- * Day 6 challenge — predict every line before running.
+ * Day 2 challenge B — predict every line before running.
  *
  * Normal build:
  *   gcc -std=c17 -Wall -Wextra -O0 -g \
- *     day-006-overflow-lab.c -o /tmp/overflow-lab
+ *     day-002-overflow-lab.c -o /tmp/overflow-lab
  *
  * Instrumented build:
  *   gcc -std=c17 -Wall -Wextra -O1 -g \
  *     -fsanitize=undefined -fno-sanitize-recover=undefined \
- *     day-006-overflow-lab.c -o /tmp/overflow-lab-ubsan
+ *     day-002-overflow-lab.c -o /tmp/overflow-lab-ubsan
  *
  * The final section intentionally performs signed overflow so UBSan can
  * detect it. Its ordinary-build output must not be treated as portable C.
@@ -21,7 +21,7 @@
 
 int main(void)
 {
-    puts("Day 6 overflow and extension lab");
+    puts("Day 2 overflow and extension lab");
     puts("================================\n");
 
     uint8_t u8_max = UINT8_MAX;

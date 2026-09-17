@@ -1590,8 +1590,9 @@ read—not monotonic, bland, or like a mechanically generated textbook.
 Current daily artifacts and exact resume state are indexed in
 `~/masterclass/DAILY_PROGRESS.md`.
 
-Current position is **Day 3 — Mastery Workshop**, aligned with the first
-curriculum topic. Day 2 was regenerated as an explicit continuation of Day 1.
-Day 3 consolidates and tests that foundation; its existence does not complete
-the topic. Use the learner's answers, observations, and questions to decide
-whether to revisit a weak link or begin signed numbers.
+On `master`, the accepted position remains the original Day 3 mastery
+workshop. On branch `experiment/accelerated-foundations`, the current task is
+to evaluate a compressed format: original Days 1–3 become accelerated Day 1,
+original Days 4–7 become accelerated Day 2, and Boolean logic begins on Day
+3. Do not merge or treat this as the accepted pacing until the learner
+explicitly approves it.

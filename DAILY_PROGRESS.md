@@ -9,52 +9,46 @@ The authoritative curriculum remains
 
 ## Current resume point
 
-- **Stage:** 1 — Foundations of Computation
-- **Topic:** Electricity, States, Bits, and Information
-- **Current lesson:** Day 3 — Mastery Workshop
-- **Topic status:** In progress; mastery not yet self-confirmed
-- **Next action:** Read Day 3, run the terminal mastery challenge, reproduce
-  the one-byte Linux experiment, and report weak areas/questions
-- **Do not advance yet:** Day 4 begins the next topic only after the learner
-  assesses this checkpoint
+- **Branch:** `experiment/accelerated-foundations`
+- **Purpose:** compare a denser early-course format before changing `master`
+- **Current evaluation:** accelerated Day 1
+- **Next action:** read accelerated Day 1 and compare its clarity, depth,
+  pacing, and workload with the former three narrow lessons on `master`
+- **Important:** prepared files do not assert learner mastery
 
-## Prepared next lessons
+## Accelerated sequence
 
-These lessons are available as a seven-day preview, but **prepared does not
-mean completed**. The resume point remains Day 3 until learner evidence is
-recorded. All seven lessons now include the historical problem being solved
-and an explicit bridge toward arithmetic circuits, stored instructions, and
-the CPU.
+### Day 1 — Foundations: From State to Meaning
 
-### Day 4 — How Can Bits Become a Negative Number?
+- Lesson: `daily/lessons/day-001-foundations-from-state-to-meaning.md`
+- PDF: `daily/pdf/day-001-foundations-from-state-to-meaning.pdf`
+- Approximate workload: 3 hours
+- Combines former narrow Days 1–3
+- Focus: historical motivation, physical state, voltage ranges, binary,
+  patterns, number systems, encoding, information, Linux observation, and
+  integrated mastery
 
-- Lesson: `daily/lessons/day-004-how-bits-become-negative-numbers.md`
-- PDF: `daily/pdf/day-004-how-bits-become-negative-numbers.pdf`
-- Focus: signed magnitude, one's complement, two's complement, ranges, and
-  the same-adder insight
+### Day 2 — Signed Numbers and Bitwise Reasoning
 
-### Day 5 — Bits as Switches
+- Lesson: `daily/lessons/day-002-signed-numbers-and-bitwise-reasoning.md`
+- PDF: `daily/pdf/day-002-signed-numbers-and-bitwise-reasoning.pdf`
+- Challenges:
+  - `daily/challenges/day-002-register-mask-lab.c`
+  - `daily/challenges/day-002-overflow-lab.c`
+- Approximate workload: 3 hours
+- Combines former narrow Days 4–7
+- Focus: signed encodings, two's complement, bitwise operations, register
+  fields, overflow, flags, extension, C behavior, and ALU bridge
 
-- Lesson: `daily/lessons/day-005-bitwise-tools-and-register-masks.md`
-- PDF: `daily/pdf/day-005-bitwise-tools-and-register-masks.pdf`
-- Challenge: `daily/challenges/day-005-register-mask-lab.c`
-- Focus: AND, OR, XOR, NOT, shifts, masks, packed fields, and register
-  read-modify-write reasoning
+### Day 3 — Boolean Logic and Physical Gates
 
-### Day 6 — When the Answer Does Not Fit
-
-- Lesson: `daily/lessons/day-006-overflow-sign-extension-and-flags.md`
-- PDF: `daily/pdf/day-006-overflow-sign-extension-and-flags.pdf`
-- Challenge: `daily/challenges/day-006-overflow-lab.c`
-- Focus: fixed-width arithmetic, unsigned wraparound, signed overflow, carry
-  versus overflow, promotions, and sign extension
-
-### Day 7 — Mastering Signed Bits
-
-- Lesson: `daily/lessons/day-007-signed-bits-mastery-workshop.md`
-- PDF: `daily/pdf/day-007-signed-bits-mastery-workshop.pdf`
-- Focus: integrated interpretation, register decoding, arithmetic, extension,
-  C experiments, and mastery explanation
+- Lesson: `daily/lessons/day-003-boolean-logic-and-physical-gates.md`
+- PDF: `daily/pdf/day-003-boolean-logic-and-physical-gates.pdf`
+- Challenge: `daily/challenges/day-003-logic-gate-lab.html`
+- Approximate workload: 3 hours
+- Focus: Boole, Shannon, relays, transistors, truth tables, six gates, De
+  Morgan's laws, universal gates, combinational logic, half-adder preview,
+  and CPU/ALU bridge
 
 ## Current mastery target
 
@@ -75,38 +69,18 @@ Required evidence:
 
 ## Daily log
 
-### Day 1 — From Physical State to a Bit
+### Accelerated Day 1 evaluation
 
-- Lesson: `daily/lessons/day-001-physical-state-to-bit.md`
-- PDF: `daily/pdf/day-001-physical-state-to-bit.pdf`
-- Focus: physical state, continuous voltage, threshold ranges, noise margin,
-  bits, and `2ⁿ` patterns
-- Learner evidence reported: not yet recorded
-- Resume note: Day 2 explicitly retrieves and extends these ideas
-
-### Day 2 — The Bits Stay Still; the Meaning Changes
-
-- Lesson: `daily/lessons/day-002-bits-patterns-meaning.md`
-- PDF: `daily/pdf/day-002-bits-patterns-meaning.pdf`
-- Challenge: `daily/challenges/day-002-bit-lab.html`
-- Focus: pattern versus meaning, encoding, information, hexadecimal, and one
-  pattern interpreted multiple ways on Linux
-- Learner evidence reported: not yet recorded
-- Resume note: complete Day 2 experiments before treating Day 3 as assessment
-
-### Day 3 — Mastery Workshop
-
-- Lesson: `daily/lessons/day-003-mastery-workshop.md`
-- PDF: `daily/pdf/day-003-mastery-workshop.pdf`
-- Challenge: `daily/challenges/day-003-mastery.py`
-- Focus: retrieval, conversion, prediction, Linux observation, drawing, and
-  mastery explanation
-- Learner evidence reported: pending
-- Exact next step: run:
-
-  ```bash
-  python3 ~/masterclass/daily/challenges/day-003-mastery.py
-  ```
+- Lesson sections completed:
+- Linux observation completed:
+- Integrated challenge completed:
+- Compared with narrow format: yes / no
+- Natural tone preserved: yes / partly / no
+- Historical reasoning sufficient: yes / partly / no
+- Workload manageable in one study day: yes / too short / too long
+- Material that felt rushed:
+- Material that still felt repetitive:
+- Decision: merge accelerated branch / revise it / keep original format
 
 ## Session update template
 

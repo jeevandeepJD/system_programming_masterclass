@@ -130,12 +130,13 @@ Use exercises to expose gaps rather than merely generate a score.
 
 - Stage 1 — Foundations of Computation
 - Topic — Electricity, States, Bits, and Information
-- Current daily position: Day 3 — Mastery Workshop
-- Day 1, Day 2, and Day 3 lesson PDFs exist.
-- Day 2 has an optional interactive Bit Lab.
-- Day 3 has a terminal mastery challenge.
-- Do not advance until the learner has read/attempted the material and shared
-  questions or evidence.
+- Active branch: `experiment/accelerated-foundations`
+- Current task: evaluate accelerated Day 1 against the original narrow format
+- Accelerated Day 1 combines original Days 1–3.
+- Accelerated Day 2 combines original Days 4–7.
+- Accelerated Day 3 begins Boolean logic and physical gates.
+- This branch is experimental; do not merge it into `master` until the user
+  explicitly approves the new pacing and presentation.
 
 ## Decision and Update Log
 
@@ -295,3 +296,22 @@ literally “think.” It executes physical state transitions according to
 circuits and encoded instructions. Higher-level reasoning and AI emerge from
 software, algorithms, learned parameters, and enormous compositions of those
 simple operations.
+
+### 2026-09-17 — Accelerated pacing for early foundations
+
+The user finds the early daily units too small and wants roughly three of the
+original narrow lessons combined into one study day so the course reaches
+advanced systems material sooner. Increase early-day density while preserving
+the causal chain and hands-on evidence. Do not simply concatenate three PDFs:
+remove repetition, merge retrieval/mastery sections, and target a coherent
+approximately three-hour concept-plus-lab unit. Acceleration may reduce
+calendar time, but must not skip prerequisites or mark mastery without
+evidence.
+
+The user asked to preserve the existing natural tone, historical reasoning,
+and detailed explanations. Rather than replacing the accepted material
+directly, the accelerated version is being developed on
+`experiment/accelerated-foundations` for comparison. The chosen experiment
+maps original Days 1–3 into accelerated Day 1, original Days 4–7 into
+accelerated Day 2, and begins Boolean logic on accelerated Day 3. Merge only
+after explicit approval.

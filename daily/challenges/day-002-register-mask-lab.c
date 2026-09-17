@@ -1,9 +1,9 @@
 /*
- * Day 5 challenge — implement bit and field operations.
+ * Day 2 challenge A — implement bit and field operations.
  *
  * Build:
  *   gcc -std=c17 -Wall -Wextra -Wconversion -O0 -g \
- *     day-005-register-mask-lab.c -o /tmp/register-mask-lab
+ *     day-002-register-mask-lab.c -o /tmp/register-mask-lab
  *
  * Do not change the tests. Replace only the TODO function bodies.
  */
@@ -102,7 +102,7 @@ int main(void)
 {
     const uint8_t initial = UINT8_C(0xad); /* 1010 1101 */
 
-    puts("Day 5 register-mask lab");
+    puts("Day 2 register-mask lab");
     puts("==========================");
     printf("initial register: 0x%02x (10101101)\n\n", initial);
 

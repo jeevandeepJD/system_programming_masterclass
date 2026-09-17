@@ -53,33 +53,40 @@ do_lesson() {
 PORT="${MC_PORT:-8731}"
 
 do_challenge() {
-    local challenge
-    challenge="$(ls "$MC"/daily/challenges/"$DAY"-* 2>/dev/null | head -n1 || true)"
-    if [ -z "$challenge" ]; then
+    local challenges=("$MC"/daily/challenges/"$DAY"-*)
+    if [ ! -e "${challenges[0]}" ]; then
         echo "No challenge for $DAY."
         return 1
     fi
-    echo "Challenge: $(basename "$challenge")"
 
-    case "$challenge" in
-      *.py)
-        echo
-        echo "  Run in a terminal:"
-        echo "  python3 $challenge"
-        echo
-        open_in_editor "$challenge"
+    local challenge html=""
+    for challenge in "${challenges[@]}"; do
+        echo "Challenge: $(basename "$challenge")"
+        case "$challenge" in
+          *.py)
+            echo "  Run: python3 $challenge"
+            open_in_editor "$challenge"
+            ;;
+          *.c)
+            echo "  Opened as a coding lab; build instructions are inside."
+            open_in_editor "$challenge"
+            ;;
+          *.html)
+            html="$challenge"
+            ;;
+          *)
+            open_in_editor "$challenge"
+            ;;
+        esac
+    done
+
+    if [ -z "$html" ]; then
         return
-        ;;
-      *.html) ;;
-      *)
-        open_in_editor "$challenge"
-        return
-        ;;
-    esac
+    fi
 
     # This box is usually driven remotely (no local DISPLAY), so instead of
     # launching a browser on the VM we serve the page on a local port --
-    # Cursor/VS Code remote forwards it to the browser on your own machine.
+    # Cursor/VS Code remote forwards it to the browser on the user's machine.
     if ! ss -ltn 2>/dev/null | grep -q ":$PORT "; then
         nohup python3 -m http.server "$PORT" --bind 127.0.0.1 \
             --directory "$MC/daily/challenges" >/tmp/mc_challenge_server.log 2>&1 &
@@ -90,20 +97,20 @@ do_challenge() {
     fi
 
     echo
-    echo "  ==> http://localhost:$PORT/$(basename "$challenge")"
+    echo "  ==> http://localhost:$PORT/$(basename "$html")"
     echo
-    echo "  (if the link does not open, run:  cursor --help  or just paste the URL"
-    echo "   into your browser -- the port is forwarded by the remote session)"
-    [ -n "$CURSOR" ] && "$CURSOR" "$challenge" >/dev/null 2>&1 || true
+    echo "  (if the link does not open, paste the URL into your browser;"
+    echo "   the remote session forwards the port)"
+    [ -n "$CURSOR" ] && "$CURSOR" "$html" >/dev/null 2>&1 || true
 }
 
 case "${1:-all}" in
     lesson)    do_lesson ;;
     challenge) do_challenge ;;
     list)
-        echo "== lessons =="   ; ls -1 "$MC"/daily/lessons    2>/dev/null || true
-        echo "== pdfs =="      ; ls -1 "$MC"/daily/pdf        2>/dev/null || true
-        echo "== challenges ==" ; ls -1 "$MC"/daily/challenges 2>/dev/null || true
+        echo "== lessons =="   ; ls -1 "$MC"/daily/lessons/day-*    2>/dev/null | xargs -r -n1 basename
+        echo "== pdfs =="      ; ls -1 "$MC"/daily/pdf/day-*        2>/dev/null | xargs -r -n1 basename
+        echo "== challenges ==" ; ls -1 "$MC"/daily/challenges/day-* 2>/dev/null | xargs -r -n1 basename
         ;;
     all)       do_lesson; echo; do_challenge ;;
     *)         sed -n '2,12p' "$0" ;;
