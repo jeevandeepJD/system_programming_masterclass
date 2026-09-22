@@ -14,7 +14,8 @@
 
 set -euo pipefail
 
-MC="$HOME/masterclass"
+BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+MC="$(cd -- "$BIN_DIR/.." && pwd)"
 CURSOR="$(find "$HOME/.cursor-server/bin" -path '*/remote-cli/cursor' -print -quit 2>/dev/null || true)"
 
 resolve_day() {

@@ -4,6 +4,8 @@ This directory catalogs the learning material selected from:
 
 - `/home/jd/Downloads/Books-20260916T113723Z-1-001.zip`
 - relevant standalone PDFs in `/home/jd/Downloads/`
+- additional EPUBs placed in the repository root and reviewed on
+  22 September 2026
 
 The imported files live under `source-materials/library/`. That directory is
 local-only and Git-ignored by default because it contains third-party books
@@ -28,6 +30,7 @@ should select only the pages or examples needed for the current tracker topic.
 |---|---|
 | `books/02-os-and-linux/operating-systems-three-easy-pieces-arpaci-dusseau.pdf` | Weeks 22–33: virtualization, processes, scheduling, memory, concurrency, persistence |
 | `books/02-os-and-linux/linux-programming-interface-michael-kerrisk.pdf` | Weeks 24–37: processes, signals, file descriptors, IPC, threads, sockets, and Linux APIs |
+| `books/02-os-and-linux/hands-on-system-programming-with-linux-kaiwan-billimoria-2018.epub` | Stages 5, 7, 9, and 10: Linux architecture, virtual memory, allocation/debugging, credentials/capabilities, process execution and creation, signals, timers, pthreads, scheduling, and advanced file I/O |
 
 ### Kernel and driver development
 
@@ -36,9 +39,17 @@ should select only the pages or examples needed for the current tracker topic.
 | `books/03-kernel-and-drivers/linux-device-drivers-development-john-madieu-2017.pdf` | Weeks 38–47: modules, kernel APIs, device model, character devices, interrupts, and drivers |
 | `books/03-kernel-and-drivers/linux-driver-development-embedded-processors-alberto-liberal-2018.pdf` | Weeks 45–47 and later hardware labs: embedded Linux driver workflow |
 | `books/03-kernel-and-drivers/mastering-linux-device-driver-development-john-madieu-2020.pdf` | Weeks 41–47: synchronization, device model, MMIO, DMA, and advanced driver work |
+| `books/03-kernel-and-drivers/linux-kernel-programming-kaiwan-billimoria-2e-2024.epub` | Preferred modern kernel-programming companion for Stages 11–12: building Linux 6.x, modules, process/task internals, memory allocation, scheduling, synchronization, RCU, and barriers |
+| `books/03-kernel-and-drivers/linux-kernel-programming-part2-char-drivers-synchronization-kaiwan-billimoria-2021.epub` | Stages 11 and 13: misc/character drivers, user-kernel interfaces, procfs/sysfs/debugfs/netlink/ioctl, MMIO, interrupts, timers, workqueues, and locking |
+| `books/03-kernel-and-drivers/linux-kernel-debugging-kaiwan-billimoria-2022.epub` | Stages 11–13: printk/dynamic debug, kprobes, KASAN/UBSAN, SLUB debug, kmemleak, Oops analysis, lock debugging, ftrace, perf, KGDB, kdump/crash, static analysis, and coverage |
 
 > Kernel books age quickly. Use them for concepts and lab ideas, then verify
 > every API against the documentation and source for the kernel being built.
+> The 2024 second edition is the strongest local starting point for general
+> kernel work, but it targets the Linux 6.1 era; this VM is newer, so APIs,
+> Kconfig options, tools, and examples still require upstream verification.
+> The 2021–2022 driver/debugging volumes are valuable technique catalogs but
+> are even more likely to contain version-specific details.
 
 ### Optional language reference
 
@@ -76,12 +87,29 @@ Included:
 - kernel/driver references,
 - source-code labs that can support hands-on daily work.
 
+New-material assessment:
+
+- **Hands-On System Programming with Linux (2018):** broad and practical;
+  overlaps the existing lab collection from the same book and adds the
+  missing explanatory narrative.
+- **Linux Kernel Programming, 2nd ed. (2024):** highly relevant and the most
+  current local kernel reference; use as the primary companion for kernel
+  build, modules, internals, memory, scheduler, and synchronization.
+- **Linux Kernel Programming Part 2 (2021):** directly matches the explicit
+  driver track, especially character drivers, user-kernel interfaces, MMIO,
+  interrupts, workqueues, and synchronization.
+- **Linux Kernel Debugging (2022):** directly supports the tracing/debugging
+  labs and adds structured coverage of sanitizers, probes, Oops/panic
+  analysis, ftrace, KGDB, and kdump/crash.
+
 Excluded:
 
 - personal/religious/fiction/finance notes unrelated to the curriculum,
 - CompTIA Security+ notes because this course is not a certification track,
 - duplicate copies of books,
 - the unusually large duplicate CS:APP PDF,
+- three new root-level PDFs whose SHA-256 hashes exactly matched the existing
+  CS:APP, OSTEP, and TLPI library copies,
 - generated binaries, nested repository metadata, swap files, and crash dumps.
 
 ## How daily lessons should use this library

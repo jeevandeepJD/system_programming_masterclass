@@ -42,7 +42,7 @@ actually updated.
 
 ## Personal GitHub backup
 
-The `~/masterclass` folder is a git repo with remote `jdssh`:
+The active masterclass checkout is a git repo with remote `jdssh`:
 
 `git@github.com:jeevandeepJD/system_programming_masterclass.git`
 
@@ -51,7 +51,7 @@ durable learning snapshot), commit the relevant masterclass files if needed
 and push to `jdssh` for personal reference:
 
 ```bash
-git -C ~/masterclass push jdssh master
+git push jdssh master
 ```
 
 Do not push every small lesson edit. Do not push secrets, private keys, or
@@ -74,12 +74,12 @@ unrelated home-directory files.
 For each study day:
 
 1. Create a focused lesson as Markdown under:
-   `~/masterclass/daily/lessons/`
+   `daily/lessons/`
 2. Render a sequence-numbered PDF under:
-   `~/masterclass/daily/pdf/`
+   `daily/pdf/`
 3. Open the PDF in the editor.
 4. When useful, create reinforcement under:
-   `~/masterclass/daily/challenges/`
+   `daily/challenges/`
 5. Choose the activity format based on the concept:
    - interactive HTML simulation,
    - quiz,
@@ -158,7 +158,7 @@ monotonic or bland textbook prose.
 
 ### 2026-09-16 — Personal GitHub backup
 
-The user linked `~/masterclass` to
+The user linked the masterclass repository to
 `git@github.com:jeevandeepJD/system_programming_masterclass.git` (remote
 `jdssh`) and asked to push after major milestones for personal reference.
 
@@ -192,8 +192,8 @@ The user provided a ZIP and standalone learning materials in `~/Downloads`
 and asked for curriculum-relevant items to be selected, renamed, and
 organized in the masterclass folder.
 
-- Local library: `~/masterclass/source-materials/library/`
-- Trackable catalog: `~/masterclass/source-materials/README.md`
+- Local library: `source-materials/library/`
+- Trackable catalog: `source-materials/README.md`
 - The imported library is Git-ignored by default because it contains
   third-party books and code; do not push it without explicit user direction.
 - Use these resources selectively for daily lessons. Cite exact chapter/page
@@ -315,3 +315,27 @@ directly, the accelerated version is being developed on
 maps original Days 1–3 into accelerated Day 1, original Days 4–7 into
 accelerated Day 2, and begins Boolean logic on accelerated Day 3. Merge only
 after explicit approval.
+
+### 2026-09-22 — Additional Linux learning materials
+
+The active checkout is currently `/home/jd/Desktop/masterclass`; scripts and
+documentation should resolve paths relative to the repository instead of
+assuming `~/masterclass`.
+
+The user added seven files for source review. SHA-256 verification showed
+that the CS:APP, OSTEP, and TLPI PDFs were exact duplicates of existing local
+library copies, so those root-level duplicates were removed. Four unique and
+relevant EPUBs were renamed and added to the ignored local library:
+
+- *Hands-On System Programming with Linux* (Kaiwan Billimoria, 2018)
+- *Linux Kernel Programming*, 2nd ed. (Kaiwan Billimoria, 2024)
+- *Linux Kernel Programming Part 2: Character Device Drivers and Kernel
+  Synchronization* (Kaiwan Billimoria, 2021)
+- *Linux Kernel Debugging* (Kaiwan Billimoria, 2022)
+
+Use the 2024 second edition as the strongest local kernel-programming
+companion, while still checking current upstream documentation/source. Use
+the Part 2 and Debugging books as targeted references for drivers,
+interrupts, synchronization, tracing, sanitizers, Oops/panic, KGDB, and
+kdump/crash. The source catalog contains the detailed curriculum mapping and
+age caveats.

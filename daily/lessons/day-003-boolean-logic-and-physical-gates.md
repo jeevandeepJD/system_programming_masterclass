@@ -673,7 +673,7 @@ the system built above it.
 
 Open this local, offline challenge in a browser:
 
-`~/masterclass/daily/challenges/day-003-logic-gate-lab.html`
+`daily/challenges/day-003-logic-gate-lab.html`
 
 Use this loop:
 

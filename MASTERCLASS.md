@@ -1,7 +1,7 @@
 # SYSTEMS ENGINEERING MASTERCLASS — CONTINUATION / CONTEXT FILE
 
 > **Session startup:** Read
-> `/home/jd/masterclass/AGENT_CONTEXT.md` first. It contains the current
+> `AGENT_CONTEXT.md` first. It contains the current
 > operating rules and append-only log of every user suggestion, correction,
 > preference, and workflow update. This file remains the detailed historical
 > and learning-progress handoff.
@@ -1544,9 +1544,9 @@ The user explicitly chose this daily operating model:
 2. Create one focused daily lesson rather than compressing an entire tracker
    week into one response. Preserve the first-principles, WHY-before-HOW
    teaching style.
-3. Save the lesson source under `~/masterclass/daily/lessons/`.
+3. Save the lesson source under `daily/lessons/`.
 4. Render a sequence-numbered `day-NNN-*` PDF under
-   `~/masterclass/daily/pdf/` and display/open it in the editor. Do not put
+   `daily/pdf/` and display/open it in the editor. Do not put
    dates or week numbers in daily artifact names; skipped calendar days must
    not create gaps in the learning sequence.
 5. After the reading, provide hands-on reinforcement appropriate to the topic.
@@ -1588,7 +1588,7 @@ read—not monotonic, bland, or like a mechanically generated textbook.
   exclamation marks or artificial praise.
 
 Current daily artifacts and exact resume state are indexed in
-`~/masterclass/DAILY_PROGRESS.md`.
+`DAILY_PROGRESS.md`.
 
 On `master`, the accepted position remains the original Day 3 mastery
 workshop. On branch `experiment/accelerated-foundations`, the current task is

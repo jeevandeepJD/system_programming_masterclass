@@ -511,7 +511,7 @@ bitwise mechanism + register semantics = correct operation
 
 Open the existing challenge:
 
-`~/masterclass/daily/challenges/day-002-register-mask-lab.c`
+`daily/challenges/day-002-register-mask-lab.c`
 
 It provides a fictional eight-bit register and tests for functions that:
 
@@ -534,7 +534,7 @@ Then build and run:
 
 ```bash
 gcc -std=c17 -Wall -Wextra -Wconversion -O0 -g \
-  ~/masterclass/daily/challenges/day-002-register-mask-lab.c \
+  daily/challenges/day-002-register-mask-lab.c \
   -o /tmp/day-002-register-mask-lab
 
 /tmp/day-002-register-mask-lab
@@ -796,7 +796,7 @@ reinterpret every out-of-range conversion silently.
 
 Open:
 
-`~/masterclass/daily/challenges/day-002-overflow-lab.c`
+`daily/challenges/day-002-overflow-lab.c`
 
 Do not run it immediately. Read each numbered output expression and predict:
 
@@ -810,7 +810,7 @@ Build normally:
 
 ```bash
 gcc -std=c17 -Wall -Wextra -O0 -g \
-  ~/masterclass/daily/challenges/day-002-overflow-lab.c \
+  daily/challenges/day-002-overflow-lab.c \
   -o /tmp/day-002-overflow-lab
 
 /tmp/day-002-overflow-lab
@@ -821,7 +821,7 @@ Then build with undefined-behavior instrumentation:
 ```bash
 gcc -std=c17 -Wall -Wextra -O1 -g \
   -fsanitize=undefined -fno-sanitize-recover=undefined \
-  ~/masterclass/daily/challenges/day-002-overflow-lab.c \
+  daily/challenges/day-002-overflow-lab.c \
   -o /tmp/day-002-overflow-lab-ubsan
 
 /tmp/day-002-overflow-lab-ubsan
