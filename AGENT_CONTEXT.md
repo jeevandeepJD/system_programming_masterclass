@@ -339,3 +339,12 @@ the Part 2 and Debugging books as targeted references for drivers,
 interrupts, synchronization, tracing, sanitizers, Oops/panic, KGDB, and
 kdump/crash. The source catalog contains the detailed curriculum mapping and
 age caveats.
+
+### 2026-09-22 — EPUB-to-PDF conversion
+
+At the user's request, the four newly added EPUBs were converted to
+searchable A4 PDFs with page numbers using Calibre 9.13.0. The original EPUBs
+remain beside the PDFs. Calibre must be run with `PYTHONNOUSERSITE=1` on this
+VM because a user-installed `lxml` version otherwise conflicts with Fedora's
+`html5-parser`/system `libxml2`. Prefer the PDF paths in lesson citations so
+page references remain stable.
