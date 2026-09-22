@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Render MASTERCLASS.md into a nicely styled PDF."""
 import re
-import sys
+from pathlib import Path
+
 import markdown
 from weasyprint import HTML, CSS
 
-SRC = "/home/jd/masterclass/MASTERCLASS.md"
-OUT = "/home/jd/masterclass/MASTERCLASS.pdf"
+ROOT = Path(__file__).resolve().parent
+SRC = ROOT / "MASTERCLASS.md"
+OUT = ROOT / "MASTERCLASS.pdf"
 
 with open(SRC, "r", encoding="utf-8") as f:
     md_text = f.read()
@@ -178,5 +180,5 @@ a { color: #0b3d91; }
 .toc a { text-decoration: none; color: #10508c; }
 """)
 
-HTML(string=html_doc, base_url=".").write_pdf(OUT, stylesheets=[css])
+HTML(string=html_doc, base_url=str(ROOT)).write_pdf(OUT, stylesheets=[css])
 print(f"wrote {OUT}")

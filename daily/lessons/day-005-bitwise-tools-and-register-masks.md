@@ -360,7 +360,7 @@ policy defined by the hardware contract.
 
 Open:
 
-`~/masterclass/daily/challenges/day-005-register-mask-lab.c`
+`./daily/challenges/day-005-register-mask-lab.c`
 
 It contains a fictional eight-bit device register and tests for functions
 that:
@@ -376,7 +376,7 @@ Build it:
 
 ```bash
 gcc -std=c17 -Wall -Wextra -Wconversion -O0 -g \
-  ~/masterclass/daily/challenges/day-005-register-mask-lab.c \
+  ./daily/challenges/day-005-register-mask-lab.c \
   -o /tmp/day-005-register-mask-lab
 
 /tmp/day-005-register-mask-lab

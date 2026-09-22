@@ -206,22 +206,22 @@ This gives a useful rule:
 
 Day 5 provided:
 
-`~/masterclass/daily/challenges/day-005-register-mask-lab.c`
+`./daily/challenges/day-005-register-mask-lab.c`
 
 Day 6 provided:
 
-`~/masterclass/daily/challenges/day-006-overflow-lab.c`
+`./daily/challenges/day-006-overflow-lab.c`
 
 Complete the register-mask TODOs first. Then build both programs with warnings
 enabled.
 
 ```bash
 gcc -std=c17 -Wall -Wextra -Wconversion -O0 -g \
-  ~/masterclass/daily/challenges/day-005-register-mask-lab.c \
+  ./daily/challenges/day-005-register-mask-lab.c \
   -o /tmp/register-mask-lab
 
 gcc -std=c17 -Wall -Wextra -O0 -g \
-  ~/masterclass/daily/challenges/day-006-overflow-lab.c \
+  ./daily/challenges/day-006-overflow-lab.c \
   -o /tmp/overflow-lab
 ```
 
@@ -230,7 +230,7 @@ For the overflow program, repeat with UBSan:
 ```bash
 gcc -std=c17 -Wall -Wextra -O1 -g \
   -fsanitize=undefined -fno-sanitize-recover=undefined \
-  ~/masterclass/daily/challenges/day-006-overflow-lab.c \
+  ./daily/challenges/day-006-overflow-lab.c \
   -o /tmp/overflow-lab-ubsan
 ```
 

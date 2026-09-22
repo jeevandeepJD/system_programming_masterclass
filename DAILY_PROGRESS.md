@@ -105,7 +105,7 @@ Required evidence:
 - Exact next step: run:
 
   ```bash
-  python3 ~/masterclass/daily/challenges/day-003-mastery.py
+  python3 ./daily/challenges/day-003-mastery.py
   ```
 
 ## Session update template

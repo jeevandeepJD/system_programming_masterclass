@@ -415,17 +415,17 @@ program and encoding should interpret them.
 
 1. Reproduce the Linux experiment in §6, typing the commands yourself.
 2. Complete the 25 conversions in:
-   `~/masterclass/tracker/week01/conversions_exercise.txt`
+   `./tracker/week01/conversions_exercise.txt`
 3. Only afterward, check them:
 
    ```bash
-   python3 ~/masterclass/tracker/week01/check_conversions.py
+   python3 ./tracker/week01/check_conversions.py
    ```
 
 4. Use the interactive Bit Lab:
-   `~/masterclass/daily/challenges/day-002-bit-lab.html`
+   `./daily/challenges/day-002-bit-lab.html`
 5. Rewrite the explanation in
-   `~/masterclass/tracker/week01/why_binary_is_practical.md`
+   `./tracker/week01/why_binary_is_practical.md`
    in your own words.
 
 For every mistake, record *why* it happened: wrong place value, wrong nibble

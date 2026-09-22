@@ -306,7 +306,7 @@ lab records GCC’s behavior on the current two’s-complement x86-64 target.
 
 Open:
 
-`~/masterclass/daily/challenges/day-006-overflow-lab.c`
+`./daily/challenges/day-006-overflow-lab.c`
 
 It demonstrates:
 
@@ -320,7 +320,7 @@ Build normally:
 
 ```bash
 gcc -std=c17 -Wall -Wextra -O0 -g \
-  ~/masterclass/daily/challenges/day-006-overflow-lab.c \
+  ./daily/challenges/day-006-overflow-lab.c \
   -o /tmp/day-006-overflow
 
 /tmp/day-006-overflow
@@ -331,7 +331,7 @@ Then enable the undefined-behavior sanitizer:
 ```bash
 gcc -std=c17 -Wall -Wextra -O1 -g \
   -fsanitize=undefined -fno-sanitize-recover=undefined \
-  ~/masterclass/daily/challenges/day-006-overflow-lab.c \
+  ./daily/challenges/day-006-overflow-lab.c \
   -o /tmp/day-006-overflow-ubsan
 
 /tmp/day-006-overflow-ubsan

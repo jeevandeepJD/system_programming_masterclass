@@ -60,32 +60,33 @@ Current curriculum position:
 Build and open the latest lesson:
 
 ```bash
-~/masterclass/bin/today lesson
+cd /path/to/masterclass
+./bin/today lesson
 ```
 
 Open or serve the optional challenge:
 
 ```bash
-~/masterclass/bin/today challenge
+./bin/today challenge
 ```
 
 List all available daily artifacts:
 
 ```bash
-~/masterclass/bin/today list
+./bin/today list
 ```
 
 Build a particular lesson manually:
 
 ```bash
-python3 ~/masterclass/bin/build_lesson.py \
-  ~/masterclass/daily/lessons/day-NNN-lesson-name.md
+python3 ./bin/build_lesson.py \
+  ./daily/lessons/day-NNN-lesson-name.md
 ```
 
 Select an earlier day:
 
 ```bash
-MC_DAY=2 ~/masterclass/bin/today lesson
+MC_DAY=2 ./bin/today lesson
 ```
 
 ## Completion standard

@@ -372,7 +372,7 @@ every C implementation.
 
 The Day 2 Bit Lab already contains a signed and unsigned view of one byte:
 
-`~/masterclass/daily/challenges/day-002-bit-lab.html`
+`./daily/challenges/day-002-bit-lab.html`
 
 Toggle bit 7 while keeping the lower seven bits fixed.
 

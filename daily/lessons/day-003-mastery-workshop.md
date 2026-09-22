@@ -269,7 +269,7 @@ The Day 2 HTML Bit Lab is useful for visual exploration. Today’s challenge is
 a small terminal program with randomized conversion input:
 
 ```bash
-python3 ~/masterclass/daily/challenges/day-003-mastery.py
+python3 ./daily/challenges/day-003-mastery.py
 ```
 
 It tests five objectively checkable items, then asks for the parts software
@@ -378,7 +378,7 @@ Choose it after attempting the challenges.
 
 ## 11. Record your stopping point
 
-Update `~/masterclass/DAILY_PROGRESS.md` with:
+Update `./DAILY_PROGRESS.md` with:
 
 - what you completed,
 - what remains,
