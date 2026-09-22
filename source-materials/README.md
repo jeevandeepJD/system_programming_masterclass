@@ -30,7 +30,7 @@ should select only the pages or examples needed for the current tracker topic.
 |---|---|
 | `books/02-os-and-linux/operating-systems-three-easy-pieces-arpaci-dusseau.pdf` | Weeks 22–33: virtualization, processes, scheduling, memory, concurrency, persistence |
 | `books/02-os-and-linux/linux-programming-interface-michael-kerrisk.pdf` | Weeks 24–37: processes, signals, file descriptors, IPC, threads, sockets, and Linux APIs |
-| `books/02-os-and-linux/hands-on-system-programming-with-linux-kaiwan-billimoria-2018.epub` | Stages 5, 7, 9, and 10: Linux architecture, virtual memory, allocation/debugging, credentials/capabilities, process execution and creation, signals, timers, pthreads, scheduling, and advanced file I/O |
+| `books/02-os-and-linux/hands-on-system-programming-with-linux-kaiwan-billimoria-2018.pdf` | Stages 5, 7, 9, and 10: Linux architecture, virtual memory, allocation/debugging, credentials/capabilities, process execution and creation, signals, timers, pthreads, scheduling, and advanced file I/O |
 
 ### Kernel and driver development
 
@@ -39,9 +39,9 @@ should select only the pages or examples needed for the current tracker topic.
 | `books/03-kernel-and-drivers/linux-device-drivers-development-john-madieu-2017.pdf` | Weeks 38–47: modules, kernel APIs, device model, character devices, interrupts, and drivers |
 | `books/03-kernel-and-drivers/linux-driver-development-embedded-processors-alberto-liberal-2018.pdf` | Weeks 45–47 and later hardware labs: embedded Linux driver workflow |
 | `books/03-kernel-and-drivers/mastering-linux-device-driver-development-john-madieu-2020.pdf` | Weeks 41–47: synchronization, device model, MMIO, DMA, and advanced driver work |
-| `books/03-kernel-and-drivers/linux-kernel-programming-kaiwan-billimoria-2e-2024.epub` | Preferred modern kernel-programming companion for Stages 11–12: building Linux 6.x, modules, process/task internals, memory allocation, scheduling, synchronization, RCU, and barriers |
-| `books/03-kernel-and-drivers/linux-kernel-programming-part2-char-drivers-synchronization-kaiwan-billimoria-2021.epub` | Stages 11 and 13: misc/character drivers, user-kernel interfaces, procfs/sysfs/debugfs/netlink/ioctl, MMIO, interrupts, timers, workqueues, and locking |
-| `books/03-kernel-and-drivers/linux-kernel-debugging-kaiwan-billimoria-2022.epub` | Stages 11–13: printk/dynamic debug, kprobes, KASAN/UBSAN, SLUB debug, kmemleak, Oops analysis, lock debugging, ftrace, perf, KGDB, kdump/crash, static analysis, and coverage |
+| `books/03-kernel-and-drivers/linux-kernel-programming-kaiwan-billimoria-2e-2024.pdf` | Preferred modern kernel-programming companion for Stages 11–12: building Linux 6.x, modules, process/task internals, memory allocation, scheduling, synchronization, RCU, and barriers |
+| `books/03-kernel-and-drivers/linux-kernel-programming-part2-char-drivers-synchronization-kaiwan-billimoria-2021.pdf` | Stages 11 and 13: misc/character drivers, user-kernel interfaces, procfs/sysfs/debugfs/netlink/ioctl, MMIO, interrupts, timers, workqueues, and locking |
+| `books/03-kernel-and-drivers/linux-kernel-debugging-kaiwan-billimoria-2022.pdf` | Stages 11–13: printk/dynamic debug, kprobes, KASAN/UBSAN, SLUB debug, kmemleak, Oops analysis, lock debugging, ftrace, perf, KGDB, kdump/crash, static analysis, and coverage |
 
 > Kernel books age quickly. Use them for concepts and lab ideas, then verify
 > every API against the documentation and source for the kernel being built.
@@ -50,6 +50,10 @@ should select only the pages or examples needed for the current tracker topic.
 > Kconfig options, tools, and examples still require upstream verification.
 > The 2021–2022 driver/debugging volumes are valuable technique catalogs but
 > are even more likely to contain version-specific details.
+>
+> These four entries were converted from EPUB to searchable A4 PDFs with
+> page numbers using Calibre 9.13.0. The original EPUB files are retained
+> beside the PDFs as source copies.
 
 ### Optional language reference
 
