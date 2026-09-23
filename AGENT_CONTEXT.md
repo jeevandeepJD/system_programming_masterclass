@@ -381,3 +381,21 @@ is fair:
 
 Do not merge either pacing model based only on file generation. Wait for the
 learner's explicit preference after reviewing or attempting both.
+
+### 2026-09-23 — Complete accelerated seven-day material set
+
+At the user's request, the accelerated branch now contains Days 1–7:
+
+1. physical state through representation and meaning;
+2. signed numbers, bitwise reasoning, overflow, and ALU bridge;
+3. Boolean logic and physical gates;
+4. adders, mux/decoder/encoder, storage, clocking, and registers;
+5. minimal CPU, tiny ISA, and fetch/decode/execute;
+6. ISA/microarchitecture, instruction encoding, machine code, and
+   x86-64/RISC-V comparison;
+7. branches/loops, privilege, exceptions/interrupts, vectoring, system calls,
+   and safe userspace observation.
+
+Each is designed as an approximately three-hour concept-plus-lab unit.
+Prepared material does not imply completion. Keep `master` and the
+accelerated branch separate until the learner decides pacing explicitly.

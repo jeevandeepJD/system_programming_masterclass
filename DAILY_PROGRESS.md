@@ -50,6 +50,50 @@ The authoritative curriculum remains
   Morgan's laws, universal gates, combinational logic, half-adder preview,
   and CPU/ALU bridge
 
+### Day 4 — Adders, Selection, and Memory
+
+- Lesson: `daily/lessons/day-004-adders-selection-and-memory.md`
+- PDF: `daily/pdf/day-004-adders-selection-and-memory.pdf`
+- Challenge: `daily/challenges/day-004-digital-circuits-lab.html`
+- Approximate workload: 3 hours
+- Focus: half/full adders, ripple carry, mux/decoder/encoder, feedback,
+  latches/flip-flops/clocks/registers, and a physical-to-logical 3+5 trace
+
+### Day 5 — Building a Minimal CPU
+
+- Lesson: `daily/lessons/day-005-building-a-minimal-cpu.md`
+- PDF: `daily/pdf/day-005-building-a-minimal-cpu.pdf`
+- Challenge: `daily/challenges/day-005-tiny-cpu.py`
+- Approximate workload: 3 hours
+- Focus: architectural state, clocked state updates, PC/IR/registers/ALU,
+  datapath versus control, tiny ISA design, fetch/decode/execute, and
+  cycle-by-cycle instruction traces
+
+### Day 6 — Instruction Sets and Machine Code
+
+- Lesson: `daily/lessons/day-006-isa-and-machine-code.md`
+- PDF: `daily/pdf/day-006-isa-and-machine-code.pdf`
+- Challenges:
+  - `daily/challenges/day-006-fictional-isa.py`
+  - `daily/challenges/day-006-machine-code-lab.c`
+- Approximate workload: 3 hours
+- Focus: ISA versus microarchitecture, encoding, opcodes/operands/immediates,
+  addressing, load/store, careful RISC/CISC comparison, x86-64/RISC-V
+  sequences, ELF disassembly, and fictional ISA design
+
+### Day 7 — Control Flow, Exceptions, and Privilege
+
+- Lesson: `daily/lessons/day-007-control-flow-exceptions-and-privilege.md`
+- PDF: `daily/pdf/day-007-control-flow-exceptions-and-privilege.pdf`
+- Challenge: `daily/challenges/day-007-exception-flow-lab.c`
+- Approximate workload: 3 hours
+- Focus: flags/branches/loops, calls preview, privilege, interrupts versus
+  synchronous exceptions, x86 fault/trap/abort classification, vectoring,
+  saved context, handler return, signals, and system-call transitions
+
+Days 1–7 now form one complete accelerated material set. They are prepared
+ahead; no day is marked complete until learner evidence is recorded.
+
 ## Pacing comparison checkpoint
 
 Both branches now reach the same Boolean-logic mastery checkpoint:

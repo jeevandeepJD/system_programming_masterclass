@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 4 — Digital Circuits Lab</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:#071019; --panel:#0d1b28; --panel2:#122638; --line:#29445b;
+    --text:#edf5fb; --muted:#9bb0c1; --cyan:#56dbe9; --blue:#79aaff;
+    --green:#58e29d; --amber:#ffc96b; --red:#ff778a; --off:#385064;
+    --mono:"DejaVu Sans Mono",ui-monospace,SFMono-Regular,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:
+    radial-gradient(circle at 8% 0,#10344b 0,transparent 28rem),
+    radial-gradient(circle at 95% 25%,#212a4a 0,transparent 32rem),var(--bg);
+    color:var(--text);font-family:Inter,ui-sans-serif,system-ui,sans-serif;line-height:1.5}
+  button,input,select{font:inherit}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #56dbe977;outline-offset:2px}
+  .top{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:16px;
+    padding:12px max(16px,calc((100vw - 1160px)/2));border-bottom:1px solid #29445bcc;
+    background:#071019e8;backdrop-filter:blur(12px)}
+  .brand{min-width:220px}.brand strong{display:block}.brand span{color:var(--muted);font-size:12px}
+  .track{height:7px;flex:1;border-radius:9px;background:#182a39;overflow:hidden}
+  .fill{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));transition:.25s}
+  .score{min-width:80px;text-align:right;color:var(--green);font:700 13px var(--mono)}
+  main{max-width:1160px;margin:auto;padding:28px 16px 80px}
+  .hero,section{border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#112334ee,#0b1824f4);box-shadow:0 20px 48px #0007}
+  .hero{display:grid;grid-template-columns:1.35fr .65fr;gap:20px;padding:30px;margin-bottom:20px}
+  h1{font-size:clamp(28px,4vw,44px);line-height:1.08;letter-spacing:-.035em;margin:7px 0 12px}
+  h2{font-size:21px;margin:0 0 4px}.eyebrow,.label{color:var(--cyan);font:700 11px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+  .hero p,.sub,.note{color:var(--muted)}.rules{display:grid;gap:9px;align-content:center}
+  .rule{display:flex;gap:10px;align-items:flex-start;color:var(--muted);font-size:13px}
+  .rule b{display:grid;place-items:center;min-width:25px;height:25px;border-radius:50%;background:var(--cyan);color:#06151c;font:800 12px var(--mono)}
+  section{padding:24px;margin:20px 0}.head{display:flex;justify-content:space-between;gap:15px;margin-bottom:18px}
+  .badge{align-self:flex-start;border:1px solid var(--line);border-radius:999px;padding:5px 10px;color:var(--amber);background:#2a2418;font:700 10px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .card{border:1px solid var(--line);border-radius:14px;background:#091620;padding:18px;overflow:auto}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:15px}
+  label{color:var(--muted);font:700 10px var(--mono);text-transform:uppercase}
+  input[type=number],select{display:block;margin-top:5px;width:100%;min-width:92px;padding:9px;border:1px solid var(--line);border-radius:9px;background:#132638;color:var(--text)}
+  button{border:1px solid var(--line);border-radius:10px;padding:9px 14px;background:#14293a;color:var(--text);cursor:pointer}
+  button:hover{border-color:var(--cyan)}button.primary{background:#174454;border-color:var(--cyan)}
+  button.bit{min-width:62px;font:800 15px var(--mono)}button.on{color:#052116;background:var(--green);border-color:var(--green)}
+  .readout{padding:13px;border:1px solid #31526b;border-radius:11px;background:#08121b;color:var(--cyan);font:700 17px var(--mono);text-align:center}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+  th,td{padding:10px;text-align:center;border-bottom:1px solid #22394c}th{color:var(--muted);font-size:10px}tr.active{background:#153748;color:#d8fbff}
+  .wires{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+  .stage{position:relative;padding:12px 8px;border:1px solid var(--line);border-radius:11px;background:#112332;text-align:center;font:700 12px var(--mono)}
+  .stage.hot{border-color:var(--amber);box-shadow:0 0 16px #ffc96b25}.stage strong{display:block;color:var(--cyan);font-size:16px;margin:5px}
+  .equation{font:700 clamp(15px,2.4vw,21px) var(--mono);text-align:center;color:var(--cyan);padding:16px}
+  .decoder{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.lamp{padding:13px 5px;border:2px solid var(--off);border-radius:10px;text-align:center;font:800 16px var(--mono);color:var(--muted)}
+  .lamp.on{border-color:var(--green);background:#173d2d;color:var(--green);box-shadow:0 0 18px #58e29d30}
+  .register{display:grid;grid-template-columns:1fr auto 1fr;gap:15px;align-items:center}
+  .regbox{padding:20px;border:2px solid var(--blue);border-radius:13px;text-align:center;background:#112943}
+  .regbox strong{display:block;font:800 30px var(--mono);color:var(--cyan)}
+  .arrow{color:var(--amber);font-size:30px}.timeline{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+  .event{padding:7px 9px;border:1px solid var(--line);border-radius:8px;color:var(--muted);font:11px var(--mono)}
+  .challenge{max-width:720px;margin:auto}.question{min-height:92px;display:grid;place-items:center;padding:18px;margin:14px 0;border:1px solid var(--line);border-radius:12px;background:#07131d;text-align:center;font:700 clamp(16px,3vw,22px) var(--mono)}
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:10px}.answer{padding:14px;font:800 17px var(--mono)}
+  .answer.correct{background:#173b2c;border-color:var(--green)}.answer.wrong{background:#3a1a23;border-color:var(--red)}
+  .feedback{min-height:64px;margin-top:12px;padding:12px;border:1px solid transparent;border-radius:10px;background:#0a1620;color:var(--muted)}
+  .feedback.good{border-color:#327858;background:#102c21;color:#caffdf}.feedback.bad{border-color:#824154;background:#301720;color:#ffd2d8}
+  .between{display:flex;justify-content:space-between;gap:10px;align-items:center}.hidden{display:none!important}
+  .checklist{display:grid;grid-template-columns:1fr 1fr;gap:8px;color:var(--muted);font-size:13px}.checklist div:before{content:"□";color:var(--amber);margin-right:8px}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  @media(max-width:780px){.hero,.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:1fr}.brand span{display:none}.wires{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.top{gap:8px}.brand{min-width:135px}.register{grid-template-columns:1fr}.arrow{transform:rotate(90deg);text-align:center}.checklist{grid-template-columns:1fr}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><strong>Digital Circuits Lab</strong><span>predict → propagate → select → store</span></div>
+  <div class="track" aria-label="Prediction challenge progress"><div class="fill" id="progress"></div></div>
+  <div class="score"><span id="score">0</span> / 10</div>
+</header>
+
+<main>
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Offline interactive lab</div>
+      <h1>Make a result, choose it, keep it.</h1>
+      <p>Derive one-bit addition, follow a four-stage carry chain, route values
+      with selectors, and clock a safe conceptual register. Scored answers stay
+      hidden until you attempt them.</p>
+    </div>
+    <div class="rules">
+      <div class="rule"><b>1</b><span>Predict before changing a control.</span></div>
+      <div class="rule"><b>2</b><span>Explain each carry, select, or state change.</span></div>
+      <div class="rule"><b>3</b><span>Treat timing views as logical models, not transistor simulation.</span></div>
+    </div>
+  </div>
+
+  <section aria-labelledby="oneBitTitle">
+    <div class="head"><div><h2 id="oneBitTitle">Half-adder and full-adder bench</h2><div class="sub">Toggle inputs and match the active truth-table row.</div></div><span class="badge">derive</span></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="controls">
+          <label>Mode<select id="adderMode"><option value="half">Half-adder</option><option value="full">Full-adder</option></select></label>
+          <button class="bit" id="bitA" aria-pressed="false">A = 0</button>
+          <button class="bit" id="bitB" aria-pressed="false">B = 0</button>
+          <button class="bit" id="bitCin" aria-pressed="false">Cin = 0</button>
+        </div>
+        <div class="equation" id="oneEquation"></div>
+        <div class="readout" id="oneReadout" aria-live="polite"></div>
+        <p class="note" id="oneWhy"></p>
+      </div>
+      <div class="card">
+        <table><thead id="oneHead"></thead><tbody id="oneBody"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="rippleTitle">
+    <div class="head"><div><h2 id="rippleTitle">Four-bit ripple-carry adder</h2><div class="sub">Commit a prediction, then reveal the complete carry path.</div></div><span class="badge">observe</span></div>
+    <div class="card">
+      <div class="controls">
+        <label>Operand A (0–15)<input id="numA" type="number" min="0" max="15" value="3"></label>
+        <label>Operand B (0–15)<input id="numB" type="number" min="0" max="15" value="5"></label>
+        <label>Your low 4-bit result (0–15)<input id="sumPrediction" type="number" min="0" max="15" placeholder="?"></label>
+        <button class="primary" id="runAdder">Reveal carry chain</button>
+      </div>
+      <div class="readout" id="rippleResult">Predict first. The stages are hidden.</div>
+      <div class="wires hidden" id="stages"></div>
+      <p class="note" id="rippleNote">Overflow beyond four bits is shown as Cout; the stored low result remains four bits.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="selectTitle">
+    <div class="head"><div><h2 id="selectTitle">Selection and decoding</h2><div class="sub">A mux routes data; a decoder expands a code into one-hot control.</div></div><span class="badge">route</span></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="label">2-to-1 multiplexer</div>
+        <div class="controls">
+          <button class="bit" id="d0" aria-pressed="false">D0 = 0</button>
+          <button class="bit" id="d1" aria-pressed="false">D1 = 0</button>
+          <button class="bit" id="sel" aria-pressed="false">S = 0</button>
+        </div>
+        <div class="equation">Y = (¬S ∧ D0) ∨ (S ∧ D1)</div>
+        <div class="readout" id="muxOut" aria-live="polite"></div>
+        <p class="note">The unselected input may change without changing Y.</p>
+      </div>
+      <div class="card">
+        <div class="label">2-to-4 decoder</div>
+        <div class="controls">
+          <button class="bit" id="dec1" aria-pressed="false">A1 = 0</button>
+          <button class="bit" id="dec0" aria-pressed="false">A0 = 0</button>
+        </div>
+        <div class="decoder" id="decoder" aria-live="polite"></div>
+        <p class="note">Exactly one output is asserted. An encoder conceptually maps an asserted input back to a compact code; a priority encoder defines which wins if several requests arrive.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="storageTitle">
+    <div class="head"><div><h2 id="storageTitle">Safe D storage and two-bit register</h2><div class="sub">Stage next-state inputs; only the simulated rising edge changes Q.</div></div><span class="badge">state</span></div>
+    <div class="card">
+      <div class="controls">
+        <button class="bit" id="regD1" aria-pressed="false">D1 = 0</button>
+        <button class="bit" id="regD0" aria-pressed="false">D0 = 0</button>
+        <button class="bit" id="load" aria-pressed="false">LOAD = 0</button>
+        <button class="primary" id="clock">Apply rising edge ↑</button>
+        <button id="resetHistory">Clear history</button>
+      </div>
+      <div class="register">
+        <div class="regbox"><span class="label">candidate input D</span><strong id="dDisplay">00</strong></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="regbox"><span class="label">stored output Q</span><strong id="qDisplay">00</strong></div>
+      </div>
+      <div class="readout" id="regMessage" aria-live="polite">Q holds 00. Changing D does not change Q between edges.</div>
+      <div class="timeline" id="timeline" aria-label="Register state transition history"></div>
+      <p class="note">Logical model: on each rising edge, Qnext = LOAD ? D : Q. This models an enabled edge-triggered register, not an analog SR latch or metastability. Real D must satisfy setup and hold requirements.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="challengeTitle">
+    <div class="head"><div><h2 id="challengeTitle">Prediction challenge</h2><div class="sub">Ten first attempts, one point each. Explanations appear only after an answer.</div></div><span class="badge">10 points</span></div>
+    <div class="card challenge">
+      <div class="between"><span class="label" id="round">ROUND 1 OF 10</span><span class="label" id="streak">STREAK 0</span></div>
+      <div class="question" id="question"></div>
+      <div class="answers" id="answers"></div>
+      <div class="feedback" id="feedback">Choose an answer to reveal the explanation.</div>
+      <div class="between" style="margin-top:10px"><button id="retry">Restart set</button><button class="primary hidden" id="next">Next</button></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><div><h2>Close the evidence loop</h2><div class="sub">The simulator supports evidence; it does not replace explanation.</div></div><span class="badge">mastery</span></div>
+    <div class="checklist">
+      <div>Explain half- and full-adder equations.</div><div>Draw all four carry stages.</div>
+      <div>Trace 0011 + 0101 to 1000.</div><div>Distinguish mux, decoder, and encoder.</div>
+      <div>Show a load and hold register transition.</div><div>Explain why the clock samples rather than “calculates.”</div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const bits={A:0,B:0,Cin:0,D0:0,D1:0,S:0,DA1:0,DA0:0,RD1:0,RD0:0,L:0};
+function toggleButton(id,key,render){
+  $(id).addEventListener("click",()=>{bits[key]^=1; render();});
+}
+function paint(id,key,label){
+  const el=$(id),v=bits[key]; el.textContent=`${label} = ${v}`;
+  el.classList.toggle("on",!!v); el.setAttribute("aria-pressed",String(!!v));
+}
+function full(a,b,c){const p=a^b;return {s:p^c,co:(a&b)|(p&c),p,g:a&b};}
+
+function renderOne(){
+  const isFull=$("adderMode").value==="full",c=isFull?bits.Cin:0,r=full(bits.A,bits.B,c);
+  paint("bitA","A","A");paint("bitB","B","B");paint("bitCin","Cin","Cin");
+  $("bitCin").classList.toggle("hidden",!isFull);
+  $("oneEquation").textContent=isFull?"Sum = A ⊕ B ⊕ Cin · Cout = AB ∨ Cin(A ⊕ B)":"Sum = A ⊕ B · Carry = A ∧ B";
+  $("oneReadout").textContent=`${bits.A} + ${bits.B}${isFull?` + Cin ${c}`:""} → Carry ${r.co}, Sum ${r.s}`;
+  $("oneWhy").textContent=r.co?"At least two active inputs generate carry-out.":"Fewer than two active inputs, so no carry-out is required.";
+  $("oneHead").innerHTML=isFull?"<tr><th>A</th><th>B</th><th>Cin</th><th>Sum</th><th>Cout</th></tr>":"<tr><th>A</th><th>B</th><th>Sum</th><th>Carry</th></tr>";
+  $("oneBody").innerHTML="";
+  for(let a=0;a<2;a++)for(let b=0;b<2;b++)for(let ci=0;ci<(isFull?2:1);ci++){
+    const x=full(a,b,ci),tr=document.createElement("tr");
+    if(a===bits.A&&b===bits.B&&ci===c)tr.className="active";
+    tr.innerHTML=isFull?`<td>${a}</td><td>${b}</td><td>${ci}</td><td>${x.s}</td><td>${x.co}</td>`:`<td>${a}</td><td>${b}</td><td>${x.s}</td><td>${x.co}</td>`;
+    $("oneBody").appendChild(tr);
+  }
+}
+toggleButton("bitA","A",renderOne);toggleButton("bitB","B",renderOne);toggleButton("bitCin","Cin",renderOne);
+$("adderMode").addEventListener("change",renderOne);
+
+const clamp=n=>Math.max(0,Math.min(15,Number.isFinite(n)?n:0));
+const bin=(n,w=4)=>n.toString(2).padStart(w,"0");
+$("runAdder").addEventListener("click",()=>{
+  const a=clamp(Number($("numA").value)),b=clamp(Number($("numB").value));let c=0,sum=0,html="";
+  for(let i=0;i<4;i++){const ai=(a>>i)&1,bi=(b>>i)&1,r=full(ai,bi,c);sum|=r.s<<i;
+    html+=`<div class="stage ${c||r.co?"hot":""}">BIT ${i}<strong>${r.s}</strong>A=${ai} B=${bi}<br>Cin=${c} → Cout=${r.co}</div>`;c=r.co;}
+  const pred=Number($("sumPrediction").value),attempted=$("sumPrediction").value!=="",ok=attempted&&pred===sum;
+  $("stages").innerHTML=html;$("stages").classList.remove("hidden");
+  $("rippleResult").textContent=`${bin(a)} (${a}) + ${bin(b)} (${b}) = ${c} ${bin(sum)} · low result ${sum}${attempted?ok?" · prediction matched":" · prediction differed":""}`;
+  $("rippleNote").textContent=c?`Cout is 1: the mathematical unsigned result ${a+b} needs five bits. The low four bits are ${bin(sum)}.`:`No final carry-out. The result ${a+b} fits in four bits.`;
+});
+
+function renderSelect(){
+  ["d0","d1","sel"].forEach((id,i)=>paint(id,["D0","D1","S"][i],["D0","D1","S"][i]));
+  const y=bits.S?bits.D1:bits.D0;$("muxOut").textContent=`S=${bits.S} selects D${bits.S}; Y=${y}`;
+  paint("dec1","DA1","A1");paint("dec0","DA0","A0");const chosen=bits.DA1*2+bits.DA0;
+  $("decoder").innerHTML=[0,1,2,3].map(i=>`<div class="lamp ${i===chosen?"on":""}">Y${i}=${i===chosen?1:0}</div>`).join("");
+}
+toggleButton("d0","D0",renderSelect);toggleButton("d1","D1",renderSelect);toggleButton("sel","S",renderSelect);
+toggleButton("dec1","DA1",renderSelect);toggleButton("dec0","DA0",renderSelect);
+
+let q=0,edge=0;
+function renderReg(){
+  paint("regD1","RD1","D1");paint("regD0","RD0","D0");paint("load","L","LOAD");
+  $("dDisplay").textContent=`${bits.RD1}${bits.RD0}`;$("qDisplay").textContent=bin(q,2);
+}
+toggleButton("regD1","RD1",renderReg);toggleButton("regD0","RD0",renderReg);toggleButton("load","L",renderReg);
+$("clock").addEventListener("click",()=>{
+  const before=q,d=bits.RD1*2+bits.RD0;if(bits.L)q=d;edge++;
+  renderReg();$("regMessage").textContent=bits.L?`Edge ${edge}: LOAD=1, so Q captured ${bin(d,2)} (was ${bin(before,2)}).`:`Edge ${edge}: LOAD=0, so feedback preserved Q=${bin(q,2)}.`;
+  const e=document.createElement("span");e.className="event";e.textContent=`↑${edge}: ${bin(before,2)} → ${bin(q,2)} (${bits.L?"load":"hold"})`;$("timeline").appendChild(e);
+});
+$("resetHistory").addEventListener("click",()=>{$("timeline").innerHTML="";edge=0;$("regMessage").textContent=`History cleared. Q still holds ${bin(q,2)}.`;});
+
+const questions=[
+  {q:"Half-adder: A=1, B=1. What is Carry,Sum?",a:"1,0",o:["0,1","1,0"],w:"1+1 is binary 10: XOR gives Sum 0 and AND gives Carry 1."},
+  {q:"Full-adder: A=1, B=0, Cin=1. What is Cout,Sum?",a:"1,0",o:["0,0","1,0"],w:"The total is 2, binary 10."},
+  {q:"0111 + 0001: how far does the carry ripple?",a:"through all 4 stages",o:["only bit 0","through all 4 stages"],w:"Bit 0 generates; bits 1 and 2 propagate; bit 3 receives it and produces the high Sum."},
+  {q:"0011 + 0101 settles to which 4-bit result?",a:"1000",o:["0110","1000"],w:"Carries propagate through bits 0, 1, and 2; bit 3 becomes 1."},
+  {q:"Mux D0=1, D1=0, S=1. What is Y?",a:"0",o:["0","1"],w:"S=1 selects D1, so the unselected D0 cannot determine Y."},
+  {q:"A 2-to-4 decoder receives A1A0=10. Which line is asserted?",a:"Y2",o:["Y1","Y2"],w:"Binary 10 encodes index 2, so the one-hot output is Y2."},
+  {q:"A plain encoder sees two asserted inputs. Is its output necessarily unambiguous?",a:"no",o:["yes","no"],w:"A plain encoder assumes one active input; a priority rule is needed for simultaneous requests."},
+  {q:"D changes between active edges in an edge-triggered register. Must Q change immediately?",a:"no",o:["yes","no"],w:"Q holds until the next active edge, subject to the storage element's timing contract."},
+  {q:"At an edge LOAD=0, D=11, Q=01. What is Qnext?",a:"01",o:["01","11"],w:"The input mux selects feedback when LOAD=0, preserving the current state."},
+  {q:"What is the clock's main role in this datapath?",a:"coordinate sampling",o:["make every transistor switch","coordinate sampling"],w:"Combinational gates respond to input changes; the clock coordinates when storage captures settled data."},
+  {q:"Which element is level-sensitive while enabled?",a:"D latch",o:["D latch","edge-triggered D flip-flop"],w:"A D latch is transparent for an active level; a flip-flop samples around an edge."},
+  {q:"Why can feedback create memory?",a:"output helps preserve the next input condition",o:["bits acquire meaning","output helps preserve the next input condition"],w:"Cross-coupled paths make the present state influence what the circuit does next."}
+];
+let set=[],qi=0,total=0,streak=0,answered=false;
+function shuffle(x){const a=[...x];for(let i=a.length-1;i;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function start(){set=shuffle(questions).slice(0,10);qi=total=streak=0;$("score").textContent=0;show();}
+function show(){
+  answered=false;const x=set[qi];$("round").textContent=`ROUND ${qi+1} OF 10`;$("streak").textContent=`STREAK ${streak}`;$("question").textContent=x.q;
+  $("answers").innerHTML="";shuffle(x.o).forEach(v=>{const b=document.createElement("button");b.className="answer";b.textContent=v;b.addEventListener("click",()=>answer(b,v));$("answers").appendChild(b);});
+  $("feedback").className="feedback";$("feedback").textContent="Choose an answer to reveal the explanation.";$("next").classList.add("hidden");$("progress").style.width=`${qi*10}%`;
+}
+function answer(btn,v){
+  if(answered)return;answered=true;const x=set[qi],ok=v===x.a;btn.classList.add(ok?"correct":"wrong");
+  $("answers").querySelectorAll("button").forEach(b=>b.disabled=true);if(ok){total++;streak++;}else streak=0;
+  $("score").textContent=total;$("streak").textContent=`STREAK ${streak}`;$("feedback").className=`feedback ${ok?"good":"bad"}`;
+  $("feedback").textContent=`${ok?"Correct.":`Not this time—the answer is ${x.a}.`} ${x.w}`;$("next").textContent=qi===9?"See result":"Next";$("next").classList.remove("hidden");$("progress").style.width=`${(qi+1)*10}%`;
+}
+$("next").addEventListener("click",()=>{if(!answered)return;if(qi<9){qi++;show();}else{$("question").textContent=`Set complete: ${total}/10`;$("answers").innerHTML="";$("feedback").className="feedback good";$("feedback").textContent=total===10?"Now trace 3 + 5 aloud from physical states through the destination register.":"Use the exposed gaps to revisit one explorer, then retry.";$("next").classList.add("hidden");}});
+$("retry").addEventListener("click",start);
+
+renderOne();renderSelect();renderReg();start();
+</script>
+</body>
+</html>
