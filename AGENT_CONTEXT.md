@@ -367,3 +367,17 @@ they overlap older material. Treat the memory-management series as
 conceptual/legacy and verify all implementation details against current
 kernel source. Treat the 2023 kernel report as a historical snapshot. The
 source catalog contains exact curriculum mappings and freshness warnings.
+
+### 2026-09-23 — Continue both pacing branches
+
+The user needs more time to choose a pacing model and asked that lessons
+continue on both branches. Keep their curriculum scope aligned so comparison
+is fair:
+
+- `master`: Days 8–10 split Boolean logic and logic gates into three
+  90–120-minute lessons.
+- `experiment/accelerated-foundations`: accelerated Day 3 covers the same
+  Boolean-logic checkpoint in one approximately three-hour unit.
+
+Do not merge either pacing model based only on file generation. Wait for the
+learner's explicit preference after reviewing or attempting both.

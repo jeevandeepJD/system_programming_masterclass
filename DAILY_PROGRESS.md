@@ -50,6 +50,17 @@ The authoritative curriculum remains
   Morgan's laws, universal gates, combinational logic, half-adder preview,
   and CPU/ALU bridge
 
+## Pacing comparison checkpoint
+
+Both branches now reach the same Boolean-logic mastery checkpoint:
+
+- Accelerated branch: Day 3, one approximately three-hour lesson.
+- Master branch: Days 8–10, three 90–120-minute lessons.
+
+Compare explanation quality, fatigue, retention after a break, and completion
+of hands-on evidence—not page count alone. No branch is approved for merging
+until the learner decides explicitly.
+
 ## Current mastery target
 
 Explain, without notes:
