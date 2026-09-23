@@ -328,3 +328,22 @@ remain beside the PDFs. Calibre must be run with `PYTHONNOUSERSITE=1` on this
 VM because a user-installed `lxml` version otherwise conflicts with Fedora's
 `html5-parser`/system `libxml2`. Prefer the PDF paths in lesson citations so
 page references remain stable.
+
+### 2026-09-23 — Instructor-led Linux/kernel training set
+
+The user added 18 PDFs from an earlier training course plus the authoritative
+curriculum DOCX. The DOCX now lives at the repository root. The PDFs were
+renamed and organized under `source-materials/library/training/kaiwantech/`:
+
+- seven 2024 kernel-internals modules (01–04, 06, 08, 09);
+- a four-part, mostly 2015-era memory-management series;
+- cgroup slides and cgroup v2 notes;
+- programmer checklist and kdump/crash notes;
+- Makefile and Git references;
+- Jonathan Corbet's OSS Europe 2023 kernel report.
+
+Preserve the missing module numbers 05 and 07. Prefer the 2024 modules where
+they overlap older material. Treat the memory-management series as
+conceptual/legacy and verify all implementation details against current
+kernel source. Treat the 2023 kernel report as a historical snapshot. The
+source catalog contains exact curriculum mappings and freshness warnings.

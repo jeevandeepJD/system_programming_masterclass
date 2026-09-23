@@ -33,6 +33,8 @@ Current curriculum position:
 ├── DAILY_PROGRESS.md         short daily resume tracker
 ├── AGENT_CONTEXT.md          teaching workflow and decision log
 ├── MASTERCLASS.md            detailed historical handoff
+├── Systems_Engineering_Masterclass_Curriculum_Tracker.docx
+│                             authoritative curriculum tracker
 ├── daily/
 │   ├── lessons/              editable Markdown lessons
 │   ├── pdf/                  rendered daily lesson PDFs
