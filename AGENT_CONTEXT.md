@@ -133,8 +133,8 @@ Use exercises to expose gaps rather than merely generate a score.
 - Stage 1 — Foundations of Computation
 - Topic — Electricity, States, Bits, and Information
 - Active branch: `experiment/weekly-modules`
-- Current module: Week 1 — State, Bits, and Meaning
-- Weeks 1–7 are prepared as coherent weekly modules.
+- Current module: Week 1 — From Physical State to CPU Control
+- Week 1 contains seven daily sections in one consolidated PDF.
 - This branch is experimental; do not merge it into `master` until the user
   explicitly approves the weekly structure and presentation.
 
@@ -404,12 +404,20 @@ accelerated branch separate until the learner decides pacing explicitly.
 
 The user prefers weekly organization over daily sequencing. The weekly
 conversion was isolated on `experiment/weekly-modules`, preserving both
-`master` and `experiment/accelerated-foundations`. Accelerated Days 1–7 were
-converted directly into Weeks 1–7 because they already map to tracker topics
-1–7. Weekly artifacts now live under `weekly/`, progress is tracked in
-`WEEKLY_PROGRESS.md`, and `bin/week` opens/builds a selected module using
-`MC_WEEK=N`.
+`master` and `experiment/accelerated-foundations`. Weekly artifacts live
+under `weekly/`, progress is tracked in `WEEKLY_PROGRESS.md`, and `bin/week`
+opens/builds a selected module using `MC_WEEK=N`.
 
 “Week” means a mastery module, not a calendar deadline. The learner may take
 more than seven days. Keep both daily branches unchanged while the weekly
 structure is evaluated.
+
+### 2026-09-23 — One PDF contains seven daily sections
+
+The user clarified that “weekly” means one weekly PDF containing seven days'
+worth of material—not relabeling each existing day as a separate week.
+`experiment/weekly-modules` now groups the original accelerated Day 1–7
+sources and labs under `weekly/week-001/`. `bin/build_week.py` renders the
+weekly overview plus all seven daily sections and merges them into one
+`weekly/pdf/week-001-*.pdf`. Keep daily source sections for maintainability,
+but present one consolidated PDF to the learner.

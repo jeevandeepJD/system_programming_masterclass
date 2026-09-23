@@ -8,9 +8,9 @@
 #
 # Select another module with MC_WEEK=2 week lesson.
 #
-# Lessons live in   weekly/lessons/week-NNN-*.md
-# PDFs are built to weekly/pdf/
-# Challenges live in weekly/challenges/week-NNN-*
+# Module sources live in weekly/week-NNN/
+# Consolidated PDFs are built to weekly/pdf/
+# Challenges live in weekly/week-NNN/challenges/
 
 set -euo pipefail
 
@@ -25,7 +25,7 @@ resolve_week() {
     fi
 
     local latest
-    latest="$(ls "$MC"/weekly/lessons/week-*.md 2>/dev/null | sort -V | tail -n1 || true)"
+    latest="$(ls -d "$MC"/weekly/week-* 2>/dev/null | sort -V | tail -n1 || true)"
     if [ -z "$latest" ]; then
         return 1
     fi
@@ -40,21 +40,22 @@ open_in_editor() {
 }
 
 do_lesson() {
-    local md
-    md="$(ls "$MC"/weekly/lessons/"$WEEK"-*.md 2>/dev/null | head -n1 || true)"
-    if [ -z "$md" ]; then
-        echo "No lesson markdown for $WEEK in $MC/weekly/lessons/"
+    local module="$MC/weekly/$WEEK"
+    if [ ! -f "$module/overview.md" ]; then
+        echo "No weekly module found at $module"
         return 1
     fi
-    echo "Lesson: $(basename "$md")"
-    python3 "$MC/bin/build_lesson.py" "$md" --no-open
-    open_in_editor "$MC/weekly/pdf/$(basename "${md%.md}").pdf"
+    echo "Module: $WEEK"
+    python3 "$MC/bin/build_week.py" "$WEEK" --no-open
+    local pdf
+    pdf="$(ls "$MC"/weekly/pdf/"$WEEK"-*.pdf 2>/dev/null | head -n1 || true)"
+    open_in_editor "$pdf"
 }
 
 PORT="${MC_PORT:-8731}"
 
 do_challenge() {
-    local challenges=("$MC"/weekly/challenges/"$WEEK"-*)
+    local challenges=("$MC"/weekly/"$WEEK"/challenges/*)
     if [ ! -e "${challenges[0]}" ]; then
         echo "No challenge for $WEEK."
         return 1
@@ -62,6 +63,7 @@ do_challenge() {
 
     local challenge html=""
     for challenge in "${challenges[@]}"; do
+        [ -f "$challenge" ] || continue
         echo "Challenge: $(basename "$challenge")"
         case "$challenge" in
           *.py)
@@ -90,7 +92,7 @@ do_challenge() {
     # Cursor/VS Code remote forwards it to the browser on the user's machine.
     if ! ss -ltn 2>/dev/null | grep -q ":$PORT "; then
         nohup python3 -m http.server "$PORT" --bind 127.0.0.1 \
-            --directory "$MC/weekly/challenges" >/tmp/mc_challenge_server.log 2>&1 &
+            --directory "$MC/weekly/$WEEK/challenges" >/tmp/mc_challenge_server.log 2>&1 &
         sleep 0.4
         echo "  started local server on port $PORT"
     else
@@ -109,9 +111,12 @@ case "${1:-all}" in
     lesson)    do_lesson ;;
     challenge) do_challenge ;;
     list)
-        echo "== lessons =="   ; ls -1 "$MC"/weekly/lessons/week-*    2>/dev/null | xargs -r -n1 basename
-        echo "== pdfs =="      ; ls -1 "$MC"/weekly/pdf/week-*        2>/dev/null | xargs -r -n1 basename
-        echo "== challenges ==" ; ls -1 "$MC"/weekly/challenges/week-* 2>/dev/null | xargs -r -n1 basename
+        echo "== modules ==" ; ls -d "$MC"/weekly/week-* 2>/dev/null | xargs -r -n1 basename
+        echo "== pdfs ==" ; ls -1 "$MC"/weekly/pdf/week-* 2>/dev/null | xargs -r -n1 basename
+        echo "== selected module challenges =="
+        for challenge in "$MC"/weekly/"$WEEK"/challenges/*; do
+            [ -f "$challenge" ] && basename "$challenge"
+        done
         ;;
     all)       do_lesson; echo; do_challenge ;;
     *)         sed -n '2,12p' "$0" ;;

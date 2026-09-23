@@ -1,4 +1,4 @@
-# Week 2 — Signed Bits
+# Day 2 — Signed Bits
 
 **Curriculum alignment:** Stage 1 — Foundations of Computation · Signed
 Numbers and Bitwise Reasoning
@@ -20,7 +20,7 @@ Numbers and Bitwise Reasoning
 
 The previous foundation established the physical-to-logical path: a voltage
 falls into an agreed range, circuitry classifies it as one of two states, and
-we write those states as 0 and 1. This week we give groups of those states useful
+we write those states as 0 and 1. Today we give groups of those states useful
 structure.
 
 We will follow one engineering problem from beginning to end:
@@ -511,7 +511,7 @@ bitwise mechanism + register semantics = correct operation
 
 Open the existing challenge:
 
-`weekly/challenges/week-002-register-mask-lab.c`
+`weekly/week-001/challenges/day-002-register-mask-lab.c`
 
 It provides a fictional eight-bit register and tests for functions that:
 
@@ -534,10 +534,10 @@ Then build and run:
 
 ```bash
 gcc -std=c17 -Wall -Wextra -Wconversion -O0 -g \
-  weekly/challenges/week-002-register-mask-lab.c \
-  -o /tmp/week-002-register-mask-lab
+  weekly/week-001/challenges/day-002-register-mask-lab.c \
+  -o /tmp/day-002-register-mask-lab
 
-/tmp/week-002-register-mask-lab
+/tmp/day-002-register-mask-lab
 ```
 
 For every passing function, explain why zeros or ones in the mask preserve,
@@ -778,7 +778,7 @@ It also explains the earlier NOT example: `~x` can invert an `int`-width
 promoted value even when `x` is stored in eight bits.
 
 We will derive the full promotion and conversion rules in later C work. For
-this week, keep this preview:
+today, keep this preview:
 
 > Always distinguish the declared object's width, the promoted expression
 > type, and the destination width.
@@ -796,7 +796,7 @@ reinterpret every out-of-range conversion silently.
 
 Open:
 
-`weekly/challenges/week-002-overflow-lab.c`
+`weekly/week-001/challenges/day-002-overflow-lab.c`
 
 Do not run it immediately. Read each numbered output expression and predict:
 
@@ -810,10 +810,10 @@ Build normally:
 
 ```bash
 gcc -std=c17 -Wall -Wextra -O0 -g \
-  weekly/challenges/week-002-overflow-lab.c \
-  -o /tmp/week-002-overflow-lab
+  weekly/week-001/challenges/day-002-overflow-lab.c \
+  -o /tmp/day-002-overflow-lab
 
-/tmp/week-002-overflow-lab
+/tmp/day-002-overflow-lab
 ```
 
 Then build with undefined-behavior instrumentation:
@@ -821,10 +821,10 @@ Then build with undefined-behavior instrumentation:
 ```bash
 gcc -std=c17 -Wall -Wextra -O1 -g \
   -fsanitize=undefined -fno-sanitize-recover=undefined \
-  weekly/challenges/week-002-overflow-lab.c \
-  -o /tmp/week-002-overflow-lab-ubsan
+  weekly/week-001/challenges/day-002-overflow-lab.c \
+  -o /tmp/day-002-overflow-lab-ubsan
 
-/tmp/week-002-overflow-lab-ubsan
+/tmp/day-002-overflow-lab-ubsan
 ```
 
 Record four columns:
@@ -1021,7 +1021,7 @@ sequences of transitions. Rich behavior emerges when enormous compositions
 of those operations implement algorithms, operating systems, applications,
 and learned models.
 
-This week's operations are therefore not isolated binary tricks. They are pieces
+Today's operations are therefore not isolated binary tricks. They are pieces
 of the machinery we will combine into an ALU, then a controlled datapath, and
 eventually a minimal CPU.
 
@@ -1042,7 +1042,7 @@ eventually a minimal CPU.
 - GCC documentation for integer overflow built-ins and undefined-behavior
   instrumentation.
 
-**After Week 2:** share the two lab results, the fresh-pattern mastery
+**After Day 2:** share the two lab results, the fresh-pattern mastery
 explanation, and any point where prediction differed from observation. That
 evidence determines whether the next unit should repair a gap or move toward
 logic gates, adders, and the ALU.

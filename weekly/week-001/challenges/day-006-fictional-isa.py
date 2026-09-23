@@ -2,11 +2,11 @@
 """Encode and decode the tiny 16-bit Cedar-16 teaching ISA.
 
 Examples:
-  python3 week-006-fictional-isa.py table
-  python3 week-006-fictional-isa.py encode add r1 r2 r3
-  python3 week-006-fictional-isa.py encode addi r1 r2 -5
-  python3 week-006-fictional-isa.py decode 0x1298
-  python3 week-006-fictional-isa.py repl
+  python3 day-006-fictional-isa.py table
+  python3 day-006-fictional-isa.py encode add r1 r2 r3
+  python3 day-006-fictional-isa.py encode addi r1 r2 -5
+  python3 day-006-fictional-isa.py decode 0x1298
+  python3 day-006-fictional-isa.py repl
 
 Encoding formats (bit 15 is the most-significant bit):
 

@@ -1,4 +1,4 @@
-# Week 6 — Instruction Sets and Machine Code
+# Day 6 — Instruction Sets and Machine Code
 
 **Target time:** approximately 3 hours
 
@@ -10,7 +10,7 @@ designing and testing Cedar-16 · 10 minutes explaining without notes
 > state. How does a compiler ask that machinery to perform one particular
 > operation—and how can a different CPU understand the same request?
 
-## Why this week exists
+## Why this day exists
 
 The previous path assembled the ingredients of a minimal processor:
 
@@ -33,7 +33,7 @@ What happens when arithmetic overflows? What does an invalid bit pattern do?
 Hardware and software need a durable contract. That contract is the
 **instruction set architecture**, or **ISA**.
 
-This week we will make that contract concrete at three levels:
+Today we will make that contract concrete at three levels:
 
 ```text
 ISA specification       written rules and programmer-visible behavior
@@ -871,7 +871,7 @@ implementations aligned to the specification.
 
 Use:
 
-`weekly/challenges/week-006-machine-code-lab.c`
+`weekly/week-001/challenges/day-006-machine-code-lab.c`
 
 The program deliberately contains:
 
@@ -901,13 +901,13 @@ From the repository root:
 
 ```bash
 gcc -std=c17 -Wall -Wextra -Wpedantic -O2 -g \
-  weekly/challenges/week-006-machine-code-lab.c -o /tmp/week6-gcc
+  weekly/week-001/challenges/day-006-machine-code-lab.c -o /tmp/day6-gcc
 
 clang -std=c17 -Wall -Wextra -Wpedantic -O2 -g \
-  weekly/challenges/week-006-machine-code-lab.c -o /tmp/week6-clang
+  weekly/week-001/challenges/day-006-machine-code-lab.c -o /tmp/day6-clang
 
-/tmp/week6-gcc
-/tmp/week6-clang
+/tmp/day6-gcc
+/tmp/day6-clang
 ```
 
 Warnings are evidence. Do not suppress them merely to make the terminal quiet.
@@ -916,9 +916,9 @@ Both compilers should build this source warning-clean.
 ### Step 3 — Ask `readelf` what kind of object this is
 
 ```bash
-readelf -h /tmp/week6-gcc
-readelf -S /tmp/week6-gcc
-readelf -sW /tmp/week6-gcc
+readelf -h /tmp/day6-gcc
+readelf -S /tmp/day6-gcc
+readelf -sW /tmp/day6-gcc
 ```
 
 Find:
@@ -933,10 +933,10 @@ the instruction stream.
 ### Step 4 — Ask `objdump` to decode bytes
 
 ```bash
-objdump -d -M intel --disassemble=weighted_sum /tmp/week6-gcc
-objdump -d -M intel --disassemble=count_above /tmp/week6-gcc
-objdump -d -M intel --disassemble=choose_operation /tmp/week6-gcc
-objdump -s -j .text /tmp/week6-gcc
+objdump -d -M intel --disassemble=weighted_sum /tmp/day6-gcc
+objdump -d -M intel --disassemble=count_above /tmp/day6-gcc
+objdump -d -M intel --disassemble=choose_operation /tmp/day6-gcc
+objdump -s -j .text /tmp/day6-gcc
 ```
 
 The `-d` output places instruction bytes beside disassembled text. Choose one
@@ -956,10 +956,10 @@ Build an unoptimized version:
 
 ```bash
 gcc -std=c17 -Wall -Wextra -Wpedantic -O0 -g \
-  weekly/challenges/week-006-machine-code-lab.c -o /tmp/week6-gcc-O0
+  weekly/week-001/challenges/day-006-machine-code-lab.c -o /tmp/day6-gcc-O0
 
-objdump -d -M intel --disassemble=count_above /tmp/week6-gcc-O0
-objdump -d -M intel --disassemble=count_above /tmp/week6-gcc
+objdump -d -M intel --disassemble=count_above /tmp/day6-gcc-O0
+objdump -d -M intel --disassemble=count_above /tmp/day6-gcc
 ```
 
 Compare:
@@ -978,8 +978,8 @@ constrain the generated program.
 ### Step 6 — Compare GCC and Clang without declaring a winner
 
 ```bash
-objdump -d -M intel --disassemble=weighted_sum /tmp/week6-gcc
-objdump -d -M intel --disassemble=weighted_sum /tmp/week6-clang
+objdump -d -M intel --disassemble=weighted_sum /tmp/day6-gcc
+objdump -d -M intel --disassemble=weighted_sum /tmp/day6-clang
 ```
 
 Record differences. Different output is not evidence that one compiler broke
@@ -990,10 +990,10 @@ result.
 
 ```bash
 gcc -std=c17 -Wall -Wextra -Wpedantic -O2 -S \
-  weekly/challenges/week-006-machine-code-lab.c -o /tmp/week6-gcc.s
+  weekly/week-001/challenges/day-006-machine-code-lab.c -o /tmp/day6-gcc.s
 
 clang -std=c17 -Wall -Wextra -Wpedantic -O2 -S \
-  weekly/challenges/week-006-machine-code-lab.c -o /tmp/week6-clang.s
+  weekly/week-001/challenges/day-006-machine-code-lab.c -o /tmp/day6-clang.s
 ```
 
 These `.s` files contain assembler text. They are not yet ELF machine-code
@@ -1010,7 +1010,7 @@ C source → compiler-generated assembly → assembler → object bytes
 
 Use:
 
-`weekly/challenges/week-006-fictional-isa.py`
+`weekly/week-001/challenges/day-006-fictional-isa.py`
 
 It implements an encoder and decoder for **Cedar-16**, a deliberately tiny
 16-bit teaching ISA. It does not emulate execution; its purpose is to make
@@ -1032,17 +1032,17 @@ instructions for this fictional design.
 ### Explore the tool
 
 ```bash
-python3 weekly/challenges/week-006-fictional-isa.py table
+python3 weekly/week-001/challenges/day-006-fictional-isa.py table
 
-python3 weekly/challenges/week-006-fictional-isa.py \
+python3 weekly/week-001/challenges/day-006-fictional-isa.py \
   encode add r1 r2 r3
 
-python3 weekly/challenges/week-006-fictional-isa.py \
+python3 weekly/week-001/challenges/day-006-fictional-isa.py \
   encode addi r1 r2 -5
 
-python3 weekly/challenges/week-006-fictional-isa.py decode 0x1298
+python3 weekly/week-001/challenges/day-006-fictional-isa.py decode 0x1298
 
-python3 weekly/challenges/week-006-fictional-isa.py repl
+python3 weekly/week-001/challenges/day-006-fictional-isa.py repl
 ```
 
 For each encoding, cover the hexadecimal output and predict it by hand first.
@@ -1083,12 +1083,12 @@ pretend every 16-bit word denotes a normal instruction.
 Predict whether each command succeeds:
 
 ```bash
-python3 weekly/challenges/week-006-fictional-isa.py encode addi r1 r2 31
-python3 weekly/challenges/week-006-fictional-isa.py encode addi r1 r2 32
-python3 weekly/challenges/week-006-fictional-isa.py encode addi r1 r2 -32
-python3 weekly/challenges/week-006-fictional-isa.py encode addi r1 r2 -33
-python3 weekly/challenges/week-006-fictional-isa.py encode jmp 2047
-python3 weekly/challenges/week-006-fictional-isa.py encode jmp 2048
+python3 weekly/week-001/challenges/day-006-fictional-isa.py encode addi r1 r2 31
+python3 weekly/week-001/challenges/day-006-fictional-isa.py encode addi r1 r2 32
+python3 weekly/week-001/challenges/day-006-fictional-isa.py encode addi r1 r2 -32
+python3 weekly/week-001/challenges/day-006-fictional-isa.py encode addi r1 r2 -33
+python3 weekly/week-001/challenges/day-006-fictional-isa.py encode jmp 2047
+python3 weekly/week-001/challenges/day-006-fictional-isa.py encode jmp 2048
 ```
 
 Explain the limits from field width and two's-complement representation,
@@ -1262,11 +1262,11 @@ Add short answers to the notebook:
 7. Why can one x86 instruction become several internal operations?
 8. Why can two correct compilers emit different byte sequences?
 9. Why is an invalid encoding part of ISA design?
-10. Where, exactly, did you observe machine code this week?
+10. Where, exactly, did you observe machine code today?
 
 ---
 
-## Mental model at the end of Week 6
+## Mental model at the end of Day 6
 
 ```text
 software needs stable operations

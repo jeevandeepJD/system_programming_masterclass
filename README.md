@@ -44,15 +44,18 @@ Current curriculum position:
 ├── Systems_Engineering_Masterclass_Curriculum_Tracker.docx
 │                             authoritative curriculum tracker
 ├── weekly/
-│   ├── lessons/              editable weekly Markdown lessons
-│   ├── pdf/                  rendered weekly lesson PDFs
-│   └── challenges/           optional HTML, Python, coding, or lab exercises
+│   ├── week-001/
+│   │   ├── overview.md       weekly cover, roadmap, and mastery goal
+│   │   ├── lessons/          seven editable daily sections
+│   │   └── challenges/       HTML, Python, C, and terminal labs
+│   └── pdf/                  one consolidated PDF per week
 ├── tracker/                  topic-specific exercises and evidence
 ├── source-materials/
 │   ├── README.md             catalog of selected references
 │   └── library/              local third-party library; Git-ignored
 └── bin/
     ├── build_lesson.py       Markdown-to-PDF renderer
+    ├── build_week.py         overview + daily sections → one weekly PDF
     └── week                  weekly lesson/challenge launcher
 ```
 
@@ -67,7 +70,7 @@ Current curriculum position:
 
 ## Weekly use
 
-Build and open the latest lesson:
+Build and open the latest weekly PDF:
 
 ```bash
 cd /path/to/masterclass
@@ -86,11 +89,10 @@ List all available weekly artifacts:
 ./bin/week list
 ```
 
-Build a particular lesson manually:
+Build a particular week manually:
 
 ```bash
-python3 ./bin/build_lesson.py \
-  ./weekly/lessons/week-NNN-lesson-name.md
+python3 ./bin/build_week.py 1
 ```
 
 Select another week:

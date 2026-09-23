@@ -1598,15 +1598,15 @@ organization as accepted until the learner explicitly approves it.
 The user now prefers weekly mastery modules rather than daily artifacts. On
 `experiment/weekly-modules`:
 
-- lessons live in `weekly/lessons/week-NNN-*.md`;
-- PDFs live in `weekly/pdf/week-NNN-*.pdf`;
-- labs live in `weekly/challenges/week-NNN-*`;
+- each module lives under `weekly/week-NNN/` with `overview.md`, seven daily
+  source sections, and challenges;
+- one consolidated PDF lives in `weekly/pdf/week-NNN-*.pdf`;
 - `WEEKLY_PROGRESS.md` stores the exact resume point;
 - `bin/week` builds/opens the latest module, or `MC_WEEK=N bin/week` selects
   another.
 
-The existing accelerated Days 1–7 map directly to tracker Weeks 1–7 and were
-renamed without dropping content. “Week” describes curriculum scope, not a
-deadline; a module may take as long as mastery requires. The `master` and
-`experiment/accelerated-foundations` branches retain their daily comparison
-structures.
+The original accelerated Days 1–7 are daily sections inside Week 1 and are
+rendered into one weekly PDF without dropping content. “Week” describes a
+material package, not a deadline; a module may take as long as mastery
+requires. The `master` and `experiment/accelerated-foundations` branches
+retain their daily comparison structures.

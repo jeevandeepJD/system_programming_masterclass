@@ -1,4 +1,4 @@
-# Week 1 — Foundations: From State to Meaning
+# Day 1 — Foundations: From State to Meaning
 
 **Curriculum alignment:** Stage 1 — Foundations of Computation · Electricity,
 States, Bits, and Information
@@ -14,7 +14,7 @@ States, Bits, and Information
 > numbers, and print a sentence. Yet at its foundation it has only physical
 > things changing state. How can such a machine represent anything at all?
 
-That is the problem for Week 1.
+That is the problem for Day 1.
 
 We will not begin by declaring that computers “speak binary.” That phrase
 hides every interesting engineering decision. We will begin lower down, with
@@ -80,7 +80,7 @@ mechanical motion is slow and difficult to scale
 
 No single person or machine suddenly invented the modern computer. Many
 developments solved different constraints: representation, switching,
-storage, arithmetic, control, and programmability. This week we establish the
+storage, arithmetic, control, and programmability. Today we establish the
 representation layer on which the rest depends.
 
 ---
@@ -524,8 +524,8 @@ Now let the machine expose the abstraction layers. We will create four bytes
 once and then refuse to change them:
 
 ```bash
-printf 'FADE' > /tmp/week1-pattern.bin
-xxd -b /tmp/week1-pattern.bin
+printf 'FADE' > /tmp/day1-pattern.bin
+xxd -b /tmp/day1-pattern.bin
 ```
 
 The bytes are:
@@ -539,7 +539,7 @@ Before each command, predict what kind of interpretation it requests.
 ### View the bytes as numbers, hex, and characters
 
 ```bash
-od -An -tu1 -tx1 -tc /tmp/week1-pattern.bin
+od -An -tu1 -tx1 -tc /tmp/day1-pattern.bin
 ```
 
 The views should correspond to:
@@ -555,7 +555,7 @@ The file has not changed between output rows.
 ### View the bytes as instructions
 
 ```bash
-objdump -D -b binary -m i386:x86-64 /tmp/week1-pattern.bin
+objdump -D -b binary -m i386:x86-64 /tmp/day1-pattern.bin
 ```
 
 The decoder applies the x86-64 instruction encoding. These bytes were not
@@ -567,7 +567,7 @@ code rather than text.
 
 ```bash
 python3 - <<'PY'
-for byte in open('/tmp/week1-pattern.bin', 'rb').read():
+for byte in open('/tmp/day1-pattern.bin', 'rb').read():
     row = ' '.join('#' if (byte >> bit) & 1 else '.'
                    for bit in range(7, -1, -1))
     print(row)
@@ -661,16 +661,16 @@ incorrect grouping, or confusion between a pattern and its interpretation.
 Create one byte:
 
 ```bash
-printf '\x41' > /tmp/week1-check.bin
+printf '\x41' > /tmp/day1-check.bin
 ```
 
 Write your predictions before running:
 
 ```bash
-xxd -b /tmp/week1-check.bin
-od -An -tu1 /tmp/week1-check.bin
-cat /tmp/week1-check.bin
-objdump -D -b binary -m i386:x86-64 /tmp/week1-check.bin
+xxd -b /tmp/day1-check.bin
+od -An -tu1 /tmp/day1-check.bin
+cat /tmp/day1-check.bin
+objdump -D -b binary -m i386:x86-64 /tmp/day1-check.bin
 ```
 
 Then answer:
@@ -792,7 +792,7 @@ according to circuits and encoded instructions. The remarkable behavior of
 applications, operating systems, and learning systems emerges from enormous
 compositions of those simple, controlled transitions.
 
-The point of Week 1 is therefore larger than learning binary conversion. We
+The point of Day 1 is therefore larger than learning binary conversion. We
 have established how a noisy physical world can support stable symbols and
 how stable symbols can carry different meanings. Next, we can ask how a
 circuit transforms those symbols according to a rule.

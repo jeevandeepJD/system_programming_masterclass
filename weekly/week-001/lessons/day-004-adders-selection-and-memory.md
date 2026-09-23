@@ -1,4 +1,4 @@
-# Week 4 — Adders, Selection, and Memory
+# Day 4 — Adders, Selection, and Memory
 
 **Target time:** approximately 3 hours
 
@@ -10,7 +10,7 @@
 > things: calculate a result, choose which result matters, and keep that result
 > after the inputs move on.
 
-That is this week's path:
+That is today's path:
 
 ```text
 gates → adder → selector → stored state → register-transfer datapath
@@ -651,7 +651,7 @@ the next bridge.
 
 Open:
 
-`weekly/challenges/week-004-digital-circuits-lab.html`
+`weekly/week-001/challenges/day-004-digital-circuits-lab.html`
 
 Use it in this order:
 

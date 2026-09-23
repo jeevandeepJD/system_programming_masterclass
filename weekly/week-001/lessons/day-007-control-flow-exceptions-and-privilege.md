@@ -1,4 +1,4 @@
-# Week 7 — Control Flow, Exceptions, and Privilege
+# Day 7 — Control Flow, Exceptions, and Privilege
 
 **Target time:** approximately 3 hours
 
@@ -11,7 +11,7 @@ diagram, explanation, and review
 > Who is allowed to change what runs next—and how can the machine enter the
 > kernel without trusting the program to choose an arbitrary kernel address?
 
-That is this week's problem. A useful computer must do more than calculate the
+That is today's problem. A useful computer must do more than calculate the
 next sequential result. It must choose, repeat, call, react, and cross a
 protection boundary under controlled conditions.
 
@@ -213,7 +213,7 @@ f:      ... work ...
 
 This is a preview, not yet a complete ABI lesson. Arguments, preserved
 registers, stack alignment, frames, and security hardening come later. For
-this week, notice the contrast:
+today, notice the contrast:
 
 - branches choose among program-specified targets;
 - calls preserve an ordinary program return point;
@@ -538,7 +538,7 @@ Use the provided lab:
 cd /home/jd/Desktop/masterclass
 
 gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O0 -g \
-  weekly/challenges/week-007-exception-flow-lab.c \
+  weekly/week-001/challenges/day-007-exception-flow-lab.c \
   -o /tmp/exception-flow-lab
 
 /tmp/exception-flow-lab normal
@@ -564,7 +564,7 @@ Then compare optimization:
 
 ```bash
 gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O2 -g \
-  weekly/challenges/week-007-exception-flow-lab.c \
+  weekly/week-001/challenges/day-007-exception-flow-lab.c \
   -o /tmp/exception-flow-lab-O2
 objdump -d -Mintel /tmp/exception-flow-lab-O2 | less
 ```

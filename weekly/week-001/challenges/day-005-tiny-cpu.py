@@ -2,8 +2,8 @@
 """A cycle-visible simulator for the Tiny-8 teaching CPU.
 
 Run:
-    python3 weekly/challenges/week-005-tiny-cpu.py
-    python3 weekly/challenges/week-005-tiny-cpu.py --step
+    python3 weekly/week-001/challenges/day-005-tiny-cpu.py
+    python3 weekly/week-001/challenges/day-005-tiny-cpu.py --step
 
 This models state transitions, not transistor propagation time.  The
 ``combinational`` method calculates the values that would settle between
