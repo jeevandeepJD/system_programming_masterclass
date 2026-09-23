@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Day 10 — Logic Gate Lab</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #071019;
+    --panel: #0e1c29;
+    --panel2: #132638;
+    --line: #29465d;
+    --text: #edf5fb;
+    --muted: #9bb0c2;
+    --cyan: #54d7e8;
+    --blue: #72a9ff;
+    --green: #5ce0a0;
+    --amber: #ffc96b;
+    --red: #ff788b;
+    --off: #3b5265;
+    --shadow: 0 22px 55px #0008;
+    --mono: "DejaVu Sans Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at 12% 0%, #113550 0, transparent 30rem),
+      radial-gradient(circle at 90% 18%, #222b4c 0, transparent 32rem),
+      var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.55;
+  }
+  button, select { font: inherit; }
+  button, select {
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text);
+    background: #14283a;
+  }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--cyan); }
+  button:focus-visible, select:focus-visible, a:focus-visible {
+    outline: 3px solid #54d7e877;
+    outline-offset: 3px;
+  }
+  button:disabled { cursor: default; opacity: .72; }
+  .skip {
+    position: fixed; left: 12px; top: -80px; z-index: 100;
+    padding: 10px 14px; border-radius: 8px; color: #051319; background: var(--cyan);
+  }
+  .skip:focus { top: 12px; }
+  .topbar {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px max(16px, calc((100vw - 1120px) / 2));
+    border-bottom: 1px solid #29465dcc;
+    background: #071019ed;
+    backdrop-filter: blur(14px);
+  }
+  .brand { min-width: 200px; }
+  .brand strong { display: block; font-size: 14px; }
+  .brand span { display: block; color: var(--muted); font-size: 11px; }
+  .progress { flex: 1; height: 7px; overflow: hidden; border-radius: 99px; background: #1c3040; }
+  .progress > i {
+    display: block; width: 0; height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+    transition: width .2s;
+  }
+  .score { min-width: 96px; text-align: right; color: var(--green); font: 700 12px var(--mono); }
+  main { width: min(1120px, 100%); margin: auto; padding: 30px 18px 80px; }
+  .hero, section {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: linear-gradient(145deg, #112435f2, #0b1824f5);
+    box-shadow: var(--shadow);
+  }
+  .hero {
+    display: grid; grid-template-columns: 1.35fr .65fr; gap: 24px;
+    padding: 30px; margin-bottom: 20px;
+  }
+  .eyebrow {
+    color: var(--cyan); font: 700 11px var(--mono);
+    letter-spacing: .14em; text-transform: uppercase;
+  }
+  h1 { margin: 8px 0 10px; font-size: clamp(28px, 5vw, 46px); line-height: 1.07; letter-spacing: -.035em; }
+  h2 { margin: 0 0 5px; font-size: 21px; letter-spacing: -.02em; }
+  h3 { margin: 0 0 8px; font-size: 16px; }
+  p { margin: .5em 0; }
+  .hero p, .sub, .muted { color: var(--muted); }
+  .route { display: grid; align-content: center; gap: 10px; }
+  .route div { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); font-size: 13px; }
+  .route b {
+    display: grid; place-items: center; flex: 0 0 26px; height: 26px;
+    border-radius: 50%; color: #06141b; background: var(--cyan); font: 800 12px var(--mono);
+  }
+  section { padding: 24px; margin: 20px 0; }
+  .section-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; margin-bottom: 20px;
+  }
+  .badge {
+    flex: 0 0 auto; padding: 5px 10px; border: 1px solid var(--line);
+    border-radius: 99px; color: var(--amber); background: #2b2518;
+    font: 700 10px var(--mono); letter-spacing: .08em; text-transform: uppercase;
+  }
+  .grid2 { display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; }
+  .card {
+    border: 1px solid var(--line); border-radius: 14px;
+    background: #091722; overflow: hidden;
+  }
+  .pad { padding: 19px; }
+  .gate-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .tab { min-height: 38px; padding: 7px 13px; font: 700 12px var(--mono); }
+  .tab[aria-selected="true"] { color: #c8fbff; border-color: var(--cyan); background: #164252; }
+  .circuit {
+    min-height: 285px; display: grid; align-content: center;
+    padding: 24px 18px;
+  }
+  .signal {
+    display: grid; grid-template-columns: 76px 1fr 104px 1fr 68px;
+    align-items: center;
+  }
+  .inputs { display: grid; gap: 24px; }
+  .input { text-align: center; }
+  .label { color: var(--muted); font: 700 10px var(--mono); letter-spacing: .06em; }
+  .toggle {
+    position: relative; width: 62px; min-height: 34px; height: 34px; padding: 3px;
+    border-radius: 20px; background: #172b3c;
+  }
+  .toggle::after {
+    content: ""; display: block; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--off); transition: transform .16s, background .16s, box-shadow .16s;
+  }
+  .toggle[aria-pressed="true"]::after {
+    transform: translateX(28px); background: var(--cyan); box-shadow: 0 0 18px #54d7e899;
+  }
+  .bitval { margin-top: 3px; font: 800 14px var(--mono); }
+  .wire { height: 3px; background: var(--off); transition: .15s; }
+  .wire.hot { background: var(--cyan); box-shadow: 0 0 10px #54d7e888; }
+  .gate {
+    display: grid; place-items: center; height: 82px;
+    border: 2px solid var(--blue); border-radius: 12px 38px 38px 12px;
+    background: #102b44; font: 800 13px var(--mono);
+  }
+  .out {
+    display: grid; place-items: center; width: 58px; height: 58px; margin: auto;
+    border: 2px solid var(--off); border-radius: 50%; color: var(--muted);
+    background: #101e29; font: 800 22px var(--mono); transition: .15s;
+  }
+  .out.on { color: #052017; border-color: var(--green); background: var(--green); box-shadow: 0 0 24px #5ce0a088; }
+  .gate-note { margin: 18px 0 0; text-align: center; color: var(--muted); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); }
+  th, td { padding: 10px; text-align: center; border-bottom: 1px solid #223c50; }
+  th { color: var(--muted); font-size: 10px; }
+  td { font-weight: 700; }
+  tr.active td { color: #d9fdff; background: #153a49; }
+  tr:last-child td { border-bottom: 0; }
+  .table-title { margin-bottom: 9px; color: var(--muted); font: 700 10px var(--mono); letter-spacing: .08em; }
+  .expression-grid { display: grid; grid-template-columns: .72fr 1.28fr; gap: 18px; }
+  .field { display: grid; gap: 6px; margin-bottom: 14px; }
+  .field label { color: var(--muted); font: 700 10px var(--mono); letter-spacing: .07em; text-transform: uppercase; }
+  select { width: 100%; padding: 8px 10px; }
+  .bits-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .bit-button { padding: 8px 14px; font: 700 12px var(--mono); }
+  .bit-button[aria-pressed="true"] { color: #052017; border-color: var(--green); background: var(--green); }
+  .formula {
+    margin: 14px 0; padding: 16px; border: 1px solid #345875; border-radius: 12px;
+    color: var(--cyan); background: #08131d; text-align: center;
+    font: 700 clamp(14px, 2.8vw, 19px) var(--mono);
+  }
+  .steps { color: var(--muted); text-align: center; font-size: 13px; }
+  .count-box {
+    margin-top: 14px; padding: 12px; border-left: 3px solid var(--amber);
+    color: var(--muted); background: #251f14; font-size: 12px;
+  }
+  .concepts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .concept {
+    padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #0b1925;
+  }
+  .concept code { display: block; margin-top: 9px; color: var(--cyan); font-family: var(--mono); font-size: 12px; }
+  .concept p { color: var(--muted); font-size: 13px; }
+  .challenge { max-width: 780px; margin: auto; }
+  .challenge-meta {
+    display: flex; justify-content: space-between; gap: 12px;
+    color: var(--muted); font: 700 11px var(--mono);
+  }
+  .kind { color: var(--amber); }
+  .prompt {
+    display: grid; place-items: center; min-height: 110px;
+    margin: 18px 0; padding: 20px; border: 1px solid var(--line);
+    border-radius: 12px; background: #08151f; text-align: center;
+    font: 700 clamp(15px, 3vw, 21px) var(--mono);
+  }
+  .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .answer { padding: 12px; font: 700 13px var(--mono); }
+  .answer.correct { border-color: var(--green); background: #15392a; }
+  .answer.wrong { border-color: var(--red); background: #3a1923; }
+  .feedback {
+    min-height: 68px; margin-top: 14px; padding: 13px 15px;
+    border: 1px solid transparent; border-radius: 10px;
+    color: var(--muted); background: #091620; font-size: 13px;
+  }
+  .feedback.good { color: #ceffe3; border-color: #2e7655; background: #102c21; }
+  .feedback.bad { color: #ffd5db; border-color: #824153; background: #301720; }
+  .next { display: flex; justify-content: flex-end; margin-top: 12px; }
+  .primary { padding: 9px 18px; border-color: var(--cyan); background: #174353; }
+  .hidden { display: none !important; }
+  .results { text-align: center; padding: 12px 0; }
+  .result-ring {
+    display: grid; place-items: center; width: 132px; height: 132px; margin: 0 auto 16px;
+    border: 7px solid var(--cyan); border-radius: 50%; background: #102838;
+    font: 800 24px var(--mono);
+  }
+  .evidence { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .evidence div {
+    padding: 14px; border: 1px solid var(--line); border-radius: 10px;
+    color: var(--muted); background: #0b1924; font-size: 12px;
+  }
+  .evidence strong { display: block; margin-bottom: 4px; color: var(--amber); }
+  blockquote {
+    margin: 16px 0; padding: 16px 20px; border-left: 3px solid var(--cyan);
+    color: #d9faff; background: #091722;
+  }
+  code { color: var(--amber); font-family: var(--mono); }
+  @media (max-width: 820px) {
+    .hero, .grid2, .expression-grid { grid-template-columns: 1fr; }
+    .concepts { grid-template-columns: 1fr; }
+    .evidence { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    main { padding-inline: 12px; }
+    section, .hero { padding: 18px; border-radius: 14px; }
+    .brand span { display: none; }
+    .topbar { gap: 8px; }
+    .signal { grid-template-columns: 68px 1fr 86px 1fr 58px; }
+    .answers, .evidence { grid-template-columns: 1fr; }
+    .section-head { display: block; }
+    .badge { display: inline-block; margin-top: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to lab</a>
+
+<header class="topbar">
+  <div class="brand">
+    <strong>Logic Gate Lab</strong>
+    <span>predict → observe → explain → build</span>
+  </div>
+  <div class="progress" aria-label="Challenge progress"><i id="progress"></i></div>
+  <div class="score" aria-live="polite"><span id="score">0</span> / 12</div>
+</header>
+
+<main id="main">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Offline mastery lab</div>
+      <h1>Compose gates into useful machinery.</h1>
+      <p>
+        Explore settled gate behavior, trace expressions, then predict De Morgan
+        equivalence, NAND-only constructions, half-adder outputs, and small
+        combinational blocks. Explanations stay hidden until you attempt each question.
+      </p>
+    </div>
+    <div class="route" aria-label="Lab method">
+      <div><b>1</b><span>Say your prediction before touching a control.</span></div>
+      <div><b>2</b><span>Observe the row and intermediate signals.</span></div>
+      <div><b>3</b><span>Explain the physical mapping, not just the gate name.</span></div>
+    </div>
+  </div>
+
+  <section aria-labelledby="gate-title">
+    <div class="section-head">
+      <div>
+        <h2 id="gate-title">Gate bench</h2>
+        <p class="sub">Toggle inputs and watch the complete truth table follow.</p>
+      </div>
+      <span class="badge">explore</span>
+    </div>
+    <div class="grid2">
+      <div class="card circuit">
+        <div id="gateTabs" class="gate-tabs" role="tablist" aria-label="Choose a gate"></div>
+        <div class="signal">
+          <div class="inputs">
+            <div class="input">
+              <div class="label">INPUT A</div>
+              <button class="toggle" id="toggleA" type="button" aria-label="Toggle input A" aria-pressed="false"></button>
+              <div class="bitval" id="valueA">0</div>
+            </div>
+            <div class="input" id="inputBWrap">
+              <div class="label">INPUT B</div>
+              <button class="toggle" id="toggleB" type="button" aria-label="Toggle input B" aria-pressed="false"></button>
+              <div class="bitval" id="valueB">0</div>
+            </div>
+          </div>
+          <div class="wire" id="wireIn"></div>
+          <div class="gate" id="gateShape">AND</div>
+          <div class="wire" id="wireOut"></div>
+          <div>
+            <div class="label" style="text-align:center">Y</div>
+            <div class="out" id="output" aria-live="polite">0</div>
+          </div>
+        </div>
+        <p class="gate-note" id="gateNote"></p>
+      </div>
+      <div class="card pad">
+        <div class="table-title">LIVE TRUTH TABLE</div>
+        <table aria-label="Selected gate truth table">
+          <thead id="truthHead"></thead>
+          <tbody id="truthBody"></tbody>
+        </table>
+        <div class="count-box" id="physicalNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="expr-title">
+    <div class="section-head">
+      <div>
+        <h2 id="expr-title">Expression and truth-table explorer</h2>
+        <p class="sub">Change an expression, toggle inputs, and trace its intermediate values.</p>
+      </div>
+      <span class="badge">trace</span>
+    </div>
+    <div class="expression-grid">
+      <div class="card pad">
+        <div class="field">
+          <label for="expressionSelect">Circuit</label>
+          <select id="expressionSelect">
+            <option value="mux">2-to-1 mux</option>
+            <option value="combo">Composed expression</option>
+            <option value="equal">One-bit comparator</option>
+            <option value="demorgan1">De Morgan: not both</option>
+            <option value="nandOr">NAND-only OR</option>
+          </select>
+        </div>
+        <div class="bits-row" aria-label="Expression inputs">
+          <button class="bit-button" type="button" data-bit="A" aria-pressed="false">A = 0</button>
+          <button class="bit-button" type="button" data-bit="B" aria-pressed="false">B = 0</button>
+          <button class="bit-button" type="button" data-bit="C" aria-pressed="false">C = 0</button>
+        </div>
+        <div class="formula" id="formula"></div>
+        <div class="steps" id="steps" aria-live="polite"></div>
+        <div class="count-box" id="rowCount"></div>
+      </div>
+      <div class="card pad" style="overflow:auto">
+        <div class="table-title">ALL REACHABLE INPUT ROWS</div>
+        <table aria-label="Expression truth table">
+          <thead id="exprHead"></thead>
+          <tbody id="exprBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="blocks-title">
+    <div class="section-head">
+      <div>
+        <h2 id="blocks-title">Three reusable circuit ideas</h2>
+        <p class="sub">These are compositions, not new kinds of physics.</p>
+      </div>
+      <span class="badge">connect</span>
+    </div>
+    <div class="concepts">
+      <article class="concept">
+        <h3>Decoder</h3>
+        <p>An encoded input activates one output line. Two input bits can select one of four lines.</p>
+        <code>D2 = A ∧ ¬B</code>
+      </article>
+      <article class="concept">
+        <h3>Multiplexer</h3>
+        <p>A select input decides which candidate data input reaches the output.</p>
+        <code>Y = (¬S∧D0) ∨ (S∧D1)</code>
+      </article>
+      <article class="concept">
+        <h3>Comparator</h3>
+        <p>Equality asks whether corresponding bits match. XOR detects difference.</p>
+        <code>EQ = ¬(A ⊕ B)</code>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="challenge-title">
+    <div class="section-head">
+      <div>
+        <h2 id="challenge-title">Prediction challenge</h2>
+        <p class="sub">Every answer and explanation stays hidden until you choose.</p>
+      </div>
+      <span class="badge">12 attempts</span>
+    </div>
+    <div class="challenge card pad" id="challengeCard">
+      <div class="challenge-meta">
+        <span id="round">ROUND 1 OF 12</span>
+        <span class="kind" id="kind">DE MORGAN</span>
+      </div>
+      <div class="prompt" id="prompt"></div>
+      <div class="answers" id="answers"></div>
+      <div class="feedback" id="feedback" role="status" aria-live="polite">
+        Commit to a prediction. The explanation appears only after your attempt.
+      </div>
+      <div class="next">
+        <button class="primary hidden" type="button" id="next">Next prediction</button>
+      </div>
+    </div>
+    <div class="challenge card pad hidden" id="results">
+      <div class="results">
+        <div class="result-ring" id="resultScore">0/12</div>
+        <h3 id="resultTitle">Prediction set complete</h3>
+        <p class="muted" id="resultText"></p>
+        <button class="primary" type="button" id="retry">Try a fresh set</button>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="mastery-title">
+    <div class="section-head">
+      <div>
+        <h2 id="mastery-title">Close the loop aloud</h2>
+        <p class="sub">A score tests predictions. Mastery needs a causal explanation.</p>
+      </div>
+      <span class="badge">evidence</span>
+    </div>
+    <blockquote>
+      How can a physical circuit implement a Boolean function without understanding it?
+    </blockquote>
+    <div class="evidence">
+      <div><strong>Explain</strong>Connect voltage ranges, local transistor response, topology, and truth-table behavior.</div>
+      <div><strong>Draw</strong>Draw a mux, decoder, half-adder, and one unequal-delay path that could glitch.</div>
+      <div><strong>Observe</strong>Test complete input sets, not one convenient example.</div>
+      <div><strong>Build</strong>Construct mux selection, one-bit equality, and NAND-only OR.</div>
+    </div>
+    <p class="muted" style="margin-top:16px">
+      Final check: explain why returning a pure combinational circuit to the same inputs
+      must return it to the same settled outputs—and why that means it cannot remember.
+    </p>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const gates = {
+  NOT: {
+    unary: true,
+    fn: a => 1 - a,
+    rule: "NOT produces the opposite state.",
+    physical: "Complementary pull-up and pull-down paths drive the output toward the opposite logical rail."
+  },
+  AND: {
+    fn: (a, b) => a & b,
+    rule: "AND is 1 only when both inputs are 1.",
+    physical: "Series-contact intuition: either open condition breaks the only conducting path."
+  },
+  OR: {
+    fn: (a, b) => a | b,
+    rule: "OR is 1 when at least one input is 1.",
+    physical: "Parallel-path intuition: either active branch can complete a path."
+  },
+  XOR: {
+    fn: (a, b) => a ^ b,
+    rule: "XOR is 1 when the inputs differ.",
+    physical: "Two mutually exclusive cases—A without B, or B without A—are joined together."
+  },
+  NAND: {
+    fn: (a, b) => 1 - (a & b),
+    rule: "NAND is 0 only when both inputs are 1.",
+    physical: "The network implements AND-like conduction and inverts the driven output."
+  },
+  NOR: {
+    fn: (a, b) => 1 - (a | b),
+    rule: "NOR is 1 only when both inputs are 0.",
+    physical: "Either active input can produce the condition that drives the output LOW."
+  }
+};
+
+let gateName = "AND";
+let gateA = 0;
+let gateB = 0;
+const tabs = document.getElementById("gateTabs");
+
+Object.keys(gates).forEach(name => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "tab";
+  button.textContent = name;
+  button.setAttribute("role", "tab");
+  button.setAttribute("aria-selected", "false");
+  button.addEventListener("click", () => {
+    gateName = name;
+    renderGate();
+  });
+  tabs.appendChild(button);
+});
+
+document.getElementById("toggleA").addEventListener("click", () => {
+  gateA ^= 1;
+  renderGate();
+});
+document.getElementById("toggleB").addEventListener("click", () => {
+  gateB ^= 1;
+  renderGate();
+});
+
+function renderGate() {
+  const def = gates[gateName];
+  const y = def.unary ? def.fn(gateA) : def.fn(gateA, gateB);
+
+  tabs.querySelectorAll("button").forEach(button => {
+    const selected = button.textContent === gateName;
+    button.setAttribute("aria-selected", String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
+
+  const toggleA = document.getElementById("toggleA");
+  const toggleB = document.getElementById("toggleB");
+  toggleA.setAttribute("aria-pressed", String(Boolean(gateA)));
+  toggleB.setAttribute("aria-pressed", String(Boolean(gateB)));
+  document.getElementById("valueA").textContent = gateA;
+  document.getElementById("valueB").textContent = gateB;
+  document.getElementById("inputBWrap").classList.toggle("hidden", Boolean(def.unary));
+  document.getElementById("gateShape").textContent = gateName;
+  document.getElementById("wireIn").classList.toggle("hot", Boolean(gateA || (!def.unary && gateB)));
+  document.getElementById("wireOut").classList.toggle("hot", Boolean(y));
+  const output = document.getElementById("output");
+  output.textContent = y;
+  output.classList.toggle("on", Boolean(y));
+  document.getElementById("gateNote").textContent = `${def.rule} Current output: Y = ${y}.`;
+  document.getElementById("physicalNote").textContent = def.physical;
+
+  document.getElementById("truthHead").innerHTML = def.unary
+    ? "<tr><th>A</th><th>Y</th></tr>"
+    : "<tr><th>A</th><th>B</th><th>Y</th></tr>";
+  const body = document.getElementById("truthBody");
+  body.innerHTML = "";
+  const rows = def.unary ? [[0], [1]] : [[0,0], [0,1], [1,0], [1,1]];
+  rows.forEach(row => {
+    const result = def.unary ? def.fn(row[0]) : def.fn(row[0], row[1]);
+    const active = def.unary
+      ? row[0] === gateA
+      : row[0] === gateA && row[1] === gateB;
+    const tr = document.createElement("tr");
+    if (active) tr.className = "active";
+    tr.innerHTML = def.unary
+      ? `<td>${row[0]}</td><td>${result}</td>`
+      : `<td>${row[0]}</td><td>${row[1]}</td><td>${result}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+const expressionDefs = {
+  mux: {
+    inputs: ["A", "B", "C"],
+    formula: "Y = (¬A ∧ C) ∨ (A ∧ B)",
+    columns: ["¬A", "¬A∧C", "A∧B", "Y"],
+    calc: (a,b,c) => {
+      const na = 1-a, left = na & c, right = a & b;
+      return { values:[na,left,right,left|right], text:`¬A=${na}; left path=${left}; right path=${right}; Y=${left|right}` };
+    }
+  },
+  combo: {
+    inputs: ["A", "B", "C"],
+    formula: "Y = (A ⊕ B) ∧ ¬C",
+    columns: ["A⊕B", "¬C", "Y"],
+    calc: (a,b,c) => {
+      const x = a^b, nc = 1-c;
+      return { values:[x,nc,x&nc], text:`A⊕B=${x}; ¬C=${nc}; Y=${x&nc}` };
+    }
+  },
+  equal: {
+    inputs: ["A", "B"],
+    formula: "EQ = ¬(A ⊕ B)",
+    columns: ["A⊕B", "EQ"],
+    calc: (a,b) => {
+      const x = a^b;
+      return { values:[x,1-x], text:`difference=${x}; invert difference → EQ=${1-x}` };
+    }
+  },
+  demorgan1: {
+    inputs: ["A", "B"],
+    formula: "¬(A ∧ B) = ¬A ∨ ¬B",
+    columns: ["¬(A∧B)", "¬A∨¬B", "match"],
+    calc: (a,b) => {
+      const left=1-(a&b), right=(1-a)|(1-b);
+      return { values:[left,right,left===right?"✓":"✗"], text:`left=${left}; right=${right}; both structures match` };
+    }
+  },
+  nandOr: {
+    inputs: ["A", "B"],
+    formula: "A ∨ B = NAND(NAND(A,A), NAND(B,B))",
+    columns: ["NAND(A,A)", "NAND(B,B)", "Y"],
+    calc: (a,b) => {
+      const na=1-(a&a), nb=1-(b&b), y=1-(na&nb);
+      return { values:[na,nb,y], text:`NAND inversions=${na},${nb}; final NAND → Y=${y}` };
+    }
+  }
+};
+
+const exprBits = { A:0, B:0, C:0 };
+document.querySelectorAll(".bit-button").forEach(button => {
+  button.addEventListener("click", () => {
+    exprBits[button.dataset.bit] ^= 1;
+    renderExpression();
+  });
+});
+document.getElementById("expressionSelect").addEventListener("change", renderExpression);
+
+function combos(count) {
+  return Array.from({length: 2 ** count}, (_, n) =>
+    Array.from({length: count}, (_, i) => (n >> (count - 1 - i)) & 1)
+  );
+}
+
+function renderExpression() {
+  const def = expressionDefs[document.getElementById("expressionSelect").value];
+  document.querySelectorAll(".bit-button").forEach(button => {
+    const used = def.inputs.includes(button.dataset.bit);
+    button.classList.toggle("hidden", !used);
+    const value = exprBits[button.dataset.bit];
+    button.textContent = `${button.dataset.bit} = ${value}`;
+    button.setAttribute("aria-pressed", String(Boolean(value)));
+  });
+  const args = def.inputs.map(name => exprBits[name]);
+  const current = def.calc(...args);
+  document.getElementById("formula").textContent = def.formula;
+  document.getElementById("steps").textContent = current.text;
+  document.getElementById("rowCount").textContent =
+    `${def.inputs.length} independent inputs → 2^${def.inputs.length} = ${2 ** def.inputs.length} truth-table rows.`;
+
+  document.getElementById("exprHead").innerHTML =
+    `<tr>${[...def.inputs, ...def.columns].map(x => `<th>${x}</th>`).join("")}</tr>`;
+  const body = document.getElementById("exprBody");
+  body.innerHTML = "";
+  combos(def.inputs.length).forEach(row => {
+    const result = def.calc(...row);
+    const tr = document.createElement("tr");
+    if (row.every((value, i) => value === args[i])) tr.className = "active";
+    tr.innerHTML = [...row, ...result.values].map(x => `<td>${x}</td>`).join("");
+    body.appendChild(tr);
+  });
+}
+
+const questionBank = [
+  {
+    kind:"DE MORGAN", prompt:"For A=1 and B=0, what do both ¬(A∧B) and ¬A∨¬B produce?",
+    choices:["0","1","They differ","No stable output"], answer:1,
+    why:"A∧B is 0, so its negation is 1. Also ¬A∨¬B is 0∨1, which is 1."
+  },
+  {
+    kind:"DE MORGAN", prompt:"Which expression is equivalent to ¬(A∨B)?",
+    choices:["¬A∨¬B","¬A∧¬B","A∧B","A⊕B"], answer:1,
+    why:"To move inversion through OR, invert each input and change OR to AND: ¬(A∨B)=¬A∧¬B."
+  },
+  {
+    kind:"UNIVERSAL GATES", prompt:"What does NAND(A,A) implement?",
+    choices:["A","¬A","A∧A","Always 1"], answer:1,
+    why:"A∧A equals A. NAND inverts that result, producing ¬A."
+  },
+  {
+    kind:"UNIVERSAL GATES", prompt:"P=NAND(A,B). What does NAND(P,P) implement?",
+    choices:["A∨B","A⊕B","A∧B","¬A∧¬B"], answer:2,
+    why:"P is ¬(A∧B). Tying P to both inputs inverts P, restoring A∧B."
+  },
+  {
+    kind:"UNIVERSAL GATES", prompt:"NAND(NAND(A,A), NAND(B,B)) is equivalent to:",
+    choices:["A∨B","A∧B","A⊕B","¬(A∨B)"], answer:0,
+    why:"The inner NANDs form ¬A and ¬B. NAND(¬A,¬B)=¬(¬A∧¬B)=A∨B."
+  },
+  {
+    kind:"HALF-ADDER", prompt:"Predict the half-adder outputs for A=1, B=1.",
+    choices:["Sum=0, Carry=0","Sum=0, Carry=1","Sum=1, Carry=0","Sum=1, Carry=1"], answer:1,
+    why:"Binary 1+1 is 10. Sum=A XOR B=0; Carry=A AND B=1."
+  },
+  {
+    kind:"HALF-ADDER", prompt:"Predict the half-adder outputs for A=0, B=1.",
+    choices:["Sum=0, Carry=0","Sum=0, Carry=1","Sum=1, Carry=0","Sum=1, Carry=1"], answer:2,
+    why:"Binary 0+1 is 01. The inputs differ, so Sum=1; both are not 1, so Carry=0."
+  },
+  {
+    kind:"HALF-ADDER", prompt:"Why is the carry output A AND B?",
+    choices:["A carry occurs when inputs differ","A carry occurs only when both bits are 1","AND remembers the previous bit","AND is faster than XOR"], answer:1,
+    why:"Only 1+1 reaches decimal 2, whose two-bit binary representation is 10."
+  },
+  {
+    kind:"COMBINATIONAL", prompt:"A pure combinational circuit returns to an earlier input pattern. Its settled output must:",
+    choices:["Remember the intervening event","Return to the same function value","Toggle once","Depend on the clock"], answer:1,
+    why:"Its output is a function only of current inputs. Same current inputs imply the same settled outputs."
+  },
+  {
+    kind:"TRUTH TABLE", prompt:"How many rows completely specify a circuit with five independent Boolean inputs?",
+    choices:["10","16","25","32"], answer:3,
+    why:"Each input doubles the combinations. Five inputs produce 2^5=32 rows."
+  },
+  {
+    kind:"MULTIPLEXER", prompt:"Y=(¬S∧D0)∨(S∧D1). With S=0, D0=1, D1=0, predict Y.",
+    choices:["0","1","Previous Y","Undefined"], answer:1,
+    why:"S=0 enables the D0 term and disables the D1 term, so Y follows D0=1."
+  },
+  {
+    kind:"DECODER", prompt:"For a 2-to-4 decoder with A=1 and B=0, which active-high output is selected?",
+    choices:["D0=¬A∧¬B","D1=¬A∧B","D2=A∧¬B","D3=A∧B"], answer:2,
+    why:"The input code 10 matches A∧¬B, so D2 is the one active output."
+  },
+  {
+    kind:"COMPARATOR", prompt:"For one-bit inputs A=1 and B=1, EQ=¬(A⊕B) produces:",
+    choices:["0","1","A glitch forever","No defined value"], answer:1,
+    why:"Equal inputs make XOR 0. Inverting difference produces EQ=1."
+  },
+  {
+    kind:"TIMING PREVIEW", prompt:"A truth table tells you:",
+    choices:["Only transistor count","The settled output for every input pattern","The exact propagation delay","Whether every transition is glitch-free"], answer:1,
+    why:"Truth tables specify settled Boolean behavior. Delay and hazards require timing and structural analysis."
+  },
+  {
+    kind:"PHYSICAL MEANING", prompt:"Where does the Boolean function physically come from?",
+    choices:["A gate understands the expression","Network topology produces the input/output mapping","The truth table is stored in every transistor","Software tells electrons what the bits mean"], answer:1,
+    why:"Devices respond locally to voltages. Their arrangement constrains conducting paths and therefore the output mapping."
+  }
+];
+
+let challenge = [];
+let index = 0;
+let points = 0;
+let attempted = false;
+
+function shuffle(items) {
+  const copy = [...items];
+  for (let i=copy.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [copy[i],copy[j]] = [copy[j],copy[i]];
+  }
+  return copy;
+}
+
+function startChallenge() {
+  challenge = shuffle(questionBank).slice(0,12);
+  index = 0;
+  points = 0;
+  document.getElementById("score").textContent = "0";
+  document.getElementById("challengeCard").classList.remove("hidden");
+  document.getElementById("results").classList.add("hidden");
+  showQuestion();
+}
+
+function showQuestion() {
+  attempted = false;
+  const item = challenge[index];
+  document.getElementById("round").textContent = `ROUND ${index+1} OF 12`;
+  document.getElementById("kind").textContent = item.kind;
+  document.getElementById("prompt").textContent = item.prompt;
+  document.getElementById("progress").style.width = `${index/12*100}%`;
+  const feedback = document.getElementById("feedback");
+  feedback.className = "feedback";
+  feedback.textContent = "Commit to a prediction. The explanation appears only after your attempt.";
+  document.getElementById("next").classList.add("hidden");
+  const answers = document.getElementById("answers");
+  answers.innerHTML = "";
+  item.choices.forEach((choice, choiceIndex) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "answer";
+    button.textContent = choice;
+    button.addEventListener("click", () => answerQuestion(choiceIndex, button));
+    answers.appendChild(button);
+  });
+}
+
+function answerQuestion(choiceIndex, button) {
+  if (attempted) return;
+  attempted = true;
+  const item = challenge[index];
+  const correct = choiceIndex === item.answer;
+  if (correct) points++;
+  document.getElementById("score").textContent = points;
+  document.getElementById("answers").querySelectorAll("button").forEach((candidate, i) => {
+    candidate.disabled = true;
+    if (i === item.answer) candidate.classList.add("correct");
+  });
+  if (!correct) button.classList.add("wrong");
+  const feedback = document.getElementById("feedback");
+  feedback.className = `feedback ${correct ? "good" : "bad"}`;
+  feedback.textContent = `${correct ? "Correct." : `Not this time. The answer is “${item.choices[item.answer]}.”`} ${item.why}`;
+  const next = document.getElementById("next");
+  next.textContent = index === 11 ? "See result" : "Next prediction";
+  next.classList.remove("hidden");
+  document.getElementById("progress").style.width = `${(index+1)/12*100}%`;
+}
+
+document.getElementById("next").addEventListener("click", () => {
+  if (!attempted) return;
+  if (index < 11) {
+    index++;
+    showQuestion();
+  } else {
+    finishChallenge();
+  }
+});
+
+function finishChallenge() {
+  document.getElementById("challengeCard").classList.add("hidden");
+  document.getElementById("results").classList.remove("hidden");
+  document.getElementById("resultScore").textContent = `${points}/12`;
+  const title = document.getElementById("resultTitle");
+  const text = document.getElementById("resultText");
+  if (points === 12) {
+    title.textContent = "Every prediction matched.";
+    text.textContent = "Now derive the constructions on paper and answer the physical-circuit mastery question aloud.";
+  } else if (points >= 9) {
+    title.textContent = "Strong prediction model.";
+    text.textContent = "Rebuild each missed result from intermediate signals, then explain it without using gate names as magic.";
+  } else {
+    title.textContent = "Useful gaps exposed.";
+    text.textContent = "Return to the explorers, test complete input sets, and retry from the one-sentence rule for each function.";
+  }
+}
+
+document.getElementById("retry").addEventListener("click", startChallenge);
+
+renderGate();
+renderExpression();
+startChallenge();
+</script>
+</body>
+</html>

@@ -20,11 +20,10 @@ The authoritative curriculum remains
 
 ## Prepared next lessons
 
-These lessons are available as a seven-day preview, but **prepared does not
-mean completed**. The resume point remains Day 3 until learner evidence is
-recorded. All seven lessons now include the historical problem being solved
-and an explicit bridge toward arithmetic circuits, stored instructions, and
-the CPU.
+These lessons are prepared ahead, but **prepared does not mean completed**.
+The resume point remains Day 3 until learner evidence is recorded. Lessons
+include the historical problem being solved and an explicit bridge toward
+arithmetic circuits, stored instructions, and the CPU.
 
 ### Day 4 — How Can Bits Become a Negative Number?
 
@@ -55,6 +54,29 @@ the CPU.
 - PDF: `daily/pdf/day-007-signed-bits-mastery-workshop.pdf`
 - Focus: integrated interpretation, register decoding, arithmetic, extension,
   C experiments, and mastery explanation
+
+### Day 8 — From Boole to Physical Gates
+
+- Lesson: `daily/lessons/day-008-from-boole-to-physical-gates.md`
+- PDF: `daily/pdf/day-008-from-boole-to-physical-gates.pdf`
+- Focus: Boole, Shannon, relays/tubes/transistors, representation versus
+  computation, physical NOT/AND/OR, truth tables, and signal restoration
+
+### Day 9 — Boolean Expressions and Universal Gates
+
+- Lesson: `daily/lessons/day-009-boolean-expressions-and-universal-gates.md`
+- PDF: `daily/pdf/day-009-boolean-expressions-and-universal-gates.pdf`
+- Focus: XOR/NAND/NOR, expressions as circuit recipes, systematic truth
+  tables, De Morgan, active-low logic, NAND/NOR completeness, and physical
+  implementation trade-offs
+
+### Day 10 — Combinational Logic Mastery
+
+- Lesson: `daily/lessons/day-010-combinational-logic-mastery.md`
+- PDF: `daily/pdf/day-010-combinational-logic-mastery.pdf`
+- Challenge: `daily/challenges/day-010-logic-gate-lab.html`
+- Focus: combinational networks, delay/hazard preview, decoder/mux/comparator,
+  half-adder derivation, CPU datapath bridge, and topic mastery checkpoint
 
 ## Current mastery target
 
