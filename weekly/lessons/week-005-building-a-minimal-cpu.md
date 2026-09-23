@@ -1,4 +1,4 @@
-# Day 5 — Building a Minimal CPU
+# Week 5 — Building a Minimal CPU
 
 **Curriculum alignment:** Stage 2 — CPU Architecture and Instruction Execution ·
 The Minimal CPU
@@ -15,7 +15,7 @@ The Minimal CPU
 > already give us a computer that can calculate `3 + 5`?
 
 An adder answers one fixed question whenever its inputs settle. It does not
-remember yesterday's answer, choose its own next operands, or decide that the
+remember the previous answer, choose its own next operands, or decide that the
 next operation should be a store rather than another addition. A programmable
 machine needs a controlled sequence of remembered states.
 
@@ -651,13 +651,13 @@ the quantity. It is the ability to distinguish:
 
 The challenge is:
 
-`daily/challenges/day-005-tiny-cpu.py`
+`weekly/challenges/week-005-tiny-cpu.py`
 
 First, predict the final values of `PC`, `IR`, `R0`, `R1`, and `MEM[0]`.
 Then run the complete trace:
 
 ```bash
-python3 daily/challenges/day-005-tiny-cpu.py
+python3 weekly/challenges/week-005-tiny-cpu.py
 ```
 
 Each row exposes:
@@ -671,7 +671,7 @@ Each row exposes:
 Now step manually:
 
 ```bash
-python3 daily/challenges/day-005-tiny-cpu.py --step
+python3 weekly/challenges/week-005-tiny-cpu.py --step
 ```
 
 Before pressing Enter, cover the “after” state and answer:

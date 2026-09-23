@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render one daily masterclass Markdown lesson as a styled PDF."""
+"""Render one masterclass Markdown lesson as a styled PDF."""
 
 from __future__ import annotations
 

@@ -175,11 +175,11 @@ Excluded:
   CS:APP, OSTEP, and TLPI library copies,
 - generated binaries, nested repository metadata, swap files, and crash dumps.
 
-## How daily lessons should use this library
+## How weekly lessons should use this library
 
 1. Start from the current tracker objective.
 2. Choose at most one primary reading and one supplemental reference.
-3. Cite the exact chapter/page range in the daily lesson.
+3. Cite the exact chapter/page range in the weekly lesson.
 4. Prefer a short targeted reading followed by an experiment.
 5. Treat imported example code as something to inspect, build, break, and
    explain—not as an answer to copy blindly.

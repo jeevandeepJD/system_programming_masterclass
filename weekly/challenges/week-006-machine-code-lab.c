@@ -1,22 +1,22 @@
 /*
- * Day 6 machine-code lab
+ * Week 6 machine-code lab
  *
  * Build both versions with warnings enabled:
  *
  *   gcc   -std=c17 -Wall -Wextra -Wpedantic -O2 -g \
- *     day-006-machine-code-lab.c -o /tmp/day6-gcc
+ *     week-006-machine-code-lab.c -o /tmp/week6-gcc
  *   clang -std=c17 -Wall -Wextra -Wpedantic -O2 -g \
- *     day-006-machine-code-lab.c -o /tmp/day6-clang
+ *     week-006-machine-code-lab.c -o /tmp/week6-clang
  *
  * Observe the executable and its machine instructions:
  *
- *   readelf -h /tmp/day6-gcc
- *   readelf -S /tmp/day6-gcc
- *   readelf -sW /tmp/day6-gcc
- *   objdump -d -M intel /tmp/day6-gcc
- *   objdump -d -M intel --disassemble=weighted_sum /tmp/day6-gcc
- *   objdump -d -M intel --disassemble=count_above /tmp/day6-gcc
- *   objdump -s -j .text /tmp/day6-gcc
+ *   readelf -h /tmp/week6-gcc
+ *   readelf -S /tmp/week6-gcc
+ *   readelf -sW /tmp/week6-gcc
+ *   objdump -d -M intel /tmp/week6-gcc
+ *   objdump -d -M intel --disassemble=weighted_sum /tmp/week6-gcc
+ *   objdump -d -M intel --disassemble=count_above /tmp/week6-gcc
+ *   objdump -s -j .text /tmp/week6-gcc
  *
  * Then rebuild with -O0 and compare. Instruction selection, register choice,
  * and layout may differ by compiler/version/flags even though all outputs

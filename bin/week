@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Daily masterclass driver.
+# Weekly masterclass driver.
 #
-#   today              -> build + open the latest lesson and challenge
-#   today lesson       -> only the lesson PDF
-#   today challenge    -> only the challenge page
-#   today list         -> list all lessons/challenges so far
+#   week              -> build + open the latest lesson and challenge
+#   week lesson       -> only the lesson PDF
+#   week challenge    -> only the challenge material
+#   week list         -> list all lessons/challenges so far
 #
-# Select another day with MC_DAY=2 today lesson.
+# Select another module with MC_WEEK=2 week lesson.
 #
-# Lessons live in   ~/masterclass/daily/lessons/day-NNN-*.md
-# PDFs are built to ~/masterclass/daily/pdf/
-# Challenges live in ~/masterclass/daily/challenges/day-NNN-*
+# Lessons live in   weekly/lessons/week-NNN-*.md
+# PDFs are built to weekly/pdf/
+# Challenges live in weekly/challenges/week-NNN-*
 
 set -euo pipefail
 
@@ -18,21 +18,21 @@ BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 MC="$(cd -- "$BIN_DIR/.." && pwd)"
 CURSOR="$(find "$HOME/.cursor-server/bin" -path '*/remote-cli/cursor' -print -quit 2>/dev/null || true)"
 
-resolve_day() {
-    if [ -n "${MC_DAY:-}" ]; then
-        printf 'day-%03d' "$((10#$MC_DAY))"
+resolve_week() {
+    if [ -n "${MC_WEEK:-}" ]; then
+        printf 'week-%03d' "$((10#$MC_WEEK))"
         return
     fi
 
     local latest
-    latest="$(ls "$MC"/daily/lessons/day-*.md 2>/dev/null | sort -V | tail -n1 || true)"
+    latest="$(ls "$MC"/weekly/lessons/week-*.md 2>/dev/null | sort -V | tail -n1 || true)"
     if [ -z "$latest" ]; then
         return 1
     fi
-    basename "$latest" | grep -oE '^day-[0-9]+'
+    basename "$latest" | grep -oE '^week-[0-9]+'
 }
 
-DAY="$(resolve_day)"
+WEEK="$(resolve_week)"
 
 open_in_editor() {
     [ -n "$CURSOR" ] && "$CURSOR" "$1" >/dev/null 2>&1 && echo "  opened in editor: $(basename "$1")" \
@@ -41,22 +41,22 @@ open_in_editor() {
 
 do_lesson() {
     local md
-    md="$(ls "$MC"/daily/lessons/"$DAY"-*.md 2>/dev/null | head -n1 || true)"
+    md="$(ls "$MC"/weekly/lessons/"$WEEK"-*.md 2>/dev/null | head -n1 || true)"
     if [ -z "$md" ]; then
-        echo "No lesson markdown for $DAY in $MC/daily/lessons/"
+        echo "No lesson markdown for $WEEK in $MC/weekly/lessons/"
         return 1
     fi
     echo "Lesson: $(basename "$md")"
     python3 "$MC/bin/build_lesson.py" "$md" --no-open
-    open_in_editor "$MC/daily/pdf/$(basename "${md%.md}").pdf"
+    open_in_editor "$MC/weekly/pdf/$(basename "${md%.md}").pdf"
 }
 
 PORT="${MC_PORT:-8731}"
 
 do_challenge() {
-    local challenges=("$MC"/daily/challenges/"$DAY"-*)
+    local challenges=("$MC"/weekly/challenges/"$WEEK"-*)
     if [ ! -e "${challenges[0]}" ]; then
-        echo "No challenge for $DAY."
+        echo "No challenge for $WEEK."
         return 1
     fi
 
@@ -90,7 +90,7 @@ do_challenge() {
     # Cursor/VS Code remote forwards it to the browser on the user's machine.
     if ! ss -ltn 2>/dev/null | grep -q ":$PORT "; then
         nohup python3 -m http.server "$PORT" --bind 127.0.0.1 \
-            --directory "$MC/daily/challenges" >/tmp/mc_challenge_server.log 2>&1 &
+            --directory "$MC/weekly/challenges" >/tmp/mc_challenge_server.log 2>&1 &
         sleep 0.4
         echo "  started local server on port $PORT"
     else
@@ -109,9 +109,9 @@ case "${1:-all}" in
     lesson)    do_lesson ;;
     challenge) do_challenge ;;
     list)
-        echo "== lessons =="   ; ls -1 "$MC"/daily/lessons/day-*    2>/dev/null | xargs -r -n1 basename
-        echo "== pdfs =="      ; ls -1 "$MC"/daily/pdf/day-*        2>/dev/null | xargs -r -n1 basename
-        echo "== challenges ==" ; ls -1 "$MC"/daily/challenges/day-* 2>/dev/null | xargs -r -n1 basename
+        echo "== lessons =="   ; ls -1 "$MC"/weekly/lessons/week-*    2>/dev/null | xargs -r -n1 basename
+        echo "== pdfs =="      ; ls -1 "$MC"/weekly/pdf/week-*        2>/dev/null | xargs -r -n1 basename
+        echo "== challenges ==" ; ls -1 "$MC"/weekly/challenges/week-* 2>/dev/null | xargs -r -n1 basename
         ;;
     all)       do_lesson; echo; do_challenge ;;
     *)         sed -n '2,12p' "$0" ;;

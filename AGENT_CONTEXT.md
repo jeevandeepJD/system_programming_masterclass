@@ -24,8 +24,8 @@ Before creating or continuing a lesson:
 1. Read this file.
 2. Read the current checkpoint in `MASTERCLASS.md`.
 3. Consult the relevant week in the authoritative `.docx` tracker.
-4. Inspect existing daily lessons and challenges to avoid repetition.
-5. Read `DAILY_PROGRESS.md` for the exact resume point and unfinished work.
+4. Inspect existing weekly lessons and challenges to avoid repetition.
+5. Read `WEEKLY_PROGRESS.md` for the exact resume point and unfinished work.
 6. Continue from demonstrated understanding, not merely from the calendar.
 
 After every user suggestion, correction, preference, or planning update:
@@ -69,17 +69,17 @@ unrelated home-directory files.
 - User-entered confidence, hours, status, and mastery remain the user's honest
   self-assessment; do not invent or auto-fill them.
 
-## Daily lesson workflow
+## Weekly module workflow
 
-For each study day:
+For each curriculum week/module:
 
-1. Create a focused lesson as Markdown under:
-   `daily/lessons/`
+1. Create a coherent lesson as Markdown under:
+   `weekly/lessons/`
 2. Render a sequence-numbered PDF under:
-   `daily/pdf/`
+   `weekly/pdf/`
 3. Open the PDF in the editor.
 4. When useful, create reinforcement under:
-   `daily/challenges/`
+   `weekly/challenges/`
 5. Choose the activity format based on the concept:
    - interactive HTML simulation,
    - quiz,
@@ -93,6 +93,8 @@ For each study day:
    **predict → run/observe → explain → connect to the larger system**.
 8. Do not reveal challenge solutions before the learner attempts them unless
    requested.
+9. A week is a mastery module, not a seven-day deadline. Preserve the exact
+   stopping point when the learner needs more time.
 
 ## Teaching and writing style
 
@@ -130,13 +132,11 @@ Use exercises to expose gaps rather than merely generate a score.
 
 - Stage 1 — Foundations of Computation
 - Topic — Electricity, States, Bits, and Information
-- Active branch: `experiment/accelerated-foundations`
-- Current task: evaluate accelerated Day 1 against the original narrow format
-- Accelerated Day 1 combines original Days 1–3.
-- Accelerated Day 2 combines original Days 4–7.
-- Accelerated Day 3 begins Boolean logic and physical gates.
+- Active branch: `experiment/weekly-modules`
+- Current module: Week 1 — State, Bits, and Meaning
+- Weeks 1–7 are prepared as coherent weekly modules.
 - This branch is experimental; do not merge it into `master` until the user
-  explicitly approves the new pacing and presentation.
+  explicitly approves the weekly structure and presentation.
 
 ## Decision and Update Log
 
@@ -196,7 +196,7 @@ organized in the masterclass folder.
 - Trackable catalog: `source-materials/README.md`
 - The imported library is Git-ignored by default because it contains
   third-party books and code; do not push it without explicit user direction.
-- Use these resources selectively for daily lessons. Cite exact chapter/page
+- Use these resources selectively for lessons. Cite exact chapter/page
   ranges instead of assigning whole books.
 - Kernel/driver books may contain outdated APIs; verify examples against the
   current kernel documentation and source.
@@ -206,7 +206,7 @@ organized in the masterclass folder.
 ### 2026-09-17 — Use source materials while preparing notes
 
 The user explicitly approved referring to the organized source-material
-library when preparing daily lessons. For each lesson:
+library when preparing lessons. For each lesson:
 
 - begin with the authoritative tracker objective, not a book's chapter order;
 - consult the most relevant local book or lab collection;
@@ -399,3 +399,17 @@ At the user's request, the accelerated branch now contains Days 1–7:
 Each is designed as an approximately three-hour concept-plus-lab unit.
 Prepared material does not imply completion. Keep `master` and the
 accelerated branch separate until the learner decides pacing explicitly.
+
+### 2026-09-23 — Weekly modules replace daily lessons on experiment
+
+The user prefers weekly organization over daily sequencing. The weekly
+conversion was isolated on `experiment/weekly-modules`, preserving both
+`master` and `experiment/accelerated-foundations`. Accelerated Days 1–7 were
+converted directly into Weeks 1–7 because they already map to tracker topics
+1–7. Weekly artifacts now live under `weekly/`, progress is tracked in
+`WEEKLY_PROGRESS.md`, and `bin/week` opens/builds a selected module using
+`MC_WEEK=N`.
+
+“Week” means a mastery module, not a calendar deadline. The learner may take
+more than seven days. Keep both daily branches unchanged while the weekly
+structure is evaluated.

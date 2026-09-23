@@ -1587,12 +1587,26 @@ read—not monotonic, bland, or like a mechanically generated textbook.
 - Enthusiasm should come from the ideas and discoveries, not from excessive
   exclamation marks or artificial praise.
 
-Current daily artifacts and exact resume state are indexed in
-`DAILY_PROGRESS.md`.
+On `master`, narrow daily artifacts remain indexed by `DAILY_PROGRESS.md`.
+`experiment/accelerated-foundations` preserves accelerated daily artifacts.
+On `experiment/weekly-modules`, current weekly artifacts and the exact resume
+point are indexed by `WEEKLY_PROGRESS.md`. Do not merge or treat the weekly
+organization as accepted until the learner explicitly approves it.
 
-On `master`, the accepted position remains the original Day 3 mastery
-workshop. On branch `experiment/accelerated-foundations`, the current task is
-to evaluate a compressed format: original Days 1–3 become accelerated Day 1,
-original Days 4–7 become accelerated Day 2, and Boolean logic begins on Day
-3. Do not merge or treat this as the accepted pacing until the learner
-explicitly approves it.
+### 40. WEEKLY MODULE WORKFLOW — 2026-09-23 (supersedes §39 on experiment)
+
+The user now prefers weekly mastery modules rather than daily artifacts. On
+`experiment/weekly-modules`:
+
+- lessons live in `weekly/lessons/week-NNN-*.md`;
+- PDFs live in `weekly/pdf/week-NNN-*.pdf`;
+- labs live in `weekly/challenges/week-NNN-*`;
+- `WEEKLY_PROGRESS.md` stores the exact resume point;
+- `bin/week` builds/opens the latest module, or `MC_WEEK=N bin/week` selects
+  another.
+
+The existing accelerated Days 1–7 map directly to tracker Weeks 1–7 and were
+renamed without dropping content. “Week” describes curriculum scope, not a
+deadline; a module may take as long as mastery requires. The `master` and
+`experiment/accelerated-foundations` branches retain their daily comparison
+structures.

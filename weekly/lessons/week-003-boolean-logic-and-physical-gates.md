@@ -1,4 +1,4 @@
-# Day 3 — Boolean Logic and Physical Gates
+# Week 3 — Boolean Logic and Physical Gates
 
 **Target time:** approximately 3 hours
 
@@ -10,7 +10,7 @@ Gate Lab · 30 minutes observing code · 15 minutes explaining from memory
 > But how could a pile of switches decide, “turn on only when both conditions
 > are true”?
 
-## Why this day exists
+## Why this week exists
 
 We already know how a physical system can carry a bit:
 
@@ -36,7 +36,7 @@ mean AND, OR, permission, equality, or addition. To compute, switches need:
 The arrangement is physical. The rule is logical. A **logic gate** is where
 those two descriptions meet.
 
-By the end of Day 3, you should be able to look at a Boolean function, write
+By the end of Week 3, you should be able to look at a Boolean function, write
 its truth table, imagine a physical switching network that realizes it, and
 explain why the circuit computes without understanding what its bits mean.
 
@@ -52,7 +52,7 @@ switching device
     → CPU datapath
 ```
 
-Today earns the first four arrows. We will glimpse one-bit addition, but save
+This week earns the first four arrows. We will glimpse one-bit addition, but save
 full adders, storage, clocks, and registers for their own treatment.
 
 ---
@@ -580,7 +580,7 @@ Examples:
 The word “now” is an abstraction. Real transistors do not respond
 instantaneously. During transitions, intermediate outputs may briefly differ
 from the final truth-table result. Later we will care about propagation delay,
-hazards, clocks, and state. For Boolean reasoning today, we analyze settled
+hazards, clocks, and state. For Boolean reasoning this week, we analyze settled
 values.
 
 ### What combinational logic cannot do
@@ -589,7 +589,7 @@ If every input returns to its old value, a pure combinational circuit returns
 to its old output. It cannot remember that something happened earlier.
 
 Memory requires another idea—feedback and controlled sampling. Do not smuggle
-memory into today's model.
+memory into this week's model.
 
 ---
 
@@ -673,7 +673,7 @@ the system built above it.
 
 Open this local, offline challenge in a browser:
 
-`daily/challenges/day-003-logic-gate-lab.html`
+`weekly/challenges/week-003-logic-gate-lab.html`
 
 Use this loop:
 
@@ -842,7 +842,7 @@ an attempted output.
 
 ---
 
-## Mental model at the end of Day 3
+## Mental model at the end of Week 3
 
 ```text
 continuous electrical behavior

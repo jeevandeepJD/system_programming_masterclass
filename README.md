@@ -1,12 +1,12 @@
 # Systems Engineering Masterclass
 
-> **Experimental branch:** `experiment/accelerated-foundations`
+> **Experimental branch:** `experiment/weekly-modules`
 >
-> This branch compresses the original seven narrow foundation lessons into
-> two approximately three-hour units, then continues through gates, storage,
-> a minimal CPU, machine code, control flow, exceptions, and privilege by Day
-> 7. The original pacing remains unchanged on `master` until the learner
-> approves this experiment.
+> This branch organizes the curriculum as mastery-oriented weekly modules.
+> Weeks 1–7 cover representation through gates, storage, a minimal CPU,
+> machine code, control flow, exceptions, and privilege. The `master` daily
+> pacing and `experiment/accelerated-foundations` accelerated-daily pacing
+> remain available for comparison.
 
 A first-principles, experiment-driven path from physical state and digital
 logic to CPUs, C, operating systems, the Linux kernel, drivers,
@@ -24,28 +24,28 @@ why each abstraction became necessary, not as a list of dates to memorize.
 
 ## Resume here
 
-Open [`DAILY_PROGRESS.md`](DAILY_PROGRESS.md). It records the current lesson,
+Open [`WEEKLY_PROGRESS.md`](WEEKLY_PROGRESS.md). It records the current module,
 unfinished evidence, and exact next action.
 
 Current curriculum position:
 
 - Stage 1 — Foundations of Computation
 - Topic — Electricity, States, Bits, and Information
-- Evaluation point — Accelerated Day 1
+- Current module — Week 1
 
 ## Repository map
 
 ```text
 .
 ├── README.md                 repository entry point
-├── DAILY_PROGRESS.md         short daily resume tracker
+├── WEEKLY_PROGRESS.md        weekly module resume tracker
 ├── AGENT_CONTEXT.md          teaching workflow and decision log
 ├── MASTERCLASS.md            detailed historical handoff
 ├── Systems_Engineering_Masterclass_Curriculum_Tracker.docx
 │                             authoritative curriculum tracker
-├── daily/
-│   ├── lessons/              editable Markdown lessons
-│   ├── pdf/                  rendered daily lesson PDFs
+├── weekly/
+│   ├── lessons/              editable weekly Markdown lessons
+│   ├── pdf/                  rendered weekly lesson PDFs
 │   └── challenges/           optional HTML, Python, coding, or lab exercises
 ├── tracker/                  topic-specific exercises and evidence
 ├── source-materials/
@@ -53,7 +53,7 @@ Current curriculum position:
 │   └── library/              local third-party library; Git-ignored
 └── bin/
     ├── build_lesson.py       Markdown-to-PDF renderer
-    └── today                 daily lesson/challenge launcher
+    └── week                  weekly lesson/challenge launcher
 ```
 
 ## Sources of truth
@@ -61,42 +61,42 @@ Current curriculum position:
 1. `Systems_Engineering_Masterclass_Curriculum_Tracker.docx` controls the
    curriculum sequence, objectives, exercises, and mastery checks. Its
    original week labels describe ordering, not calendar deadlines.
-2. `DAILY_PROGRESS.md` records where the learner actually stopped.
+2. `WEEKLY_PROGRESS.md` records where the learner actually stopped.
 3. `AGENT_CONTEXT.md` records teaching preferences and operational decisions.
 4. `MASTERCLASS.md` preserves detailed history and prior discoveries.
 
-## Daily use
+## Weekly use
 
 Build and open the latest lesson:
 
 ```bash
 cd /path/to/masterclass
-./bin/today lesson
+./bin/week lesson
 ```
 
 Open or serve the optional challenge:
 
 ```bash
-./bin/today challenge
+./bin/week challenge
 ```
 
-List all available daily artifacts:
+List all available weekly artifacts:
 
 ```bash
-./bin/today list
+./bin/week list
 ```
 
 Build a particular lesson manually:
 
 ```bash
 python3 ./bin/build_lesson.py \
-  ./daily/lessons/day-NNN-lesson-name.md
+  ./weekly/lessons/week-NNN-lesson-name.md
 ```
 
-Select an earlier day:
+Select another week:
 
 ```bash
-MC_DAY=2 ./bin/today lesson
+MC_WEEK=2 ./bin/week lesson
 ```
 
 ## Completion standard
@@ -119,5 +119,5 @@ replaced or checked against current primary sources: kernel documentation and
 source, architecture manuals, standards, RFCs, and official project
 documentation.
 
-Daily lessons should cite specific chapters/pages or current web sources when
+Weekly lessons should cite specific chapters/pages or current web sources when
 they materially rely on them.
