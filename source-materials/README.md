@@ -81,6 +81,62 @@ Only source and reference artifacts were imported. Nested Git repositories,
 editor swap files, object files, shared libraries, executables, core dumps,
 and other generated binaries were deliberately removed.
 
+## Instructor-led training material
+
+The KaiwanTECH PDFs under `library/training/kaiwantech/` came from an
+instructor-led kernel/system-programming course. They are useful because they
+are concise, diagram-heavy companions to the larger books. They are
+references, not replacements for current kernel documentation and source.
+
+### Linux kernel internals modules (2024)
+
+| Module | Local filename | Curriculum use |
+|---:|---|---|
+| 01 | `training/kaiwantech/kernel-internals-2024/01-linux-system-architecture.pdf` | Stages 7, 10, and 11: Unix/Linux architecture, user/kernel boundary, system calls, execution contexts |
+| 02 | `training/kaiwantech/kernel-internals-2024/02-kernel-source-tree.pdf` | Stage 11: navigating subsystems, architecture trees, headers, documentation, Kconfig/Kbuild locations |
+| 03 | `training/kaiwantech/kernel-internals-2024/03-modern-kernel-build.pdf` | Stage 11: configuring, building, installing, and booting a modern kernel |
+| 04 | `training/kaiwantech/kernel-internals-2024/04-practical-loadable-kernel-modules.pdf` | Stages 11 and 13: module lifecycle, build flow, parameters, symbols, logging, and practical LKM workflow |
+| 06 | `training/kaiwantech/kernel-internals-2024/06-kernel-architecture-and-task-structure.pdf` | Stage 11: process/interrupt context, kernel architecture, `task_struct`, process state |
+| 08 | `training/kaiwantech/kernel-internals-2024/08-linux-cpu-scheduler.pdf` | Stages 7 and 11: scheduler concepts, policies, run queues, priorities, affinity, and kernel implementation |
+| 09 | `training/kaiwantech/kernel-internals-2024/09-kernel-synchronization-locking.pdf` | Stages 9 and 11: races, atomicity, mutexes, spinlocks, interrupt interaction, and locking rules |
+
+Modules 05 and 07 were not included in the supplied material. Their absence
+is preserved in the numbering instead of silently renumbering the course.
+
+These decks carry 2024 copyright markings, but exact APIs and implementation
+details must still be checked against the target kernel.
+
+### Memory-management series (legacy/conceptual)
+
+| Part | Local filename | Main topics |
+|---:|---|---|
+| 1 | `training/kaiwantech/memory-management-legacy/01-virtual-memory-and-paging.pdf` | Virtual-memory motivation, paging, translation, page tables, allocator overview |
+| 2 | `training/kaiwantech/memory-management-legacy/02-kernel-and-process-memory-segments.pdf` | Process mappings, user/kernel split, code/data/heap/stack and kernel segments |
+| 3 | `training/kaiwantech/memory-management-legacy/03-physical-memory-and-kernel-segment.pdf` | Physical-memory organization and kernel virtual-address-space concepts |
+| 4 | `training/kaiwantech/memory-management-legacy/04-page-cache-watermarks-oom-and-vmas.pdf` | Page cache introduction, watermarks, OOM behavior, and VMAs |
+
+Parts of this series are marked 2000–2015. Use them for diagrams, historical
+context, and stable concepts only. Do **not** rely on their structures,
+algorithms, function names, tunables, or source paths without checking the
+current kernel.
+
+### Containers and resource control
+
+| Local filename | Use |
+|---|---|
+| `training/kaiwantech/containers/cgroups-training-slides.pdf` | Stage 17: cgroup motivation, hierarchy, controllers, process grouping, and resource management |
+| `training/kaiwantech/containers/cgroups-v2-quick-notes.pdf` | Current-oriented cgroup v2 quick reference centered on `/sys/fs/cgroup`; verify controller and delegation details against current kernel/systemd docs |
+
+### Debugging, workflow, and reports
+
+| Local filename | Use |
+|---|---|
+| `training/kaiwantech/debugging/programmers-checklist-seven-rules.pdf` | Cross-cutting code-review checklist: API errors, warnings, input validation, assertions, logging, and cleanup |
+| `training/kaiwantech/debugging/kdump-crash-quick-notes.pdf` | Stages 11–13: introductory kdump/kexec/crash setup and panic-dump workflow; distribution configuration is likely dated |
+| `training/kaiwantech/tooling/better-makefile.pdf` | Stages 5 and 11: reusable userspace/LKM Makefile workflow, warnings, analysis, debug and sanitizer targets |
+| `training/kaiwantech/tooling/git-basics.pdf` | Supporting workflow reference; useful but not part of the systems-concept critical path |
+| `training/kaiwantech/reports/linux-kernel-report-oss-europe-2023-jonathan-corbet.pdf` | Historical snapshot of kernel-development statistics, community, process, and concerns in 2023—not current-state authority |
+
 ## Selection decisions
 
 Included:
@@ -90,6 +146,9 @@ Included:
 - OS/Linux programming references,
 - kernel/driver references,
 - source-code labs that can support hands-on daily work.
+- instructor-led Linux architecture, kernel build/module, scheduler,
+  synchronization, memory-management, cgroup, debugging, and workflow
+  material aligned to later curriculum stages.
 
 New-material assessment:
 
