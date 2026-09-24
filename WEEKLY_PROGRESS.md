@@ -9,9 +9,8 @@ The authoritative curriculum remains
 
 ## Current resume point
 
-- **Branch:** `experiment/weekly-modules`
-- **Purpose:** evaluate mastery-oriented weekly modules before changing
-  `master`
+- **Branch:** `master`
+- **Format:** approved weekly mastery modules
 - **Current module:** Week 1
 - **Next action:** work through Week 1 at a comfortable pace, complete its
   observation/mastery evidence, and record the exact stopping point
@@ -80,12 +79,12 @@ sufficient.
 Weeks 2 and 3 are prepared ahead. They are not marked complete and do not
 change the current resume point.
 
-## Pacing comparison checkpoint
+## Pace check
 
-The weekly branch intentionally covers a broader scope per module than either
-daily branch. Compare retention, fatigue, and completed evidence—not only how
-quickly the PDF reaches advanced topics. No branch is approved for merging
-until the learner decides explicitly.
+Weekly modules intentionally cover a broad scope. Evaluate retention,
+fatigue, and completed evidence—not only how quickly the PDF reaches advanced
+topics. Slow down or split a work session whenever understanding becomes
+shallow.
 
 ## Current mastery target
 

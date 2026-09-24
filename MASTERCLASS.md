@@ -1587,16 +1587,14 @@ read—not monotonic, bland, or like a mechanically generated textbook.
 - Enthusiasm should come from the ideas and discoveries, not from excessive
   exclamation marks or artificial praise.
 
-On `master`, narrow daily artifacts remain indexed by `DAILY_PROGRESS.md`.
-`experiment/accelerated-foundations` preserves accelerated daily artifacts.
-On `experiment/weekly-modules`, current weekly artifacts and the exact resume
-point are indexed by `WEEKLY_PROGRESS.md`. Do not merge or treat the weekly
-organization as accepted until the learner explicitly approves it.
+On `master`, the approved weekly artifacts and exact resume point are indexed
+by `WEEKLY_PROGRESS.md`. Earlier daily approaches are preserved on
+`backup/narrow-daily` and `backup/accelerated-daily`.
 
 ### 40. WEEKLY MODULE WORKFLOW — 2026-09-23 (supersedes §39 on experiment)
 
 The user now prefers weekly mastery modules rather than daily artifacts. On
-`experiment/weekly-modules`:
+`master`:
 
 - each module lives under `weekly/week-NNN/` with `overview.md`, seven daily
   source sections, and challenges;
@@ -1608,5 +1606,4 @@ The user now prefers weekly mastery modules rather than daily artifacts. On
 The original accelerated Days 1–7 are daily sections inside Week 1 and are
 rendered into one weekly PDF without dropping content. “Week” describes a
 material package, not a deadline; a module may take as long as mastery
-requires. The `master` and `experiment/accelerated-foundations` branches
-retain their daily comparison structures.
+requires. Earlier daily structures remain available only as backup branches.

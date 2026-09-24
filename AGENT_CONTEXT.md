@@ -132,11 +132,10 @@ Use exercises to expose gaps rather than merely generate a score.
 
 - Stage 1 — Foundations of Computation
 - Topic — Electricity, States, Bits, and Information
-- Active branch: `experiment/weekly-modules`
+- Active branch: `master`
 - Current module: Week 1 — From Physical State to CPU Control
 - Week 1 contains seven daily sections in one consolidated PDF.
-- This branch is experimental; do not merge it into `master` until the user
-  explicitly approves the weekly structure and presentation.
+- Weekly modules are the approved official format.
 
 ## Decision and Update Log
 
@@ -465,3 +464,16 @@ Quiz source data lives in each module's `quizzes.json`;
 `bin/generate_quizzes.py` regenerates the HTML. Treat quiz scores as
 diagnostic retrieval evidence, not mastery. Weekly PDF generation places each
 quiz link after its matching daily lesson alongside practical labs.
+
+### 2026-09-24 — Weekly format promoted to master
+
+The user approved the weekly format as the official course structure.
+`experiment/weekly-modules` is promoted to `master`. Preserve earlier pacing
+approaches as explicit backups:
+
+- `backup/narrow-daily` — the former master branch;
+- `backup/accelerated-daily` — the former accelerated-foundations branch.
+
+Interactive theory checks use conversational labels such as “Now check your
+understanding,” appear after the relevant lesson section, and keep practical
+labs alongside them. Continue future work on `master` using weekly packages.

@@ -1,12 +1,11 @@
 # Systems Engineering Masterclass
 
-> **Experimental branch:** `experiment/weekly-modules`
+> **Official format on `master`: weekly mastery modules**
 >
-> This branch organizes the curriculum as mastery-oriented weekly modules.
-> Weeks 1–7 cover representation through gates, storage, a minimal CPU,
-> machine code, control flow, exceptions, and privilege. The `master` daily
-> pacing and `experiment/accelerated-foundations` accelerated-daily pacing
-> remain available for comparison.
+> Each week contains one consolidated PDF, seven maintainable daily source
+> sections, interactive theory checks, and practical labs. Earlier pacing
+> experiments remain preserved as `backup/narrow-daily` and
+> `backup/accelerated-daily`.
 
 A first-principles, experiment-driven path from physical state and digital
 logic to CPUs, C, operating systems, the Linux kernel, drivers,

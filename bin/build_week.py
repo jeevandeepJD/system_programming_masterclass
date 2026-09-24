@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LESSON_BUILDER = ROOT / "bin" / "build_lesson.py"
 GITHUB_BLOB_ROOT = (
     "https://github.com/jeevandeepJD/system_programming_masterclass/"
-    "blob/experiment/weekly-modules"
+    "blob/master"
 )
 
 
@@ -46,9 +46,17 @@ def lesson_with_challenge_links(
         return lesson
 
     challenges = sorted(
-        path
-        for path in (module / "challenges").glob(f"{day_match.group(1)}-*")
-        if path.is_file()
+        (
+            path
+            for path in (module / "challenges").glob(
+                f"{day_match.group(1)}-*"
+            )
+            if path.is_file()
+        ),
+        key=lambda path: (
+            0 if "theory-check" in path.stem else 1,
+            path.name,
+        ),
     )
     if not challenges:
         return lesson
@@ -64,11 +72,11 @@ def lesson_with_challenge_links(
         "",
         "---",
         "",
-        "## Challenge links for this section",
+        "## Now check your understanding",
         "",
-        "Run commands from the repository root. File links are relative to the",
-        "weekly PDF, so they work on any device that retains the repository",
-        "folder structure. GitHub remains a source-view fallback.",
+        "You have finished the theory for this section. Before moving on, use",
+        "the quick check below to find anything that still feels uncertain,",
+        "then reinforce the idea with the practical lab when one is provided.",
         "",
     ]
     for path in challenges:
@@ -78,13 +86,39 @@ def lesson_with_challenge_links(
         relative_pdf_url = (
             f"repo-relative:../{module.name}/challenges/{quote(path.name)}"
         )
-        lines.extend([f"### {path.name}", "", f"**Type:** {kind}", ""])
+        friendly_name = re.sub(
+            r"^day-\d+-", "", path.stem
+        ).replace("-", " ").title()
+
+        if "theory-check" in path.stem:
+            lines.extend(
+                [
+                    "### Quick theory check",
+                    "",
+                    "Answer from memory first. Explanations appear only after",
+                    "you submit your choices.",
+                    "",
+                    f"- [Start the interactive theory check]({relative_pdf_url})",
+                    f"- [View quiz source on GitHub]({github_url})",
+                    "",
+                ]
+            )
+            continue
+
+        lines.extend(
+            [
+                f"### Put it into practice — {friendly_name}",
+                "",
+                f"**Format:** {kind}",
+                "",
+            ]
+        )
 
         if path.suffix.lower() == ".html":
             lines.extend(
                 [
-                    f"- [Open interactive lab]({relative_pdf_url})",
-                    f"- [View source on GitHub]({github_url})",
+                    f"- [Open the interactive lab]({relative_pdf_url})",
+                    f"- [View lab source on GitHub]({github_url})",
                     "",
                 ]
             )
@@ -99,8 +133,8 @@ def lesson_with_challenge_links(
                 command,
                 "```",
                 "",
-                f"- [Open challenge file]({relative_pdf_url})",
-                f"- [View source on GitHub]({github_url})",
+                f"- [Open the lab file]({relative_pdf_url})",
+                f"- [View lab source on GitHub]({github_url})",
                 "",
             ]
         )
