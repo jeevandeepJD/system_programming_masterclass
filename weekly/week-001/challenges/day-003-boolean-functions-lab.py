@@ -77,6 +77,9 @@ def check(label: str, function, expected) -> int:
 
 
 def main() -> int:
+    print("Boolean-functions starter challenge")
+    print("Open this file, implement each TODO gate, then rerun it.")
+    print("Derive truth tables before changing the code.\n")
     failures = 0
     failures += check(
         "NOT", lambda: (gate_not(0), gate_not(1)), (1, 0)

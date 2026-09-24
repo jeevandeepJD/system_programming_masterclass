@@ -478,6 +478,12 @@ Boolean functions and NAND completeness, and a four-bit ripple-carry adder.
 Existing CPU, ISA, exception, assembly, memory, C, and toolchain sections
 already contain coding or terminal labs.
 
+Challenge entries must never be a bare command. Each practical section should
+state what the lab teaches, distinguish starter/TODO code from an observation
+program, link the source file before the command, and tell the learner to
+predict or implement before running it. Starter programs should also print a
+short orientation when executed unchanged.
+
 ### 2026-09-24 — Weekly format promoted to master
 
 The user approved the weekly format as the official course structure.

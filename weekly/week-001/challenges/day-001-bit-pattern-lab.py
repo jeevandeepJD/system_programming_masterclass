@@ -54,6 +54,9 @@ def attempt(label: str, function, expected) -> int:
 
 
 def main() -> int:
+    print("Bit-pattern starter challenge")
+    print("Open this file, implement the four TODO functions, then rerun it.")
+    print("The checks below report which parts are still incomplete.\n")
     failures = 0
     failures += attempt("20 states need 5 bits", lambda: bits_needed(20), 5)
     failures += attempt("1 state needs 0 bits", lambda: bits_needed(1), 0)

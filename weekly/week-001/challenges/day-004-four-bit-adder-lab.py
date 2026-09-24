@@ -44,6 +44,9 @@ def check(label: str, function, expected) -> int:
 
 
 def main() -> int:
+    print("Four-bit-adder starter challenge")
+    print("Open this file, implement the TODO adders, then rerun it.")
+    print("Trace every carry on paper before changing the code.\n")
     failures = 0
     failures += check("half 0+0", lambda: half_adder(0, 0), (0, 0))
     failures += check("half 1+1", lambda: half_adder(1, 1), (0, 1))

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import subprocess
 import sys
@@ -111,6 +112,8 @@ def lesson_with_challenge_links(
                 "",
                 f"**Format:** {kind}",
                 "",
+                f"**What you will do:** {challenge_description(path)}",
+                "",
             ]
         )
 
@@ -125,15 +128,35 @@ def lesson_with_challenge_links(
             continue
 
         command = runnable_command(path, module)
+        has_todos = "TODO" in path.read_text(
+            encoding="utf-8", errors="ignore"
+        )
+        if has_todos:
+            lines.extend(
+                [
+                    "This is starter code. Open the file, read its instructions,",
+                    "complete the `TODO` sections, and then run the self-checks.",
+                    "",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    "Predict the important result first, then run the lab and",
+                    "explain any difference between prediction and observation.",
+                    "",
+                ]
+            )
         lines.extend(
             [
+                f"- [Open the lab file]({relative_pdf_url})",
+                "",
                 "**Copy and run:**",
                 "",
                 "```bash",
                 command,
                 "```",
                 "",
-                f"- [Open the lab file]({relative_pdf_url})",
                 f"- [View lab source on GitHub]({github_url})",
                 "",
             ]
@@ -145,6 +168,40 @@ def lesson_with_challenge_links(
         encoding="utf-8",
     )
     return enhanced
+
+
+def challenge_description(path: Path) -> str:
+    text = path.read_text(encoding="utf-8", errors="ignore")
+
+    if path.suffix.lower() == ".py":
+        try:
+            description = ast.get_docstring(ast.parse(text))
+            if description:
+                return " ".join(description.splitlines()[0].split())
+        except SyntaxError:
+            pass
+
+    if path.suffix.lower() == ".html":
+        match = re.search(r"<title>(.*?)</title>", text, re.I | re.S)
+        if match:
+            return " ".join(match.group(1).split())
+
+    if path.suffix.lower() in {".c", ".s"}:
+        match = re.search(r"/\*(.*?)\*/", text, re.S)
+        if match:
+            for raw_line in match.group(1).splitlines():
+                line = raw_line.strip().lstrip("*").strip()
+                if line and not line.lower().startswith(("build", "run")):
+                    return line
+
+    if path.suffix.lower() == ".sh":
+        for raw_line in text.splitlines()[1:12]:
+            line = raw_line.strip().lstrip("#").strip()
+            if line:
+                return line
+
+    friendly = re.sub(r"^day-\d+-", "", path.stem).replace("-", " ")
+    return f"Use this {friendly} exercise to test the section's model."
 
 
 def runnable_command(path: Path, module: Path) -> str:
