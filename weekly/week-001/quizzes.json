@@ -1,0 +1,355 @@
+{
+  "week": 1,
+  "days": [
+    {
+      "day": 1,
+      "title": "Foundations: From State to Meaning",
+      "questions": [
+        {
+          "prompt": "Why do digital inputs classify voltage ranges instead of requiring one exact voltage for each bit value?",
+          "options": [
+            "Ranges let the same wire encode several bits simultaneously.",
+            "Ranges tolerate noise and component variation while still producing a stable logical value.",
+            "Ranges make electrical voltage physically discrete.",
+            "Ranges attach a permanent meaning to each stored bit."
+          ],
+          "answer": 1,
+          "explanation": "Broad valid ranges provide noise margin, allowing imperfect continuous signals to be restored to reliable LOW or HIGH values."
+        },
+        {
+          "prompt": "A system must distinguish 20 machine states. Why is five bits the minimum sufficient width?",
+          "options": [
+            "Five bits provide 25 patterns, exactly five more than required.",
+            "Four bits provide 16 patterns, while five bits provide 32 because each added bit doubles the previous possibilities.",
+            "Five bits are required because machine states always use an odd number of bits.",
+            "Four bits provide 20 patterns only when hexadecimal notation is used."
+          ],
+          "answer": 1,
+          "explanation": "Independent binary choices yield 2^n patterns; 16 is insufficient for 20 states, while 32 is sufficient."
+        },
+        {
+          "prompt": "A file contains the byte pattern 01000110. One tool prints 70 and another prints F. What best explains the different outputs?",
+          "options": [
+            "The second tool changed the byte before displaying it.",
+            "The operating system stores a numeric copy and a text copy of every byte.",
+            "Each tool applied a different interpretation rule to the same stored pattern.",
+            "The pattern carries both meanings physically in separate voltage levels."
+          ],
+          "answer": 2,
+          "explanation": "The bits are unchanged; unsigned binary and ASCII are different mappings from one pattern to meaning."
+        },
+        {
+          "prompt": "Which trace correctly connects a physical implementation to the meaning of a displayed character?",
+          "options": [
+            "Character meaning → exact voltage point → byte → threshold",
+            "Voltage range → logical bits → byte pattern → character encoding → displayed character",
+            "Logical bit → character encoding → voltage noise → byte pattern",
+            "Byte pattern → inherent character meaning → voltage range → display"
+          ],
+          "answer": 1,
+          "explanation": "Circuit thresholds first create reliable bits; grouping and an explicit character encoding then supply the semantic meaning."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Signed Bits",
+      "questions": [
+        {
+          "prompt": "Why can the same fixed-width binary adder serve both unsigned and two's-complement addition?",
+          "options": [
+            "The adder detects the source-language type and changes its gates.",
+            "Both interpretations use the same modulo-2^n low result bits; signedness changes how operands, results, and flags are interpreted.",
+            "Signed values reserve a separate carry wire for every negative operand.",
+            "Two's-complement addition converts both operands to decimal before adding."
+          ],
+          "answer": 1,
+          "explanation": "Binary addition produces the same low n bits in either interpretation, while carry and signed overflow report different range facts."
+        },
+        {
+          "prompt": "Software must replace a packed MODE field while preserving neighboring bits. Which sequence has the required effect?",
+          "options": [
+            "OR the new shifted value into the register once.",
+            "XOR the entire register with the field mask.",
+            "Clear the field with an inverted mask, then OR in the masked and shifted new value.",
+            "Shift the complete register right and write it back."
+          ],
+          "answer": 2,
+          "explanation": "Clearing removes every old field bit, and masking the shifted replacement prevents it from leaking into adjacent fields."
+        },
+        {
+          "prompt": "An 8-bit addition computes 01111111 + 00000001 = 10000000 with no carry-out. Which status interpretation is correct?",
+          "options": [
+            "Unsigned carry occurred because the result's high bit is one.",
+            "Signed overflow occurred because two positive operands produced a negative-encoded result.",
+            "Both unsigned carry and signed overflow occurred.",
+            "Neither condition occurred because the adder produced eight result bits."
+          ],
+          "answer": 1,
+          "explanation": "Unsigned 128 fits in eight bits, but signed +128 exceeds the range -128 through +127, so only signed overflow occurs."
+        },
+        {
+          "prompt": "The 8-bit pattern 11110110 is widened to preserve its value as signed two's complement. Which result and rationale are correct?",
+          "options": [
+            "0000000011110110, because widening always inserts zeros",
+            "1111111111110110, because replicating the sign bit preserves the same negative residue at the wider width",
+            "1111011000000000, because widening appends low zeros",
+            "0000000011110110, because the original pattern represents -10 under every interpretation"
+          ],
+          "answer": 1,
+          "explanation": "Sign extension copies the old high bit so the wider two's-complement pattern still represents -10."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Boolean Logic and Physical Gates",
+      "questions": [
+        {
+          "prompt": "How can a transistor network implement an AND function without understanding the application-level meaning of its inputs?",
+          "options": [
+            "Each transistor stores the complete truth table as software.",
+            "The network topology permits the output-driving condition only for the physical input combination classified as 1,1.",
+            "The input labels tell each transistor which semantic rule to execute.",
+            "The clock translates the application meaning into current flow."
+          ],
+          "answer": 1,
+          "explanation": "Devices respond locally to voltages, while their arrangement produces an input/output mapping that we describe abstractly as AND."
+        },
+        {
+          "prompt": "A control output should be active when A and B differ. Which Boolean operation directly specifies that behavior?",
+          "options": [
+            "AND",
+            "Inclusive OR",
+            "XOR",
+            "NAND"
+          ],
+          "answer": 2,
+          "explanation": "XOR is true for 0,1 and 1,0 and false when the inputs are equal."
+        },
+        {
+          "prompt": "Why does building NOT, AND, and OR from NAND establish that NAND is functionally complete?",
+          "options": [
+            "Every Boolean function can be constructed from NOT, AND, and OR, so NAND can reproduce any such construction.",
+            "NAND physically switches faster than every other gate.",
+            "A NAND gate stores prior inputs as sequential state.",
+            "Every truth table has exactly the same output as one NAND gate."
+          ],
+          "answer": 0,
+          "explanation": "Once NAND compositions can realize a complete basis, they can realize every Boolean function expressible from that basis."
+        },
+        {
+          "prompt": "Why can a half-adder compute one-bit Sum and Carry yet fail as a general stage inside a multi-bit adder?",
+          "options": [
+            "It uses XOR for Sum instead of OR.",
+            "It accepts two operand bits but has no input for carry arriving from the less-significant stage.",
+            "It produces its outputs only on a clock edge.",
+            "It can represent only decimal operands."
+          ],
+          "answer": 1,
+          "explanation": "Higher bit positions must combine A, B, and an incoming carry, which requires the three-input behavior of a full-adder."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Adders, Selection, and Memory",
+      "questions": [
+        {
+          "prompt": "In a ripple-carry adder, why can the most-significant sum bit settle later than lower bits?",
+          "options": [
+            "Each stage may depend on a carry produced by the preceding stage, so the longest carry path crosses several gate delays.",
+            "The clock computes lower bits before higher bits.",
+            "The most-significant bit always uses a slower numerical encoding.",
+            "Registers capture each sum bit on a different clock."
+          ],
+          "answer": 0,
+          "explanation": "Carry is a causal dependency between stages, so a worst-case change must propagate through the chain before the final sum is valid."
+        },
+        {
+          "prompt": "An ALU has already produced AND, OR, and ADD results. Why is a multiplexer needed before one destination input?",
+          "options": [
+            "It remembers all results after the operands change.",
+            "It converts the selected result from binary to decimal.",
+            "It lets a control signal choose one data value while avoiding multiple outputs driving the destination together.",
+            "It generates a one-hot register write-enable from a register number."
+          ],
+          "answer": 2,
+          "explanation": "A mux selects one candidate data path; directly joining independently driven outputs would create contention rather than selection."
+        },
+        {
+          "prompt": "A D latch and an edge-triggered D flip-flop receive changing D values. Which distinction explains their different behavior?",
+          "options": [
+            "A latch is transparent while its enable level is active, while a flip-flop samples around a specified clock edge.",
+            "A latch stores a whole word, while a flip-flop stores no state.",
+            "A flip-flop continuously follows D, while a latch changes only at an edge.",
+            "A latch is combinational, while a flip-flop is a decoder."
+          ],
+          "answer": 0,
+          "explanation": "Level sensitivity allows changes through during the active interval; edge triggering limits capture to a timing aperture around an edge."
+        },
+        {
+          "prompt": "For a synchronous datapath computing 3 + 5, which sequence correctly describes how 8 becomes durable state?",
+          "options": [
+            "The clock edge starts each carry, and the mux stores the final decimal value.",
+            "Operand voltages drive the adder, carries settle to 1000, control selects that result, and a destination register captures it at an allowed edge.",
+            "The register computes 1000 before the adder receives its inputs.",
+            "The decoder converts 3 and 5 to 8, then the adder preserves it through feedback."
+          ],
+          "answer": 1,
+          "explanation": "Combinational logic produces the settled sum; selection routes it, and clocked storage preserves the chosen bit pattern."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Building a Minimal CPU",
+      "questions": [
+        {
+          "prompt": "Why is a combinational adder insufficient to make a programmable CPU?",
+          "options": [
+            "It cannot add values represented by voltages.",
+            "It continuously computes one function but provides no stored sequence, operand selection, or instruction-controlled state updates.",
+            "It always requires a separate ISA for each addition.",
+            "It can preserve every prior result without registers."
+          ],
+          "answer": 1,
+          "explanation": "Programmability requires remembered state and control that selects a sequence of operations, not merely one continuously active function."
+        },
+        {
+          "prompt": "In Tiny-8, the FETCH edge loads IR from instruction_memory[PC] and increments PC. Why is IR useful during the following EXECUTE phase?",
+          "options": [
+            "IR preserves the current instruction while PC already addresses the next one.",
+            "IR computes the next PC without combinational logic.",
+            "IR permanently converts instruction bytes into assembly text.",
+            "IR replaces the architectural register file during execution."
+          ],
+          "answer": 0,
+          "explanation": "The instruction must remain stable for decoding after fetch changes the PC, so IR holds that byte across the phase boundary."
+        },
+        {
+          "prompt": "During Tiny-8's EXECUTE interval for ADD R0, R1, the ALU output has settled to 8. When does R0 become 8?",
+          "options": [
+            "As soon as any internal carry changes",
+            "When decoding begins",
+            "At the active edge where reg_write enables R0 to capture the settled ALU result",
+            "When the following instruction is fetched"
+          ],
+          "answer": 2,
+          "explanation": "The ALU result is only a candidate on combinational wires until the enabled register commits it at the clock edge."
+        },
+        {
+          "prompt": "Two Tiny-8 implementations use different numbers of internal phases but produce the same specified register and memory effects for every instruction. What does this demonstrate?",
+          "options": [
+            "The instruction bytes belong to the microarchitecture rather than the ISA.",
+            "Architectural behavior can remain fixed while microarchitectural state and timing organization differ.",
+            "Software must inspect the phase register before using each instruction.",
+            "A clock schedule is always part of the programmer-visible contract."
+          ],
+          "answer": 1,
+          "explanation": "The ISA constrains visible state transitions, while implementations may organize internal registers and cycles differently."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "Instruction Sets and Machine Code",
+      "questions": [
+        {
+          "prompt": "Why can two processors with different pipelines, caches, and execution units run the same machine-code program correctly?",
+          "options": [
+            "Machine-code bytes describe every internal circuit required for execution.",
+            "Both processors preserve the same ISA-defined architectural behavior even though their microarchitectures differ.",
+            "Cache and pipeline choices are encoded into every executable.",
+            "The operating system rewrites each instruction into identical transistor operations."
+          ],
+          "answer": 1,
+          "explanation": "Compatibility comes from honoring the same software-visible contract, not from sharing one internal implementation."
+        },
+        {
+          "prompt": "Why does enlarging a fixed-width instruction's immediate field force an ISA design tradeoff?",
+          "options": [
+            "Immediate bits consume finite encoding space that could otherwise identify operations, registers, or other operands.",
+            "Larger immediates require every register to hold text.",
+            "An immediate is fetched from data memory and therefore needs a cache line.",
+            "Fixed-width instructions can contain fields of unlimited size."
+          ],
+          "answer": 0,
+          "explanation": "A fixed instruction width is a bit budget, so increasing one field requires shrinking, relocating, or redesigning others."
+        },
+        {
+          "prompt": "An x86-64 instruction performs a memory increment in one architectural instruction, while a RISC-V sequence uses load, add, and store. What conclusion is justified?",
+          "options": [
+            "The x86-64 sequence always completes three times faster.",
+            "The RISC-V sequence cannot preserve the same program behavior.",
+            "The ISAs expose different operand models, while runtime still depends on implementation and memory-system behavior.",
+            "Architectural instruction count equals the number of clock cycles."
+          ],
+          "answer": 2,
+          "explanation": "Instruction count reveals encoding and operand-model differences but does not determine internal operations, latency, or total performance."
+        },
+        {
+          "prompt": "Which statement correctly relates an ISA manual, ELF .text bytes, and a processor decoder?",
+          "options": [
+            "The ELF file contains the complete ISA specification, which the decoder reads at startup.",
+            "The manual defines the contract, .text contains encoded instruction instances, and the decoder helps implement those rules in hardware.",
+            "The decoder stores assembly mnemonics that are copied directly into .text.",
+            "The ISA exists only as electrical state inside one processor model."
+          ],
+          "answer": 1,
+          "explanation": "Specification, encoded program, and implementation are distinct layers connected by shared encoding and behavior rules."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Control Flow, Exceptions, and Privilege",
+      "questions": [
+        {
+          "prompt": "How does a conditional branch create a loop at the machine level?",
+          "options": [
+            "The CPU recognizes the source-language loop keyword.",
+            "A condition controls whether the next PC receives a sequential address or an earlier branch target.",
+            "The ALU stores every previous instruction and repeats them automatically.",
+            "The clock reverses direction when a comparison succeeds."
+          ],
+          "answer": 1,
+          "explanation": "Repeated execution emerges from state updates, comparison, and next-PC selection to a backward target."
+        },
+        {
+          "prompt": "Why do x86 signed and unsigned less-than branches use different flag conditions after comparing the same bit patterns?",
+          "options": [
+            "The comparison produces different result bits for signed operands.",
+            "Signed ordering must account for signed overflow, while unsigned ordering depends on borrow/carry behavior.",
+            "Unsigned branches compare assembly text instead of register values.",
+            "Signed branches always test only the high result bit."
+          ],
+          "answer": 1,
+          "explanation": "The subtraction bits are shared, but signed and unsigned interpretations ask different range questions and therefore combine flags differently."
+        },
+        {
+          "prompt": "A user-mode page access triggers a page fault for a valid lazily allocated region. Why can execution resume successfully?",
+          "options": [
+            "The CPU silently ignores every page fault.",
+            "The kernel can install the required mapping and return so the faulting instruction is retried.",
+            "The user process chooses an arbitrary privileged handler address.",
+            "The fault automatically converts the instruction into a system call."
+          ],
+          "answer": 1,
+          "explanation": "A page fault is a restartable request for privileged attention; kernel policy determines whether to repair the mapping or signal failure."
+        },
+        {
+          "prompt": "Which mechanism best explains how an interrupt or exception can safely transfer control from user execution to an operating-system handler?",
+          "options": [
+            "User code supplies any kernel target and continues on its user stack with full privilege.",
+            "Hardware selects a protected configured entry, saves return state, changes privilege and stack as required, and later uses an architectural restoration path.",
+            "The event calls an ordinary user-space function whose return instruction enables kernel mode.",
+            "The CPU saves every software object and permanently transfers ownership to the handler."
+          ],
+          "answer": 1,
+          "explanation": "Protected vectoring and trusted context management prevent unprivileged code from choosing arbitrary privileged control state."
+        }
+      ]
+    }
+  ]
+}

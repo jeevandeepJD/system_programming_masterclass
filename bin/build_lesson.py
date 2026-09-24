@@ -26,6 +26,11 @@ def main() -> None:
         type=Path,
         help="base directory used to resolve relative links and images",
     )
+    parser.add_argument(
+        "--preserve-relative-links",
+        action="store_true",
+        help="leave relative hyperlinks unresolved for portable merged PDFs",
+    )
     parser.add_argument("--no-open", action="store_true")
     args = parser.parse_args()
 
@@ -141,11 +146,13 @@ strong { color: #17202a; }
 """
     )
 
-    base_url = (
-        args.base_url.expanduser().resolve()
-        if args.base_url
-        else source.parent
-    )
+    base_url = None
+    if not args.preserve_relative_links:
+        base_url = (
+            args.base_url.expanduser().resolve()
+            if args.base_url
+            else source.parent
+        )
     HTML(string=document, base_url=str(base_url)).write_pdf(
         output, stylesheets=[css]
     )

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 1 · Day 5 Theory Check — Building a Minimal CPU</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:#07111b; --panel:#102031; --panel2:#162a3e; --line:#2d4861;
+    --text:#eaf3fa; --muted:#9db0c2; --accent:#5bc8ff;
+    --ok:#56df9b; --bad:#ff7589; --warn:#ffd06d;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:linear-gradient(145deg,#07111b,#0d1b29);
+    color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  main { width:min(880px,100%); margin:auto; padding:32px 18px 80px; }
+  header, .question, .result {
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:22px; margin-bottom:18px;
+  }
+  .eyebrow {
+    color:var(--accent); font:700 12px ui-monospace,monospace;
+    letter-spacing:.1em; text-transform:uppercase;
+  }
+  h1 { margin:.35rem 0 .5rem; font-size:clamp(25px,5vw,40px); line-height:1.12; }
+  .lede { color:var(--muted); margin:.4rem 0 0; }
+  fieldset { border:0; padding:0; margin:0; }
+  legend { font-weight:700; margin-bottom:14px; width:100%; }
+  .option {
+    display:flex; gap:11px; align-items:flex-start; padding:11px 13px;
+    margin:8px 0; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); cursor:pointer;
+  }
+  .option:hover { border-color:var(--accent); }
+  .option.correct { border-color:var(--ok); background:#123629; }
+  .option.wrong { border-color:var(--bad); background:#3a1822; }
+  input { margin-top:.28rem; accent-color:var(--accent); }
+  .feedback {
+    display:none; margin-top:13px; padding:11px 13px;
+    border-left:3px solid var(--accent); color:var(--muted); background:#0a1723;
+  }
+  .feedback.show { display:block; }
+  .unanswered { border-color:var(--warn); }
+  .actions { display:flex; gap:12px; flex-wrap:wrap; margin:24px 0; }
+  button {
+    border:1px solid var(--accent); border-radius:9px; padding:11px 18px;
+    background:#173c55; color:var(--text); font:700 15px inherit; cursor:pointer;
+  }
+  button.secondary { border-color:var(--line); background:transparent; }
+  button:hover { filter:brightness(1.14); }
+  .result { display:none; text-align:center; }
+  .result.show { display:block; }
+  .score { color:var(--accent); font-size:32px; font-weight:800; }
+  code { font-family:ui-monospace,monospace; color:#bdeaff; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Week 1 · Day 5 · Theory check</div>
+    <h1>Building a Minimal CPU</h1>
+    <p class="lede">Predict first. Submit once. Explanations remain hidden until
+    every question has an attempted answer.</p>
+  </header>
+  <form id="quiz"></form>
+  <div class="actions">
+    <button type="button" id="submit">Submit answers</button>
+    <button type="button" class="secondary" id="reset">Reset</button>
+  </div>
+  <section class="result" id="result" aria-live="polite">
+    <div class="score" id="score"></div>
+    <p id="summary"></p>
+  </section>
+</main>
+<script>
+const questions = [{"prompt": "Why is a combinational adder insufficient to make a programmable CPU?", "options": ["It cannot add values represented by voltages.", "It continuously computes one function but provides no stored sequence, operand selection, or instruction-controlled state updates.", "It always requires a separate ISA for each addition.", "It can preserve every prior result without registers."], "answer": 1, "explanation": "Programmability requires remembered state and control that selects a sequence of operations, not merely one continuously active function."}, {"prompt": "In Tiny-8, the FETCH edge loads IR from instruction_memory[PC] and increments PC. Why is IR useful during the following EXECUTE phase?", "options": ["IR preserves the current instruction while PC already addresses the next one.", "IR computes the next PC without combinational logic.", "IR permanently converts instruction bytes into assembly text.", "IR replaces the architectural register file during execution."], "answer": 0, "explanation": "The instruction must remain stable for decoding after fetch changes the PC, so IR holds that byte across the phase boundary."}, {"prompt": "During Tiny-8's EXECUTE interval for ADD R0, R1, the ALU output has settled to 8. When does R0 become 8?", "options": ["As soon as any internal carry changes", "When decoding begins", "At the active edge where reg_write enables R0 to capture the settled ALU result", "When the following instruction is fetched"], "answer": 2, "explanation": "The ALU result is only a candidate on combinational wires until the enabled register commits it at the clock edge."}, {"prompt": "Two Tiny-8 implementations use different numbers of internal phases but produce the same specified register and memory effects for every instruction. What does this demonstrate?", "options": ["The instruction bytes belong to the microarchitecture rather than the ISA.", "Architectural behavior can remain fixed while microarchitectural state and timing organization differ.", "Software must inspect the phase register before using each instruction.", "A clock schedule is always part of the programmer-visible contract."], "answer": 1, "explanation": "The ISA constrains visible state transitions, while implementations may organize internal registers and cycles differently."}];
+const quiz = document.querySelector("#quiz");
+
+function build() {
+  quiz.innerHTML = "";
+  questions.forEach((q, qi) => {
+    const section = document.createElement("section");
+    section.className = "question";
+    section.dataset.question = qi;
+    const fieldset = document.createElement("fieldset");
+    const legend = document.createElement("legend");
+    legend.textContent = `${qi + 1}. ${q.prompt}`;
+    fieldset.appendChild(legend);
+    q.options.forEach((option, oi) => {
+      const label = document.createElement("label");
+      label.className = "option";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `q${qi}`;
+      input.value = oi;
+      label.append(input, document.createTextNode(option));
+      fieldset.appendChild(label);
+    });
+    const feedback = document.createElement("div");
+    feedback.className = "feedback";
+    section.append(fieldset, feedback);
+    quiz.appendChild(section);
+  });
+}
+
+document.querySelector("#submit").addEventListener("click", () => {
+  let score = 0;
+  let unanswered = 0;
+  questions.forEach((q, qi) => {
+    const section = quiz.querySelector(`[data-question="${qi}"]`);
+    const selected = section.querySelector("input:checked");
+    section.classList.toggle("unanswered", !selected);
+    const feedback = section.querySelector(".feedback");
+    section.querySelectorAll(".option").forEach((label, oi) => {
+      label.classList.remove("correct", "wrong");
+      if (oi === q.answer) label.classList.add("correct");
+      if (selected && Number(selected.value) === oi && oi !== q.answer)
+        label.classList.add("wrong");
+    });
+    if (!selected) {
+      unanswered++;
+      feedback.textContent = "Choose an answer before reviewing this explanation.";
+    } else {
+      if (Number(selected.value) === q.answer) score++;
+      feedback.textContent = q.explanation;
+    }
+    feedback.classList.add("show");
+  });
+  const result = document.querySelector("#result");
+  result.classList.add("show");
+  document.querySelector("#score").textContent = `${score} / ${questions.length}`;
+  document.querySelector("#summary").textContent = unanswered
+    ? `${unanswered} question(s) were unanswered. Review, reset, and try again.`
+    : score === questions.length
+      ? "All correct. Now explain the causal reason for each answer without the options."
+      : "Use the explanations to identify the weak concept, not merely the missed option.";
+  result.scrollIntoView({behavior:"smooth", block:"center"});
+});
+
+document.querySelector("#reset").addEventListener("click", () => {
+  build();
+  document.querySelector("#result").classList.remove("show");
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+build();
+</script>
+</body>
+</html>

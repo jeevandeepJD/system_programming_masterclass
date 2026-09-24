@@ -443,10 +443,25 @@ resume point or imply mastery.
 The user requested challenge links inside the PDFs. `bin/build_week.py` now
 appends each day's relevant challenge links immediately after that daily
 lesson section. C, assembly, Python, and shell labs include copy-paste
-commands using repository-relative paths. HTML labs include a copy-paste
-local-server command and clickable `localhost` URL. A GitHub source link is
-retained as a portable fallback. Do not embed machine-specific `file://`
-paths.
+commands using repository-relative paths. Every challenge link is relative
+to the consolidated PDF's location (for example,
+`../week-001/challenges/day-002-overflow-lab.c`), including directly
+openable HTML labs. A GitHub source link is retained as a fallback. Do not
+embed machine-specific `file://` or `localhost` URLs. `bin/build_week.py`
+uses `pypdf` (`python3-pypdf` on Fedora) to preserve literal relative URIs
+after PDF merging.
 
 Rebuild a weekly PDF after adding or renaming a challenge so its generated
 links remain accurate.
+
+### 2026-09-24 — Interactive theory checks after major sections
+
+The user requested simple interactive trivia/MCQs after major theory
+sections. Every daily section in Weeks 1–3 now has a generated,
+self-contained `day-NNN-theory-check.html` with four concept-specific MCQs.
+Answers and explanations remain hidden until submission.
+
+Quiz source data lives in each module's `quizzes.json`;
+`bin/generate_quizzes.py` regenerates the HTML. Treat quiz scores as
+diagnostic retrieval evidence, not mastery. Weekly PDF generation places each
+quiz link after its matching daily lesson alongside practical labs.

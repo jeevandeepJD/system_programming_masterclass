@@ -44,7 +44,8 @@ The authoritative curriculum remains
    interrupts/exceptions, vectoring, signals, and system-call transitions.
 
 The seven sections are assembled into one PDF. Completion still requires the
-labs and mastery evidence; reading the combined file is not sufficient.
+theory checks, labs, and mastery evidence; reading the combined file is not
+sufficient.
 
 ## Prepared Week 2 package
 
@@ -105,6 +106,7 @@ Required evidence:
 - [ ] Encode/decode fictional instructions and inspect a real ELF
 - [ ] Trace a branch/loop and draw exception/system-call control flow
 - [ ] Run the safe exception-flow lab and distinguish exception from signal
+- [ ] Attempt each section's interactive theory check and record weak concepts
 - [ ] Explain the mastery checkpoint aloud without notes
 - [ ] Record confidence, time spent, status, and reflection here
 

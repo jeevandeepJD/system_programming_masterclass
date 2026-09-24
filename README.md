@@ -79,9 +79,17 @@ cd /path/to/masterclass
 
 Each daily section in the consolidated PDF ends with links to its relevant
 challenges. C, assembly, Python, and shell labs include copy-paste commands
-that use repository-relative paths. HTML labs include a local-server command
-and clickable `localhost` link. GitHub links remain available for portable
+that use repository-relative paths. Every challenge—including HTML labs—has
+a clickable path relative to the PDF's location, so it remains portable when
+the repository is moved to another device. GitHub links remain available for
 source viewing.
+
+Each daily section also includes a self-contained HTML theory check with four
+MCQs. Regenerate all theory checks after editing `quizzes.json`:
+
+```bash
+python3 ./bin/generate_quizzes.py
+```
 
 Open or serve the optional challenge:
 
@@ -100,6 +108,9 @@ Build a particular week manually:
 ```bash
 python3 ./bin/build_week.py 1
 ```
+
+The weekly builder uses `pypdf` to preserve literal relative link annotations
+inside the merged PDF (`python3-pypdf` on Fedora).
 
 Select another week:
 

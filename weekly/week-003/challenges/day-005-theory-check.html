@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 3 · Day 5 Theory Check — From Source to Object File</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:#07111b; --panel:#102031; --panel2:#162a3e; --line:#2d4861;
+    --text:#eaf3fa; --muted:#9db0c2; --accent:#5bc8ff;
+    --ok:#56df9b; --bad:#ff7589; --warn:#ffd06d;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:linear-gradient(145deg,#07111b,#0d1b29);
+    color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  main { width:min(880px,100%); margin:auto; padding:32px 18px 80px; }
+  header, .question, .result {
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:22px; margin-bottom:18px;
+  }
+  .eyebrow {
+    color:var(--accent); font:700 12px ui-monospace,monospace;
+    letter-spacing:.1em; text-transform:uppercase;
+  }
+  h1 { margin:.35rem 0 .5rem; font-size:clamp(25px,5vw,40px); line-height:1.12; }
+  .lede { color:var(--muted); margin:.4rem 0 0; }
+  fieldset { border:0; padding:0; margin:0; }
+  legend { font-weight:700; margin-bottom:14px; width:100%; }
+  .option {
+    display:flex; gap:11px; align-items:flex-start; padding:11px 13px;
+    margin:8px 0; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); cursor:pointer;
+  }
+  .option:hover { border-color:var(--accent); }
+  .option.correct { border-color:var(--ok); background:#123629; }
+  .option.wrong { border-color:var(--bad); background:#3a1822; }
+  input { margin-top:.28rem; accent-color:var(--accent); }
+  .feedback {
+    display:none; margin-top:13px; padding:11px 13px;
+    border-left:3px solid var(--accent); color:var(--muted); background:#0a1723;
+  }
+  .feedback.show { display:block; }
+  .unanswered { border-color:var(--warn); }
+  .actions { display:flex; gap:12px; flex-wrap:wrap; margin:24px 0; }
+  button {
+    border:1px solid var(--accent); border-radius:9px; padding:11px 18px;
+    background:#173c55; color:var(--text); font:700 15px inherit; cursor:pointer;
+  }
+  button.secondary { border-color:var(--line); background:transparent; }
+  button:hover { filter:brightness(1.14); }
+  .result { display:none; text-align:center; }
+  .result.show { display:block; }
+  .score { color:var(--accent); font-size:32px; font-weight:800; }
+  code { font-family:ui-monospace,monospace; color:#bdeaff; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Week 3 · Day 5 · Theory check</div>
+    <h1>From Source to Object File</h1>
+    <p class="lede">Predict first. Submit once. Explanations remain hidden until
+    every question has an attempted answer.</p>
+  </header>
+  <form id="quiz"></form>
+  <div class="actions">
+    <button type="button" id="submit">Submit answers</button>
+    <button type="button" class="secondary" id="reset">Reset</button>
+  </div>
+  <section class="result" id="result" aria-live="polite">
+    <div class="score" id="score"></div>
+    <p id="summary"></p>
+  </section>
+</main>
+<script>
+const questions = [{"prompt": "Why can #include <stdio.h> make a printf call compile without supplying printf's executable definition?", "options": ["The preprocessor copies declarations and related header tokens into the translation unit; the external definition can remain unresolved until linking.", "Every include directive copies libc's machine code into the source file.", "The assembler implements all functions declared by system headers.", "The kernel resolves every declared C function during preprocessing."], "answer": 0, "explanation": "A header provides source-level declarations, types, and macros needed for semantic checking. The resulting object may contain an undefined printf symbol plus relocation metadata; a linker and, for dynamic linkage, the runtime loader later connect that reference to code."}, {"prompt": "An ET_REL object contains a call instruction whose target function is defined in another object. What allows the instruction to exist before the final target address is known?", "options": ["The assembler guesses a virtual address and Linux guarantees that layout.", "The object records a symbol reference and relocation describing where and how a later linker must patch or resolve the address-dependent field.", "The C preprocessor reserves a physical page for every external function.", "ET_REL files execute the call by searching symbol names at each CPU instruction."], "answer": 1, "explanation": "The assembler can emit the opcode and a placeholder or addend while recording a relocation tied to the unresolved symbol. Once input selection and layout are known, the linker applies the ABI-defined calculation or preserves an appropriate dynamic relocation."}, {"prompt": "Why can a large zero-initialized object occupy substantial memory at runtime while adding few or no equivalent zero bytes to an ELF object's file image?", "options": ["The CPU treats every absent section as writable zero memory.", "A NOBITS-style .bss section records required size and alignment, and the eventual load image supplies zero-filled memory without storing all zeros in the file.", "The preprocessor compresses all numeric literals in source files.", "Zero-initialized objects have no C lifetime until first written."], "answer": 1, "explanation": "Object metadata can describe zero-initialized storage by size rather than file payload. The linker carries that requirement into the loadable image, where memory size can exceed file-backed bytes and the extra portion is initialized to zero."}, {"prompt": "Which fact most directly explains why a relocatable .o containing real machine instructions is not normally runnable as a Linux process image?", "options": ["Machine instructions are legal only inside shared libraries.", "It can still lack resolved externals, final virtual layout, startup code, and a loadable program-header plan.", "Linux can execute only source files whose suffix is .c.", "Relocatable objects cannot contain data or symbols."], "answer": 1, "explanation": "ET_REL is a linker handoff container: instructions coexist with sections, symbols, and unresolved relocations. A runnable image requires completed composition and runtime metadata such as an entry point and loadable segments, which ordinary .o files do not provide."}];
+const quiz = document.querySelector("#quiz");
+
+function build() {
+  quiz.innerHTML = "";
+  questions.forEach((q, qi) => {
+    const section = document.createElement("section");
+    section.className = "question";
+    section.dataset.question = qi;
+    const fieldset = document.createElement("fieldset");
+    const legend = document.createElement("legend");
+    legend.textContent = `${qi + 1}. ${q.prompt}`;
+    fieldset.appendChild(legend);
+    q.options.forEach((option, oi) => {
+      const label = document.createElement("label");
+      label.className = "option";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `q${qi}`;
+      input.value = oi;
+      label.append(input, document.createTextNode(option));
+      fieldset.appendChild(label);
+    });
+    const feedback = document.createElement("div");
+    feedback.className = "feedback";
+    section.append(fieldset, feedback);
+    quiz.appendChild(section);
+  });
+}
+
+document.querySelector("#submit").addEventListener("click", () => {
+  let score = 0;
+  let unanswered = 0;
+  questions.forEach((q, qi) => {
+    const section = quiz.querySelector(`[data-question="${qi}"]`);
+    const selected = section.querySelector("input:checked");
+    section.classList.toggle("unanswered", !selected);
+    const feedback = section.querySelector(".feedback");
+    section.querySelectorAll(".option").forEach((label, oi) => {
+      label.classList.remove("correct", "wrong");
+      if (oi === q.answer) label.classList.add("correct");
+      if (selected && Number(selected.value) === oi && oi !== q.answer)
+        label.classList.add("wrong");
+    });
+    if (!selected) {
+      unanswered++;
+      feedback.textContent = "Choose an answer before reviewing this explanation.";
+    } else {
+      if (Number(selected.value) === q.answer) score++;
+      feedback.textContent = q.explanation;
+    }
+    feedback.classList.add("show");
+  });
+  const result = document.querySelector("#result");
+  result.classList.add("show");
+  document.querySelector("#score").textContent = `${score} / ${questions.length}`;
+  document.querySelector("#summary").textContent = unanswered
+    ? `${unanswered} question(s) were unanswered. Review, reset, and try again.`
+    : score === questions.length
+      ? "All correct. Now explain the causal reason for each answer without the options."
+      : "Use the explanations to identify the weak concept, not merely the missed option.";
+  result.scrollIntoView({behavior:"smooth", block:"center"});
+});
+
+document.querySelector("#reset").addEventListener("click", () => {
+  build();
+  document.querySelector("#result").classList.remove("show");
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+build();
+</script>
+</body>
+</html>

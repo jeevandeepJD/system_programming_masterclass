@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 3 · Day 1 Theory Check — Addresses You Have Already Seen</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:#07111b; --panel:#102031; --panel2:#162a3e; --line:#2d4861;
+    --text:#eaf3fa; --muted:#9db0c2; --accent:#5bc8ff;
+    --ok:#56df9b; --bad:#ff7589; --warn:#ffd06d;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:linear-gradient(145deg,#07111b,#0d1b29);
+    color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  main { width:min(880px,100%); margin:auto; padding:32px 18px 80px; }
+  header, .question, .result {
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:22px; margin-bottom:18px;
+  }
+  .eyebrow {
+    color:var(--accent); font:700 12px ui-monospace,monospace;
+    letter-spacing:.1em; text-transform:uppercase;
+  }
+  h1 { margin:.35rem 0 .5rem; font-size:clamp(25px,5vw,40px); line-height:1.12; }
+  .lede { color:var(--muted); margin:.4rem 0 0; }
+  fieldset { border:0; padding:0; margin:0; }
+  legend { font-weight:700; margin-bottom:14px; width:100%; }
+  .option {
+    display:flex; gap:11px; align-items:flex-start; padding:11px 13px;
+    margin:8px 0; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); cursor:pointer;
+  }
+  .option:hover { border-color:var(--accent); }
+  .option.correct { border-color:var(--ok); background:#123629; }
+  .option.wrong { border-color:var(--bad); background:#3a1822; }
+  input { margin-top:.28rem; accent-color:var(--accent); }
+  .feedback {
+    display:none; margin-top:13px; padding:11px 13px;
+    border-left:3px solid var(--accent); color:var(--muted); background:#0a1723;
+  }
+  .feedback.show { display:block; }
+  .unanswered { border-color:var(--warn); }
+  .actions { display:flex; gap:12px; flex-wrap:wrap; margin:24px 0; }
+  button {
+    border:1px solid var(--accent); border-radius:9px; padding:11px 18px;
+    background:#173c55; color:var(--text); font:700 15px inherit; cursor:pointer;
+  }
+  button.secondary { border-color:var(--line); background:transparent; }
+  button:hover { filter:brightness(1.14); }
+  .result { display:none; text-align:center; }
+  .result.show { display:block; }
+  .score { color:var(--accent); font-size:32px; font-weight:800; }
+  code { font-family:ui-monospace,monospace; color:#bdeaff; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Week 3 · Day 1 · Theory check</div>
+    <h1>Addresses You Have Already Seen</h1>
+    <p class="lede">Predict first. Submit once. Explanations remain hidden until
+    every question has an attempted answer.</p>
+  </header>
+  <form id="quiz"></form>
+  <div class="actions">
+    <button type="button" id="submit">Submit answers</button>
+    <button type="button" class="secondary" id="reset">Reset</button>
+  </div>
+  <section class="result" id="result" aria-live="polite">
+    <div class="score" id="score"></div>
+    <p id="summary"></p>
+  </section>
+</main>
+<script>
+const questions = [{"prompt": "Given int a[5], which expression is valid to form in ISO C but invalid to dereference?", "options": ["a + 5", "a + 6", "a - 1", "*(a + 4)"], "answer": 0, "explanation": "C permits a pointer one past the last array element so iteration can use an end sentinel, but that pointer does not designate an element and cannot be dereferenced. Forming a + 6 or a - 1 is already undefined; dereferencing a + 4 is valid."}, {"prompt": "On an implementation where sizeof(int) is 4, int a[5]; int *p = a; why can sizeof a be 20 while sizeof p is 8?", "options": ["The array expression always stores a hidden five-element length beside its address.", "a is an array object whose full size is known in the sizeof context, while p is a separate pointer object.", "sizeof follows a at runtime and counts elements until it reaches inaccessible memory.", "p points to only one int, so sizeof p reports sizeof(int) plus one machine word."], "answer": 1, "explanation": "An array and a pointer are different objects and types. Array-to-pointer conversion does not occur when an array is the operand of sizeof, so sizeof a measures all five ints; sizeof p measures the pointer representation, not its pointee or array extent."}, {"prompt": "Why is passing int grid[3][4] to a function expecting int ** not a valid way to pass the matrix?", "options": ["A two-dimensional array decays to a pointer to its first four-int row, not to a pointer to a stored row pointer.", "int ** can address only dynamically allocated integers.", "The inner dimension is discarded, but the outer dimension is retained in the converted type.", "ISO C requires every multidimensional array to use column-major layout."], "answer": 0, "explanation": "grid is an array of three arrays of four int, so in most expressions it converts to int (*)[4]. Its storage contains adjacent int rows and no array of int * values; int ** describes a different representation with an additional indirection."}, {"prompt": "A source array contains five nonzero characters and no null byte. Why is calling strlen on it invalid even when adjacent mapped memory happens to contain a zero?", "options": ["strlen may inspect only arrays allocated by malloc.", "strlen is required to read exactly one byte beyond every source array.", "The array does not represent a C string, so strlen reads beyond the array while searching for a terminator.", "Mapped memory outside an array automatically extends that array's C lifetime."], "answer": 2, "explanation": "strlen's contract requires a pointer to a null-terminated byte string. Without a null byte inside the array, its scan crosses the object's bound, which is undefined behavior regardless of whether the MMU maps the following address or a zero is found there."}];
+const quiz = document.querySelector("#quiz");
+
+function build() {
+  quiz.innerHTML = "";
+  questions.forEach((q, qi) => {
+    const section = document.createElement("section");
+    section.className = "question";
+    section.dataset.question = qi;
+    const fieldset = document.createElement("fieldset");
+    const legend = document.createElement("legend");
+    legend.textContent = `${qi + 1}. ${q.prompt}`;
+    fieldset.appendChild(legend);
+    q.options.forEach((option, oi) => {
+      const label = document.createElement("label");
+      label.className = "option";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `q${qi}`;
+      input.value = oi;
+      label.append(input, document.createTextNode(option));
+      fieldset.appendChild(label);
+    });
+    const feedback = document.createElement("div");
+    feedback.className = "feedback";
+    section.append(fieldset, feedback);
+    quiz.appendChild(section);
+  });
+}
+
+document.querySelector("#submit").addEventListener("click", () => {
+  let score = 0;
+  let unanswered = 0;
+  questions.forEach((q, qi) => {
+    const section = quiz.querySelector(`[data-question="${qi}"]`);
+    const selected = section.querySelector("input:checked");
+    section.classList.toggle("unanswered", !selected);
+    const feedback = section.querySelector(".feedback");
+    section.querySelectorAll(".option").forEach((label, oi) => {
+      label.classList.remove("correct", "wrong");
+      if (oi === q.answer) label.classList.add("correct");
+      if (selected && Number(selected.value) === oi && oi !== q.answer)
+        label.classList.add("wrong");
+    });
+    if (!selected) {
+      unanswered++;
+      feedback.textContent = "Choose an answer before reviewing this explanation.";
+    } else {
+      if (Number(selected.value) === q.answer) score++;
+      feedback.textContent = q.explanation;
+    }
+    feedback.classList.add("show");
+  });
+  const result = document.querySelector("#result");
+  result.classList.add("show");
+  document.querySelector("#score").textContent = `${score} / ${questions.length}`;
+  document.querySelector("#summary").textContent = unanswered
+    ? `${unanswered} question(s) were unanswered. Review, reset, and try again.`
+    : score === questions.length
+      ? "All correct. Now explain the causal reason for each answer without the options."
+      : "Use the explanations to identify the weak concept, not merely the missed option.";
+  result.scrollIntoView({behavior:"smooth", block:"center"});
+});
+
+document.querySelector("#reset").addEventListener("click", () => {
+  build();
+  document.querySelector("#result").classList.remove("show");
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+build();
+</script>
+</body>
+</html>

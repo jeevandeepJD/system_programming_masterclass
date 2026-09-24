@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 1 · Day 7 Theory Check — Control Flow, Exceptions, and Privilege</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:#07111b; --panel:#102031; --panel2:#162a3e; --line:#2d4861;
+    --text:#eaf3fa; --muted:#9db0c2; --accent:#5bc8ff;
+    --ok:#56df9b; --bad:#ff7589; --warn:#ffd06d;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:linear-gradient(145deg,#07111b,#0d1b29);
+    color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  main { width:min(880px,100%); margin:auto; padding:32px 18px 80px; }
+  header, .question, .result {
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:22px; margin-bottom:18px;
+  }
+  .eyebrow {
+    color:var(--accent); font:700 12px ui-monospace,monospace;
+    letter-spacing:.1em; text-transform:uppercase;
+  }
+  h1 { margin:.35rem 0 .5rem; font-size:clamp(25px,5vw,40px); line-height:1.12; }
+  .lede { color:var(--muted); margin:.4rem 0 0; }
+  fieldset { border:0; padding:0; margin:0; }
+  legend { font-weight:700; margin-bottom:14px; width:100%; }
+  .option {
+    display:flex; gap:11px; align-items:flex-start; padding:11px 13px;
+    margin:8px 0; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); cursor:pointer;
+  }
+  .option:hover { border-color:var(--accent); }
+  .option.correct { border-color:var(--ok); background:#123629; }
+  .option.wrong { border-color:var(--bad); background:#3a1822; }
+  input { margin-top:.28rem; accent-color:var(--accent); }
+  .feedback {
+    display:none; margin-top:13px; padding:11px 13px;
+    border-left:3px solid var(--accent); color:var(--muted); background:#0a1723;
+  }
+  .feedback.show { display:block; }
+  .unanswered { border-color:var(--warn); }
+  .actions { display:flex; gap:12px; flex-wrap:wrap; margin:24px 0; }
+  button {
+    border:1px solid var(--accent); border-radius:9px; padding:11px 18px;
+    background:#173c55; color:var(--text); font:700 15px inherit; cursor:pointer;
+  }
+  button.secondary { border-color:var(--line); background:transparent; }
+  button:hover { filter:brightness(1.14); }
+  .result { display:none; text-align:center; }
+  .result.show { display:block; }
+  .score { color:var(--accent); font-size:32px; font-weight:800; }
+  code { font-family:ui-monospace,monospace; color:#bdeaff; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Week 1 · Day 7 · Theory check</div>
+    <h1>Control Flow, Exceptions, and Privilege</h1>
+    <p class="lede">Predict first. Submit once. Explanations remain hidden until
+    every question has an attempted answer.</p>
+  </header>
+  <form id="quiz"></form>
+  <div class="actions">
+    <button type="button" id="submit">Submit answers</button>
+    <button type="button" class="secondary" id="reset">Reset</button>
+  </div>
+  <section class="result" id="result" aria-live="polite">
+    <div class="score" id="score"></div>
+    <p id="summary"></p>
+  </section>
+</main>
+<script>
+const questions = [{"prompt": "How does a conditional branch create a loop at the machine level?", "options": ["The CPU recognizes the source-language loop keyword.", "A condition controls whether the next PC receives a sequential address or an earlier branch target.", "The ALU stores every previous instruction and repeats them automatically.", "The clock reverses direction when a comparison succeeds."], "answer": 1, "explanation": "Repeated execution emerges from state updates, comparison, and next-PC selection to a backward target."}, {"prompt": "Why do x86 signed and unsigned less-than branches use different flag conditions after comparing the same bit patterns?", "options": ["The comparison produces different result bits for signed operands.", "Signed ordering must account for signed overflow, while unsigned ordering depends on borrow/carry behavior.", "Unsigned branches compare assembly text instead of register values.", "Signed branches always test only the high result bit."], "answer": 1, "explanation": "The subtraction bits are shared, but signed and unsigned interpretations ask different range questions and therefore combine flags differently."}, {"prompt": "A user-mode page access triggers a page fault for a valid lazily allocated region. Why can execution resume successfully?", "options": ["The CPU silently ignores every page fault.", "The kernel can install the required mapping and return so the faulting instruction is retried.", "The user process chooses an arbitrary privileged handler address.", "The fault automatically converts the instruction into a system call."], "answer": 1, "explanation": "A page fault is a restartable request for privileged attention; kernel policy determines whether to repair the mapping or signal failure."}, {"prompt": "Which mechanism best explains how an interrupt or exception can safely transfer control from user execution to an operating-system handler?", "options": ["User code supplies any kernel target and continues on its user stack with full privilege.", "Hardware selects a protected configured entry, saves return state, changes privilege and stack as required, and later uses an architectural restoration path.", "The event calls an ordinary user-space function whose return instruction enables kernel mode.", "The CPU saves every software object and permanently transfers ownership to the handler."], "answer": 1, "explanation": "Protected vectoring and trusted context management prevent unprivileged code from choosing arbitrary privileged control state."}];
+const quiz = document.querySelector("#quiz");
+
+function build() {
+  quiz.innerHTML = "";
+  questions.forEach((q, qi) => {
+    const section = document.createElement("section");
+    section.className = "question";
+    section.dataset.question = qi;
+    const fieldset = document.createElement("fieldset");
+    const legend = document.createElement("legend");
+    legend.textContent = `${qi + 1}. ${q.prompt}`;
+    fieldset.appendChild(legend);
+    q.options.forEach((option, oi) => {
+      const label = document.createElement("label");
+      label.className = "option";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `q${qi}`;
+      input.value = oi;
+      label.append(input, document.createTextNode(option));
+      fieldset.appendChild(label);
+    });
+    const feedback = document.createElement("div");
+    feedback.className = "feedback";
+    section.append(fieldset, feedback);
+    quiz.appendChild(section);
+  });
+}
+
+document.querySelector("#submit").addEventListener("click", () => {
+  let score = 0;
+  let unanswered = 0;
+  questions.forEach((q, qi) => {
+    const section = quiz.querySelector(`[data-question="${qi}"]`);
+    const selected = section.querySelector("input:checked");
+    section.classList.toggle("unanswered", !selected);
+    const feedback = section.querySelector(".feedback");
+    section.querySelectorAll(".option").forEach((label, oi) => {
+      label.classList.remove("correct", "wrong");
+      if (oi === q.answer) label.classList.add("correct");
+      if (selected && Number(selected.value) === oi && oi !== q.answer)
+        label.classList.add("wrong");
+    });
+    if (!selected) {
+      unanswered++;
+      feedback.textContent = "Choose an answer before reviewing this explanation.";
+    } else {
+      if (Number(selected.value) === q.answer) score++;
+      feedback.textContent = q.explanation;
+    }
+    feedback.classList.add("show");
+  });
+  const result = document.querySelector("#result");
+  result.classList.add("show");
+  document.querySelector("#score").textContent = `${score} / ${questions.length}`;
+  document.querySelector("#summary").textContent = unanswered
+    ? `${unanswered} question(s) were unanswered. Review, reset, and try again.`
+    : score === questions.length
+      ? "All correct. Now explain the causal reason for each answer without the options."
+      : "Use the explanations to identify the weak concept, not merely the missed option.";
+  result.scrollIntoView({behavior:"smooth", block:"center"});
+});
+
+document.querySelector("#reset").addEventListener("click", () => {
+  build();
+  document.querySelector("#result").classList.remove("show");
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+build();
+</script>
+</body>
+</html>

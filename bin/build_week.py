@@ -11,6 +11,9 @@ import tempfile
 from pathlib import Path
 from urllib.parse import quote
 
+from pypdf import PdfReader, PdfWriter
+from pypdf.generic import NameObject, TextStringObject
+
 
 ROOT = Path(__file__).resolve().parent.parent
 LESSON_BUILDER = ROOT / "bin" / "build_lesson.py"
@@ -18,7 +21,6 @@ GITHUB_BLOB_ROOT = (
     "https://github.com/jeevandeepJD/system_programming_masterclass/"
     "blob/experiment/weekly-modules"
 )
-HTML_PORT = 8731
 
 
 def normalize_week(value: str) -> str:
@@ -64,29 +66,24 @@ def lesson_with_challenge_links(
         "",
         "## Challenge links for this section",
         "",
-        "Run commands from the repository root. GitHub links are included only",
-        "as a portable way to inspect or download the source.",
+        "Run commands from the repository root. File links are relative to the",
+        "weekly PDF, so they work on any device that retains the repository",
+        "folder structure. GitHub remains a source-view fallback.",
         "",
     ]
     for path in challenges:
         relative = path.relative_to(ROOT).as_posix()
         kind = labels.get(path.suffix.lower(), "challenge file")
         github_url = f"{GITHUB_BLOB_ROOT}/{quote(relative, safe='/')}"
+        relative_pdf_url = (
+            f"repo-relative:../{module.name}/challenges/{quote(path.name)}"
+        )
         lines.extend([f"### {path.name}", "", f"**Type:** {kind}", ""])
 
         if path.suffix.lower() == ".html":
-            serve_directory = path.parent.relative_to(ROOT).as_posix()
-            local_url = f"http://localhost:{HTML_PORT}/{quote(path.name)}"
             lines.extend(
                 [
-                    "**Start the local challenge server:**",
-                    "",
-                    "```bash",
-                    f"python3 -m http.server {HTML_PORT} --bind 127.0.0.1 "
-                    f"--directory {serve_directory}",
-                    "```",
-                    "",
-                    f"- [Open interactive lab]({local_url})",
+                    f"- [Open interactive lab]({relative_pdf_url})",
                     f"- [View source on GitHub]({github_url})",
                     "",
                 ]
@@ -102,6 +99,7 @@ def lesson_with_challenge_links(
                 command,
                 "```",
                 "",
+                f"- [Open challenge file]({relative_pdf_url})",
                 f"- [View source on GitHub]({github_url})",
                 "",
             ]
@@ -175,6 +173,35 @@ def runnable_command(path: Path, module: Path) -> str:
     return f"printf 'Open this challenge file: %s\\n' {relative}"
 
 
+def rewrite_relative_links(pdf: Path) -> int:
+    reader = PdfReader(pdf)
+    changed = 0
+    marker = "repo-relative:"
+
+    for page in reader.pages:
+        for reference in page.get("/Annots", []):
+            annotation = reference.get_object()
+            action = annotation.get("/A")
+            if not action or "/URI" not in action:
+                continue
+            uri = str(action["/URI"])
+            if not uri.startswith(marker):
+                continue
+            action[NameObject("/URI")] = TextStringObject(
+                uri.removeprefix(marker)
+            )
+            changed += 1
+
+    if changed:
+        rewritten = pdf.with_suffix(".relative-links.pdf")
+        writer = PdfWriter(clone_from=reader)
+        with rewritten.open("wb") as stream:
+            writer.write(stream)
+        rewritten.replace(pdf)
+
+    return changed
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("week", type=normalize_week)
@@ -196,29 +223,32 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix=f"{args.week}-") as temp:
         temp_dir = Path(temp)
-        sources = [(overview, module)]
-        sources.extend(
-            (
-                lesson_with_challenge_links(lesson, module, temp_dir),
-                lesson.parent,
+        sources = [(overview, module, False)]
+        for lesson in lessons:
+            rendered_source = lesson_with_challenge_links(
+                lesson, module, temp_dir
             )
-            for lesson in lessons
-        )
+            sources.append(
+                (rendered_source, lesson.parent, rendered_source != lesson)
+            )
         parts: list[Path] = []
 
-        for index, (source, base_url) in enumerate(sources):
+        for index, (source, base_url, preserve_relative) in enumerate(sources):
             part = temp_dir / f"{index:02d}-{source.stem}.pdf"
+            command = [
+                sys.executable,
+                str(LESSON_BUILDER),
+                str(source),
+                "--output",
+                str(part),
+                "--base-url",
+                str(base_url),
+                "--no-open",
+            ]
+            if preserve_relative:
+                command.append("--preserve-relative-links")
             subprocess.run(
-                [
-                    sys.executable,
-                    str(LESSON_BUILDER),
-                    str(source),
-                    "--output",
-                    str(part),
-                    "--base-url",
-                    str(base_url),
-                    "--no-open",
-                ],
+                command,
                 check=True,
             )
             parts.append(part)
@@ -228,7 +258,8 @@ def main() -> None:
             check=True,
         )
 
-    print(f"wrote {output}")
+    relative_links = rewrite_relative_links(output)
+    print(f"wrote {output} ({relative_links} relative challenge links)")
 
     if not args.no_open:
         cursor = subprocess.run(

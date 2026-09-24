@@ -1,0 +1,355 @@
+{
+  "week": 3,
+  "days": [
+    {
+      "day": 1,
+      "title": "Addresses You Have Already Seen",
+      "questions": [
+        {
+          "prompt": "Given int a[5], which expression is valid to form in ISO C but invalid to dereference?",
+          "options": [
+            "a + 5",
+            "a + 6",
+            "a - 1",
+            "*(a + 4)"
+          ],
+          "answer": 0,
+          "explanation": "C permits a pointer one past the last array element so iteration can use an end sentinel, but that pointer does not designate an element and cannot be dereferenced. Forming a + 6 or a - 1 is already undefined; dereferencing a + 4 is valid."
+        },
+        {
+          "prompt": "On an implementation where sizeof(int) is 4, int a[5]; int *p = a; why can sizeof a be 20 while sizeof p is 8?",
+          "options": [
+            "The array expression always stores a hidden five-element length beside its address.",
+            "a is an array object whose full size is known in the sizeof context, while p is a separate pointer object.",
+            "sizeof follows a at runtime and counts elements until it reaches inaccessible memory.",
+            "p points to only one int, so sizeof p reports sizeof(int) plus one machine word."
+          ],
+          "answer": 1,
+          "explanation": "An array and a pointer are different objects and types. Array-to-pointer conversion does not occur when an array is the operand of sizeof, so sizeof a measures all five ints; sizeof p measures the pointer representation, not its pointee or array extent."
+        },
+        {
+          "prompt": "Why is passing int grid[3][4] to a function expecting int ** not a valid way to pass the matrix?",
+          "options": [
+            "A two-dimensional array decays to a pointer to its first four-int row, not to a pointer to a stored row pointer.",
+            "int ** can address only dynamically allocated integers.",
+            "The inner dimension is discarded, but the outer dimension is retained in the converted type.",
+            "ISO C requires every multidimensional array to use column-major layout."
+          ],
+          "answer": 0,
+          "explanation": "grid is an array of three arrays of four int, so in most expressions it converts to int (*)[4]. Its storage contains adjacent int rows and no array of int * values; int ** describes a different representation with an additional indirection."
+        },
+        {
+          "prompt": "A source array contains five nonzero characters and no null byte. Why is calling strlen on it invalid even when adjacent mapped memory happens to contain a zero?",
+          "options": [
+            "strlen may inspect only arrays allocated by malloc.",
+            "strlen is required to read exactly one byte beyond every source array.",
+            "The array does not represent a C string, so strlen reads beyond the array while searching for a terminator.",
+            "Mapped memory outside an array automatically extends that array's C lifetime."
+          ],
+          "answer": 2,
+          "explanation": "strlen's contract requires a pointer to a null-terminated byte string. Without a null byte inside the array, its scan crosses the object's bound, which is undefined behavior regardless of whether the MMU maps the following address or a zero is found there."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Structures, Unions, and Function Pointers",
+      "questions": [
+        {
+          "prompt": "Why can a structure require tail padding after its final declared member?",
+          "options": [
+            "It stores a runtime count of the structure's members.",
+            "It ensures successive elements in an array of that structure each satisfy the structure's alignment requirement.",
+            "ISO C requires every structure size to be a multiple of eight bytes.",
+            "It makes memcmp a portable member-by-member comparison."
+          ],
+          "answer": 1,
+          "explanation": "Array elements are separated by sizeof the element type. Tail padding can make that stride a multiple of the structure's alignment, so the corresponding members of every array element remain correctly aligned; neither the amount nor an eight-byte rule is universal."
+        },
+        {
+          "prompt": "Why can memcmp report two structures unequal even when every corresponding member value compares equal?",
+          "options": [
+            "memcmp invokes each member's comparison operator in declaration order.",
+            "The compiler may reorder declared members differently in each object.",
+            "Padding bytes can have unspecified values that differ even though the members have equal values.",
+            "memcmp always compares pointers rather than object representations."
+          ],
+          "answer": 2,
+          "explanation": "memcmp compares every byte in the object representation, including padding. Structure value equality depends on member values, while padding can contain unspecified, differing bytes, so raw byte equality is not a general structure-value comparison."
+        },
+        {
+          "prompt": "What property makes a tagged union safer for variant data than a union alone?",
+          "options": [
+            "The tag changes the union so all members have separate storage.",
+            "The tag records which alternative the program currently intends to be valid, allowing reads to be checked against that invariant.",
+            "The tag makes every inactive-member read portable and representation-independent.",
+            "The tag forces the compiler to zero all padding whenever a member changes."
+          ],
+          "answer": 1,
+          "explanation": "Union members overlap, and the union itself does not remember which alternative was stored. A separate tag lets software maintain and test that state invariant; it does not alter storage overlap or legalize arbitrary representation reinterpretation."
+        },
+        {
+          "prompt": "Why can casting an incompatible function pointer not make an indirect call safe?",
+          "options": [
+            "A cast changes only the static expression type; it does not make the callee and caller agree on the ABI-level argument and return conventions.",
+            "Function pointers may never be stored in structures.",
+            "Every indirect call is undefined in strictly conforming C.",
+            "The linker rewrites all cast function pointers to null."
+          ],
+          "answer": 0,
+          "explanation": "Calling through a pointer requires a compatible function type. A cast may suppress a diagnostic, but it cannot change the actual callee's parameter handling, return representation, or calling convention, so a mismatch still causes undefined behavior."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Dynamic Memory and Lifetime",
+      "questions": [
+        {
+          "prompt": "Why does assigning the result of realloc directly back to the sole owner risk a leak?",
+          "options": [
+            "realloc always frees the old allocation before attempting any resize.",
+            "On failure realloc returns null while leaving the old allocation valid, so overwriting the only pointer loses the allocation's address.",
+            "realloc can resize only allocations originally returned by calloc.",
+            "A successful realloc never preserves existing bytes."
+          ],
+          "answer": 1,
+          "explanation": "For a nonzero resize request, failure returns null and leaves the original allocation unchanged. Using a temporary preserves the old owner until success is known; direct assignment can discard the only path needed to use and free that still-live block."
+        },
+        {
+          "prompt": "After free(p), why is reading through an alias q that still contains the old address undefined even if the page remains mapped?",
+          "options": [
+            "free is required to unmap the entire virtual page immediately.",
+            "The allocation's lifetime ended, and address translation by the MMU does not grant C permission to access a dead object.",
+            "All pointer representations are automatically changed to null by free.",
+            "Mapped pages may contain only objects with static storage duration."
+          ],
+          "answer": 1,
+          "explanation": "free ends the allocated object's lifetime, making every alias dangling. The allocator may retain the block and Linux may keep its page mapped, but mapping state and familiar bytes are lower-layer facts that do not recreate a live C object."
+        },
+        {
+          "prompt": "Why is count > SIZE_MAX / sizeof *items checked before malloc(count * sizeof *items)?",
+          "options": [
+            "malloc accepts element counts but not byte counts.",
+            "The division forces malloc to return storage aligned for items.",
+            "The multiplication could wrap as size_t and request a smaller block than the program will index.",
+            "ISO C defines every failed multiplication as a null pointer."
+          ],
+          "answer": 2,
+          "explanation": "size_t arithmetic is unsigned and wraps modulo its range. If the product wraps, malloc may successfully allocate too few bytes while later code assumes count elements exist; the precondition prevents that undersized-allocation cause."
+        },
+        {
+          "prompt": "Which design property is the primary reason a bump arena can allocate cheaply?",
+          "options": [
+            "It asks the kernel for a fresh page for every object.",
+            "It generally advances an aligned offset in one backing region and defers reclamation to one bulk lifetime end.",
+            "It stores every object in static storage.",
+            "It can reclaim any individual object without metadata."
+          ],
+          "answer": 1,
+          "explanation": "A bump arena commonly computes alignment, returns the next slice, and advances one offset. Avoiding per-object free and general-purpose free-list management makes allocation cheap, at the cost of tying all contained objects to the arena's bulk lifetime."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Qualifiers, Atomics, and Undefined Behavior",
+      "questions": [
+        {
+          "prompt": "Why does volatile int ready not make payload = 42; ready = 1; a valid cross-thread publication protocol in ISO C?",
+          "options": [
+            "volatile objects can be accessed only by signal handlers.",
+            "volatile preserves relevant accesses but creates neither atomic synchronization nor a happens-before edge for the ordinary payload access.",
+            "volatile always makes ready thread-local.",
+            "The C standard requires volatile stores to occur only after a process-wide mutex is locked."
+          ],
+          "answer": 1,
+          "explanation": "volatile concerns externally significant accesses; it is not the C thread-synchronization mechanism. Conflicting ordinary accesses without a happens-before relationship can form a data race, so release/acquire atomics or a lock is needed to publish payload."
+        },
+        {
+          "prompt": "Why may an optimizer replace return x + 1 > x; with return 1; for int x under ordinary ISO C rules?",
+          "options": [
+            "All target CPUs saturate signed addition at INT_MAX.",
+            "For executions where x + 1 is defined the comparison is true, while signed overflow is undefined and supplies no required wrapping case.",
+            "int is required to have the same representation as unsigned int.",
+            "Relational expressions involving int are evaluated only at translation time."
+          ],
+          "answer": 1,
+          "explanation": "The compiler must preserve defined executions. Whenever signed x + 1 is defined, it exceeds x; the INT_MAX case invokes undefined behavior rather than requiring machine-style wraparound, so it does not constrain the optimized result."
+        },
+        {
+          "prompt": "A producer writes ordinary payload data and then performs a release store to an atomic flag. When may a consumer safely read that payload without making it atomic?",
+          "options": [
+            "After any relaxed load of the flag, regardless of the value observed.",
+            "After an acquire load observes the value from the relevant release sequence, establishing synchronization and happens-before.",
+            "After reading the flag through a volatile-qualified non-atomic pointer.",
+            "Only if the payload and flag happen to occupy one cache line."
+          ],
+          "answer": 1,
+          "explanation": "A matching acquire that reads from the release sequence synchronizes with the release. The producer's earlier payload write then happens before the consumer's later payload read, preventing a data race; cache-line placement is not the language guarantee."
+        },
+        {
+          "prompt": "Which statement correctly distinguishes unspecified from implementation-defined behavior?",
+          "options": [
+            "Both allow arbitrary behavior and require no documented choices.",
+            "Implementation-defined behavior requires the implementation to choose and document a permitted behavior; unspecified behavior need not document which permitted choice occurs.",
+            "Unspecified behavior is always a compile-time error, while implementation-defined behavior is always undefined at runtime.",
+            "Implementation-defined behavior is fixed by the CPU alone, while unspecified behavior is fixed by the linker."
+          ],
+          "answer": 1,
+          "explanation": "Both categories retain constraints from the standard, unlike undefined behavior. The distinguishing requirement is documentation: an implementation-defined choice must be documented, while an unspecified choice may vary among permitted alternatives without documentation."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "From Source to Object File",
+      "questions": [
+        {
+          "prompt": "Why can #include <stdio.h> make a printf call compile without supplying printf's executable definition?",
+          "options": [
+            "The preprocessor copies declarations and related header tokens into the translation unit; the external definition can remain unresolved until linking.",
+            "Every include directive copies libc's machine code into the source file.",
+            "The assembler implements all functions declared by system headers.",
+            "The kernel resolves every declared C function during preprocessing."
+          ],
+          "answer": 0,
+          "explanation": "A header provides source-level declarations, types, and macros needed for semantic checking. The resulting object may contain an undefined printf symbol plus relocation metadata; a linker and, for dynamic linkage, the runtime loader later connect that reference to code."
+        },
+        {
+          "prompt": "An ET_REL object contains a call instruction whose target function is defined in another object. What allows the instruction to exist before the final target address is known?",
+          "options": [
+            "The assembler guesses a virtual address and Linux guarantees that layout.",
+            "The object records a symbol reference and relocation describing where and how a later linker must patch or resolve the address-dependent field.",
+            "The C preprocessor reserves a physical page for every external function.",
+            "ET_REL files execute the call by searching symbol names at each CPU instruction."
+          ],
+          "answer": 1,
+          "explanation": "The assembler can emit the opcode and a placeholder or addend while recording a relocation tied to the unresolved symbol. Once input selection and layout are known, the linker applies the ABI-defined calculation or preserves an appropriate dynamic relocation."
+        },
+        {
+          "prompt": "Why can a large zero-initialized object occupy substantial memory at runtime while adding few or no equivalent zero bytes to an ELF object's file image?",
+          "options": [
+            "The CPU treats every absent section as writable zero memory.",
+            "A NOBITS-style .bss section records required size and alignment, and the eventual load image supplies zero-filled memory without storing all zeros in the file.",
+            "The preprocessor compresses all numeric literals in source files.",
+            "Zero-initialized objects have no C lifetime until first written."
+          ],
+          "answer": 1,
+          "explanation": "Object metadata can describe zero-initialized storage by size rather than file payload. The linker carries that requirement into the loadable image, where memory size can exceed file-backed bytes and the extra portion is initialized to zero."
+        },
+        {
+          "prompt": "Which fact most directly explains why a relocatable .o containing real machine instructions is not normally runnable as a Linux process image?",
+          "options": [
+            "Machine instructions are legal only inside shared libraries.",
+            "It can still lack resolved externals, final virtual layout, startup code, and a loadable program-header plan.",
+            "Linux can execute only source files whose suffix is .c.",
+            "Relocatable objects cannot contain data or symbols."
+          ],
+          "answer": 1,
+          "explanation": "ET_REL is a linker handoff container: instructions coexist with sections, symbols, and unresolved relocations. A runnable image requires completed composition and runtime metadata such as an entry point and loadable segments, which ordinary .o files do not provide."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "Linking and Libraries",
+      "questions": [
+        {
+          "prompt": "Why can placing a static archive before main.o on a traditional left-to-right link command leave a symbol unresolved?",
+          "options": [
+            "Archive members are interpreted as C source and require a preceding header.",
+            "When the archive is scanned, the linker may not yet have seen main.o's unresolved reference, so it does not extract the provider member and may not revisit the archive.",
+            "ELF forbids archive members from defining global symbols.",
+            "Static archives can satisfy references only from shared objects."
+          ],
+          "answer": 1,
+          "explanation": "Archive extraction is demand-driven under conventional one-pass processing. Inputs already seen establish the unresolved set, so an archive scanned too early may contribute nothing even though a later object introduces the need."
+        },
+        {
+          "prompt": "Which statement correctly distinguishes linking against libmathops.a from requesting a fully static executable with -static?",
+          "options": [
+            "Using one archive selects needed members from that archive, while -static broadly requests static forms of default libraries and avoids normal shared dependencies where available.",
+            "They are identical because every .a option implies -static for the entire link.",
+            "-static converts every archive member into position-independent shared code.",
+            "An archive-backed link cannot produce an ELF executable."
+          ],
+          "answer": 0,
+          "explanation": "A normal executable can incorporate selected members of a private .a yet remain dynamically linked to libc and other defaults. -static changes the broader library-selection policy and depends on suitable static libraries being installed."
+        },
+        {
+          "prompt": "Why can position-independent code for a shared object be mapped at different base addresses without rewriting most of its instruction bytes?",
+          "options": [
+            "PIC contains no references to code or data addresses.",
+            "PIC uses base-independent calculations such as PC-relative addressing and loader-fixed indirection tables for addresses that cannot be fixed locally.",
+            "Linux disables ASLR whenever it maps a shared object.",
+            "Every process maps every shared object at one ABI-mandated absolute address."
+          ],
+          "answer": 1,
+          "explanation": "PIC still computes addresses, but it avoids unnecessary embedded absolutes. Relative references remain valid after rebasing, while GOT entries and selected dynamic relocations hold runtime-dependent values, preserving shareable code pages."
+        },
+        {
+          "prompt": "Why does full RELRO commonly pair -z relro with eager binding via -z now?",
+          "options": [
+            "Eager binding resolves function-related relocation state before the loader makes the protected relocation region read-only.",
+            "Lazy binding requires all .text pages to stay writable forever.",
+            "RELRO removes every dynamic symbol from the executable.",
+            "-z now forces all shared-library code to be copied into the executable."
+          ],
+          "answer": 0,
+          "explanation": "Classic lazy PLT binding may need to update GOT state on first call. Resolving those entries during startup lets the loader finish relocations and then make more relocation-related memory read-only, reducing writable control-data exposure."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "ELF Loading and `main`",
+      "questions": [
+        {
+          "prompt": "For a normal dynamically linked Linux ELF executable, where does the kernel usually begin user-mode execution after a successful execve?",
+          "options": [
+            "At the C function main.",
+            "At the executable's first source-level function in .text.",
+            "At the entry point of the ELF interpreter named by PT_INTERP.",
+            "Inside the kernel's ELF loader, which continues running in user mode."
+          ],
+          "answer": 2,
+          "explanation": "The kernel maps the executable and its requested interpreter, builds the initial process state, and enters the interpreter in user mode. The dynamic linker then maps dependencies and eventually transfers control toward the executable's entry and libc startup before main."
+        },
+        {
+          "prompt": "Why does Linux primarily use ELF program headers rather than section headers to construct a process image?",
+          "options": [
+            "Program headers describe loadable file and memory ranges, permissions, alignment, and runtime metadata; sections mainly organize material for linking and debugging.",
+            "Section headers contain only C identifier names and no offsets.",
+            "Program headers are generated dynamically after main begins.",
+            "The kernel creates one virtual mapping for every section name."
+          ],
+          "answer": 0,
+          "explanation": "PT_LOAD entries and related program headers form the runtime mapping recipe, including file size versus memory size. Multiple sections with compatible needs can be grouped into one segment, and section headers may even be absent from a stripped runtime file."
+        },
+        {
+          "prompt": "What best explains why AT_ENTRY can name the main executable's entry even though that address is not the first user instruction executed after a dynamic exec?",
+          "options": [
+            "AT_ENTRY is always overwritten with main's address by libc.",
+            "The kernel supplies the executable's entry as information to the interpreter while initially transferring control to the interpreter's own entry.",
+            "The CPU executes AT_ENTRY and the interpreter simultaneously.",
+            "AT_ENTRY is a section-header file offset rather than a virtual address."
+          ],
+          "answer": 1,
+          "explanation": "The auxiliary vector communicates facts about the new image to startup code. For a PT_INTERP executable, Linux can enter ld.so first while providing the executable's entry address so the loader knows where control must later be transferred."
+        },
+        {
+          "prompt": "Why can a failed execve return to the caller while a successful execve cannot return to the old instruction stream?",
+          "options": [
+            "On success the kernel replaces the process's userspace image and initializes execution in the new image; on failure it leaves the old image available and reports an error.",
+            "A successful execve always creates a new PID and destroys the caller process.",
+            "The dynamic linker calls fork before reporting success.",
+            "ISO C requires main to intercept successful execve returns."
+          ],
+          "answer": 0,
+          "explanation": "execve is process-image replacement, not process creation. Before commitment, an error can be returned to the existing program; after successful replacement, the old code and stack no longer form the running image, so execution starts in the prepared new program instead."
+        }
+      ]
+    }
+  ]
+}

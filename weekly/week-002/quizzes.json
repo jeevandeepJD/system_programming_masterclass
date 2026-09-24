@@ -1,0 +1,355 @@
+{
+  "week": 2,
+  "days": [
+    {
+      "day": 1,
+      "title": "x86-64 Assembly Foundations",
+      "questions": [
+        {
+          "prompt": "In AT&T syntax, RAX starts as 0xffffffffffffffff. After `movl $1, %eax`, then `addq $2, %rax`, what is RAX?",
+          "options": [
+            "0xffffffffffff0003",
+            "0xffffffff00000003",
+            "0x0000000000000003",
+            "The result is undefined because EAX and RAX overlap"
+          ],
+          "answer": 2,
+          "explanation": "An x86-64 write to a 32-bit general-purpose subregister zeroes the upper 32 bits of its 64-bit register. The `movl` therefore makes RAX equal to 1, and the 64-bit add produces 3."
+        },
+        {
+          "prompt": "RDI is 0x1000 and RSI is 3. What does `leaq 12(%rdi,%rsi,4), %rax` do?",
+          "options": [
+            "Loads eight bytes from 0x1018 into RAX",
+            "Stores RAX at 0x1018",
+            "Sets RAX to 0x1018 without reading data memory",
+            "Sets RAX to 0x100f because the scale applies to the displacement"
+          ],
+          "answer": 2,
+          "explanation": "The effective address is 0x1000 + 3×4 + 12 = 0x1018. `lea` computes that address as an integer result; despite its memory-like syntax, it does not dereference the address."
+        },
+        {
+          "prompt": "RDI and RSI both contain the bit pattern 0xffffffffffffffff. After `cmpq %rsi, %rdi`, which statement is reliable before any later flag-writing instruction?",
+          "options": [
+            "`je` is taken because the subtraction result is zero",
+            "`jl` is taken because both operands represent negative values",
+            "`jb` is taken because both operands represent large unsigned values",
+            "No branch can use the result because `cmp` discards it"
+          ],
+          "answer": 0,
+          "explanation": "`cmpq %rsi, %rdi` sets flags from RDI−RSI without storing the subtraction. Equal bit patterns produce zero, so ZF is set and `je` is taken; signedness does not alter equality."
+        },
+        {
+          "prompt": "A loop executes `cmpq %rdi, %rcx; jge .done` with RCX holding the loop index and RDI holding a nonnegative bound. A new `addq` is inserted between `cmpq` and `jge`. What is the main risk?",
+          "options": [
+            "The add changes RIP so the branch is skipped",
+            "The add may replace the flags that `jge` was meant to test",
+            "The add converts the operands from signed to unsigned",
+            "The add forces the bound to be reloaded from memory"
+          ],
+          "answer": 1,
+          "explanation": "Condition flags are mutable architectural state, not permanently attached to the compared values. Because `addq` writes flags, `jge` would test the add's result rather than the earlier comparison."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Frames and Contracts",
+      "questions": [
+        {
+          "prompt": "Under the System V AMD64 ABI, a caller keeps a needed value in RBX across a call. The callee uses RBX as scratch without saving it but returns the correct value in RAX. What can happen?",
+          "options": [
+            "Nothing; a correct RAX return makes the call ABI-compliant",
+            "The CPU automatically restores RBX when `ret` executes",
+            "The caller's live value can be corrupted even though the callee's return value is correct",
+            "The linker rejects the callee because RBX is reserved by the ISA"
+          ],
+          "answer": 2,
+          "explanation": "RBX is callee-saved in this ABI, so the callee must restore its incoming value before returning. `ret` only pops the return address; it does not repair violated register-preservation promises."
+        },
+        {
+          "prompt": "Immediately before a System V AMD64 caller executes `call`, RSP is 16-byte aligned. Assuming no exceptional transfer, what alignment does the callee observe on entry?",
+          "options": [
+            "RSP mod 16 is 0 because `call` preserves alignment",
+            "RSP mod 16 is 8 because `call` pushed an 8-byte return address",
+            "RSP mod 16 is 4 because the target address is 32 bits",
+            "It is unknowable until the callee establishes RBP"
+          ],
+          "answer": 1,
+          "explanation": "`call` decrements RSP by eight and stores the return address there. Starting from a multiple of 16 therefore leaves the entry RSP congruent to 8 modulo 16; RBP is irrelevant to that arithmetic."
+        },
+        {
+          "prompt": "A hand-written System V AMD64 callee reads its seventh integer argument from `8(%rsp)` immediately on entry. If it first executes `push %rbx`, where is that same argument relative to the new RSP?",
+          "options": [
+            "`0(%rsp)`",
+            "`8(%rsp)`",
+            "`16(%rsp)`",
+            "It moved into R9"
+          ],
+          "answer": 2,
+          "explanation": "On entry, `0(%rsp)` is the return address and the seventh argument begins at `8(%rsp)`. Pushing RBX lowers RSP by eight, so both existing slots are now eight bytes farther away and the argument is at `16(%rsp)`."
+        },
+        {
+          "prompt": "An optimized function omits RBP as a frame pointer, yet GDB can still unwind through it. What most directly makes that possible?",
+          "options": [
+            "Every `ret` stores the caller's complete register file",
+            "The ABI requires every local variable to have a fixed RSP offset",
+            "Compiler-emitted call-frame information describes where saved state is at relevant instruction addresses",
+            "The kernel reconstructs source-level calls from cache history"
+          ],
+          "answer": 2,
+          "explanation": "DWARF call-frame information can describe the canonical frame address and saved-register locations as the prologue and epilogue change them. Unwinding therefore need not depend on a runtime linked list of saved RBP values."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "RISC-V, Seen Through a Decoder",
+      "questions": [
+        {
+          "prompt": "In RV64I, memory byte 0xff is loaded first with `lb t0, 0(a0)` and then with `lbu t1, 0(a0)`. Which result pair is correct?",
+          "options": [
+            "t0 = 0x00000000000000ff; t1 = 0xffffffffffffffff",
+            "t0 = 0xffffffffffffffff; t1 = 0x00000000000000ff",
+            "Both registers become 0xffffffffffffffff because memory is signed",
+            "Both registers become 0x00000000000000ff because registers are unsigned"
+          ],
+          "answer": 1,
+          "explanation": "`lb` sign-extends the loaded byte, while `lbu` zero-extends the same byte. Memory does not carry signedness; the selected load operation determines how the byte is widened."
+        },
+        {
+          "prompt": "A non-leaf RISC-V function receives its return address in `ra` and then executes another ordinary call. Why must it preserve its incoming `ra` first?",
+          "options": [
+            "The next call conventionally writes its own return address into `ra`, replacing the old one",
+            "Every RISC-V call automatically clears all caller-saved registers including SP",
+            "`ret` reads the return address only from the top of the stack",
+            "The ISA forbids a function from reading `ra` after a call"
+          ],
+          "answer": 0,
+          "explanation": "An ordinary `jal ra, target` writes its link address into `ra`. A non-leaf function still needs its caller's link later, so it typically spills that value to its frame before making another call."
+        },
+        {
+          "prompt": "On RV64I, t0 is 0xffffffffffffffff and t1 is 1. How do `blt t0, t1, target` and `bltu t0, t1, target` differ?",
+          "options": [
+            "Both are taken because t0 has its high bit set",
+            "Neither is taken because the registers hold the same bits for both instructions",
+            "`blt` is taken, while `bltu` is not taken",
+            "`bltu` is taken, while `blt` is not taken"
+          ],
+          "answer": 2,
+          "explanation": "`blt` interprets t0 as signed −1, which is less than 1. `bltu` interprets the same bits as UINT64_MAX, which is not less than 1; the register contents do not change."
+        },
+        {
+          "prompt": "x86-64 uses one instruction for a scaled indexed load while an RV64I sequence uses shift, add, and load. What conclusion is justified from this comparison alone?",
+          "options": [
+            "The x86-64 version must take exactly one third as many cycles",
+            "The RV64I version must perform three DRAM accesses",
+            "The ISAs expose different address-formation contracts, but instruction count alone does not determine runtime",
+            "The x86-64 operation is atomic because it is one instruction"
+          ],
+          "answer": 2,
+          "explanation": "The architectural sequences differ in explicit work and encoding density, but implementations can pipeline, fuse, or overlap internal operations, and cache behavior may dominate. One architectural instruction also does not imply atomic inter-core behavior."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "RAM, Locality, and the Memory Wall",
+      "questions": [
+        {
+          "prompt": "Two arrays are equally large and exceed the last-level cache. One is scanned sequentially; the other is followed as a dependent random pointer chain. Why is the chain likely to expose more latency?",
+          "options": [
+            "Random addresses always bypass every cache by ISA definition",
+            "Each next chain address depends on the preceding load, limiting prefetch and overlap",
+            "Sequential loads are served directly by CPU registers after the first element",
+            "DRAM transfers only contiguous arrays and rejects pointer-based data"
+          ],
+          "answer": 1,
+          "explanation": "The dependency prevents the processor from knowing the next useful address until the current load completes. A sequential stream is predictable and offers independent work, allowing prefetching and multiple outstanding transfers."
+        },
+        {
+          "prompt": "A random-access benchmark becomes much faster when its working set shrinks from 128 MiB to 16 KiB. Which explanation is strongest?",
+          "options": [
+            "Random access became sequential at the smaller size",
+            "The smaller active set is more likely to remain in a nearby cache despite its random order",
+            "The C language guarantees arrays below 64 KiB use SRAM",
+            "Linux handles each small load in software"
+          ],
+          "answer": 1,
+          "explanation": "Random order defeats spatial prediction, but it does not defeat capacity. If the active lines fit in a nearby cache, repeated accesses can hit there; access order and working-set size are separate factors."
+        },
+        {
+          "prompt": "A CPU's arithmetic throughput doubles, but a program is a serialized chain of cache-missing loads. Why might runtime improve little?",
+          "options": [
+            "Arithmetic units cannot execute while virtual memory is enabled",
+            "The critical path is waiting for each load before the next address is known",
+            "DRAM bandwidth always halves when arithmetic throughput doubles",
+            "A cache miss forces the operating system to emulate every load"
+          ],
+          "answer": 1,
+          "explanation": "The chain's critical path is data-delivery latency, not arithmetic throughput. Mapped loads are normally handled by hardware, but the dependency prevents useful memory-level parallelism from hiding distant-cache or DRAM latency."
+        },
+        {
+          "prompt": "A memory benchmark shows one isolated latency spike at 4 MiB but not at nearby sizes or in repeated runs. What is the most defensible interpretation?",
+          "options": [
+            "It proves the L2 cache is exactly 4 MiB",
+            "It proves the access crossed from SRAM to persistent storage",
+            "Treat it as possible scheduling or measurement noise and seek repeatable transitions",
+            "Discard all non-spike measurements because cache boundaries are single points"
+          ],
+          "answer": 2,
+          "explanation": "Cache behavior is blurred by replacement, sharing, prefetch, system activity, and timing noise. A lone non-repeatable point cannot identify a cache capacity; repeatable ranges and slopes provide stronger evidence."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Cache Organization",
+      "questions": [
+        {
+          "prompt": "A cache has 64-byte lines and 256 sets. For address 0x12345678, which offset and set are selected?",
+          "options": [
+            "offset 0x38, set 0x59",
+            "offset 0x18, set 0x56",
+            "offset 0x59, set 0x38",
+            "offset 0x00, set 0x78"
+          ],
+          "answer": 0,
+          "explanation": "The low six bits select the byte offset, giving 0x38. After dividing by 64 to obtain the line number, its low eight bits select set 0x59; associativity would not change either field."
+        },
+        {
+          "prompt": "A four-way cache repeatedly alternates among five lines that all map to one set, while most other sets remain empty. What pressure best explains repeated evictions?",
+          "options": [
+            "Compulsory misses only, because each line can miss just once",
+            "Capacity misses, because the five lines exceed the total cache capacity",
+            "Conflict misses, because restricted placement offers only four slots in their set",
+            "Page faults, because cache ways are virtual-memory pages"
+          ],
+          "answer": 2,
+          "explanation": "The cache has sufficient unused storage overall, but each line is constrained to the same set and only four ways are available there. A fully associative cache of the same total capacity could retain all five, which identifies conflict pressure."
+        },
+        {
+          "prompt": "Two threads update distinct C11 atomic counters that occupy the same cache line on different cores. Why can padding them apart improve throughput?",
+          "options": [
+            "Padding removes an otherwise undefined C data race",
+            "Coherence tracks ownership at line granularity, so the shared line may bounce between cores",
+            "Padding changes atomic operations into non-atomic instructions",
+            "Each counter gets a separate NUMA node after padding"
+          ],
+          "answer": 1,
+          "explanation": "The objects are logically independent and atomic, but coherence permissions apply to the containing line. Separating them can stop writes to one counter from invalidating the line containing the other; it changes placement, not language correctness."
+        },
+        {
+          "prompt": "In a write-back, write-allocate cache, a store misses. What conceptual sequence is expected?",
+          "options": [
+            "Write only to the lower level and never place the line in this cache",
+            "Fetch or obtain the line, update it in cache, mark it dirty, and defer lower-level writeback",
+            "Update every cache level immediately and keep no dirty state",
+            "Convert the store into a read because write-back caches cannot allocate"
+          ],
+          "answer": 1,
+          "explanation": "Write-allocate answers the miss by bringing the line into the cache before updating it. Write-back keeps the modified line dirty and propagates it later, commonly on eviction or an explicit cleaning event."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "Alignment, Endianness, and NUMA",
+      "questions": [
+        {
+          "prompt": "Code decodes four bytes at `raw + 1` by casting that address to `uint32_t *` and dereferencing it. It happens to work on one x86-64 run. What should be concluded?",
+          "options": [
+            "The operation is portable because x86-64 often tolerates unaligned integer loads",
+            "The run proves `raw + 1` met every C object and alignment rule",
+            "The C expression can still be nonportable or undefined; `memcpy` into a properly declared uint32_t avoids the misaligned typed dereference",
+            "The cast automatically asks the compiler to generate four byte loads"
+          ],
+          "answer": 2,
+          "explanation": "CPU tolerance does not establish C alignment, object, or effective-type validity. `memcpy` expresses a byte copy into a correctly aligned object, which the compiler may still lower efficiently for the target."
+        },
+        {
+          "prompt": "Why may a struct need tail padding after its final declared member?",
+          "options": [
+            "So every array element begins at an address satisfying the struct's alignment",
+            "So `memcmp` can always compare structs by value",
+            "So the final member is automatically converted to network byte order",
+            "So the stack grows downward in whole cache lines"
+          ],
+          "answer": 0,
+          "explanation": "Array pointer arithmetic advances by `sizeof(struct)`. Making that size a suitable multiple of the struct alignment ensures each subsequent element, and therefore its members, begins correctly aligned."
+        },
+        {
+          "prompt": "A program sends a compiler-packed struct directly over a network. Why is packing alone insufficient to define a portable protocol?",
+          "options": [
+            "Packing always inserts extra tail padding",
+            "Packing does not by itself specify integer widths, byte order, field validation, or versioning",
+            "Packed objects cannot contain integer members",
+            "Networks accept only naturally aligned host objects"
+          ],
+          "answer": 1,
+          "explanation": "Packing controls one implementation's member spacing but leaves representation and protocol rules unresolved. A wire format must explicitly define widths, signedness, field order, endianness, bounds, and evolution."
+        },
+        {
+          "prompt": "One thread on NUMA node 0 first writes every page of a large anonymous array. Later, workers on nodes 0 and 1 split the array. Under a typical default local policy, what performance risk exists?",
+          "options": [
+            "Node 1 cannot dereference pointers created on node 0",
+            "All pages are guaranteed to migrate instantly to node 1",
+            "Many pages may have been allocated near node 0, so node-1 workers can incur remote accesses",
+            "The array becomes big-endian when read from node 1"
+          ],
+          "answer": 2,
+          "explanation": "First writes commonly trigger private page allocation near the allocating CPU under the active policy. The memory remains coherent and accessible from node 1, but its path may cross an interconnect to node 0's controller and cost more."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "C's Execution Model and Data Types",
+      "questions": [
+        {
+          "prompt": "On an implementation where `int` and `unsigned int` are both 32 bits, what is the result of `-1 < 1u`?",
+          "options": [
+            "True, because negative values are always less than positive values",
+            "False, because `-1` converts to `unsigned int` and becomes UINT_MAX for the comparison",
+            "Undefined, because converting a negative int to unsigned overflows",
+            "Implementation-defined, because the CPU may choose signed or unsigned flags"
+          ],
+          "answer": 1,
+          "explanation": "The usual arithmetic conversions select `unsigned int` when the operands have equal rank and differing signedness here. Converting −1 to unsigned is defined modulo UINT_MAX+1, so it compares as UINT_MAX and the relation is false."
+        },
+        {
+          "prompt": "On a common system where `int` can represent every `unsigned char` value, two `unsigned char` objects hold 250 and 10. What value does `a + b` produce before assignment to a narrower type?",
+          "options": [
+            "4 as an unsigned-char wrap",
+            "260 as an `int` result after integer promotions",
+            "Undefined behavior due to signed `int` overflow",
+            "An implementation-defined value because `char` signedness controls it"
+          ],
+          "answer": 1,
+          "explanation": "Both operands undergo integer promotion to `int` because `int` can represent their full ranges. The addition is therefore performed as `int` and yields 260; only a later conversion back to unsigned char would reduce it modulo that type's range."
+        },
+        {
+          "prompt": "At `-O2`, a helper that computes a result from compile-time constants disappears and `main` directly uses the known result. What does this demonstrate?",
+          "options": [
+            "The helper had no meaning in the C abstract machine",
+            "Optimized C no longer follows the language rules",
+            "The compiler may choose no runtime instructions for work resolved during translation while preserving required observable behavior",
+            "Every function called with constants must be removed by every conforming compiler"
+          ],
+          "answer": 2,
+          "explanation": "C constrains observable behavior rather than demanding a surviving function body or instruction per source statement. Constant propagation and inlining are permitted when the transformed program has the required defined behavior."
+        },
+        {
+          "prompt": "A function returns the address of an automatic local. Later code sees that the old bytes still contain the expected integer. Why is dereferencing the pointer still invalid?",
+          "options": [
+            "The identifier is out of scope, which alone erases all address bits",
+            "The object's lifetime ended when its block activation ended; residual bytes do not make the object exist",
+            "Automatic objects must always be held only in registers",
+            "The ABI requires every returned pointer to designate static storage"
+          ],
+          "answer": 1,
+          "explanation": "Lifetime is a language-level condition on whether the object exists, not a test of whether its former storage was overwritten. Once the automatic object's lifetime ends, the stale address does not designate that live object even if the bytes look unchanged."
+        }
+      ]
+    }
+  ]
+}
