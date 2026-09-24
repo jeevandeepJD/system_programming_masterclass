@@ -90,6 +90,10 @@ MCQs. Regenerate all theory checks after editing `quizzes.json`:
 python3 ./bin/generate_quizzes.py
 ```
 
+Sections also include coding challenges when implementation provides useful
+Build evidence. These starter labs use TODOs, prediction prompts, and
+self-checks rather than presenting completed answers immediately.
+
 Open or serve the optional challenge:
 
 ```bash

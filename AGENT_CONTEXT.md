@@ -465,6 +465,19 @@ Quiz source data lives in each module's `quizzes.json`;
 diagnostic retrieval evidence, not mastery. Weekly PDF generation places each
 quiz link after its matching daily lesson alongside practical labs.
 
+### 2026-09-24 — Coding challenges where implementation adds evidence
+
+The user requested coding challenges at appropriate points, not merely
+theory quizzes. Audit every weekly package for concepts that become clearer
+through implementation. Add focused starter code with TODOs and self-checks
+when coding provides meaningful Build evidence; do not force code onto
+historical or purely conceptual material.
+
+Week 1 now adds coding labs for bit-pattern conversion/interpretation,
+Boolean functions and NAND completeness, and a four-bit ripple-carry adder.
+Existing CPU, ISA, exception, assembly, memory, C, and toolchain sections
+already contain coding or terminal labs.
+
 ### 2026-09-24 — Weekly format promoted to master
 
 The user approved the weekly format as the official course structure.
