@@ -79,6 +79,30 @@ sufficient.
 Weeks 2 and 3 are prepared ahead. They are not marked complete and do not
 change the current resume point.
 
+## Approved follow-on track
+
+Do not generate or begin this track until the learner has worked through the
+three prepared modules and reported evidence/gaps.
+
+Next learner-facing package:
+
+`04-cpu-and-chip-design/`
+
+Planned progression:
+
+1. MOSFET and CMOS switching with small ngspice observations
+2. Gate implementation, restoration, delay, capacitance, fan-out, and power
+3. Sequential timing, setup/hold, metastability, and clocking
+4. SystemVerilog RTL, Icarus/Verilator, GTKWave, and Yosys synthesis
+5. ALU, register file, PC, decoder, and single-cycle RISC-V subset
+6. Multi-cycle/pipelined execution, hazards, forwarding, stalls, and branches
+7. Cache/TLB/MMU and memory-interface foundations
+8. End-to-end C → ISA → datapath → gates → transistor-state trace
+
+Afterward, begin a guided x86-64 ToyOS under QEMU using C and minimal
+assembly. The purpose is reconstruction and understanding, not producing a
+novel or production operating system.
+
 ## Pace check
 
 Weekly modules intentionally cover a broad scope. Evaluate retention,

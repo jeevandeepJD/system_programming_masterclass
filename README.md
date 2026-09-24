@@ -32,6 +32,26 @@ Current curriculum position:
 - Topic — Electricity, States, Bits, and Information
 - Current module — Week 1
 
+## Approved next direction
+
+After the three prepared review modules:
+
+1. Create `04-cpu-and-chip-design/`.
+2. Progress through MOSFET/CMOS, gates, delay/power, sequential timing,
+   SystemVerilog, simulation, synthesis, ALU/register-file design, and a
+   simple RISC-V CPU.
+3. Trace a compiled C task through instructions, datapath control, gates, and
+   transistor-level voltage/charge changes.
+4. Begin the guided x86-64 ToyOS build-along after the CPU/RTL foundations.
+
+The chip-design and ToyOS tracks meet at the ISA boundary:
+
+```text
+transistors → gates → RTL → CPU
+                           ↓ ISA
+C / assembly → kernel → ToyOS
+```
+
 ## Repository map
 
 ```text

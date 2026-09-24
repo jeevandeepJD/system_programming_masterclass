@@ -1610,3 +1610,55 @@ material package, not a deadline; a module may take as long as mastery
 requires. Earlier daily structures remain available only as backup branches.
 Metadata, tools, references, and archived prototypes are kept outside the
 learner-facing numbered topic folders.
+
+### 41. APPROVED CPU/CHIP AND TOYOS TRACK — 2026-09-24
+
+The learner is already familiar with much of the introductory material and
+wants the course to move beyond definitions into a physically grounded model
+of CPU/chip design.
+
+After completing the three prepared review modules, create
+`04-cpu-and-chip-design/` and follow this dependency path:
+
+```text
+MOSFET/CMOS
+    → restoring gates
+    → delay, capacitance, fan-out, power, and noise margins
+    → combinational/sequential timing
+    → SystemVerilog RTL and simulation
+    → synthesis and gate-level netlist
+    → ALU, register file, decoder, PC, and control
+    → simple RISC-V CPU
+    → pipeline/hazards/branch handling
+    → cache, TLB/MMU, and memory interface
+```
+
+Use ngspice for selected transistor-level experiments; Icarus or Verilator
+and GTKWave for RTL simulation; and Yosys for synthesis. The objective is a
+causal model of how a simple C computation becomes instruction bytes,
+control signals, gate transitions, and transistor-level charge/voltage
+changes—not professional analog IC specialization.
+
+Then begin a guided x86-64 ToyOS build-along under QEMU:
+
+1. freestanding kernel image, linker script, stack, serial output;
+2. exception entry, IDT, and register dump;
+3. physical page allocation;
+4. page tables and virtual memory;
+5. interrupts and timer;
+6. task state and scheduling;
+7. user mode and system calls;
+8. processes/address spaces and ELF user loading;
+9. descriptor table and minimal ramfs/VFS;
+10. optional virtio/PCI/MMIO/DMA experiments.
+
+Each milestone follows:
+
+```text
+question → design → predict → implement → observe → break/debug
+         → compare with xv6 → compare with Linux
+```
+
+The custom CPU track and ToyOS track meet at the ISA boundary. Do not start
+ToyOS by copying a finished template before assembly, ABI, linker/ELF, CPU
+state, privilege, and exception foundations are understood.

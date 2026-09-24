@@ -484,6 +484,34 @@ program, link the source file before the command, and tell the learner to
 predict or implement before running it. Starter programs should also print a
 short orientation when executed unchanged.
 
+### 2026-09-24 — Deep CPU and chip-design mental model
+
+The learner expects to move quickly through familiar foundations and wants a
+deeper hardware path—not an indefinitely basic-only course. Add a sustained
+chip/CPU-design track that explains:
+
+- MOSFET and CMOS switching at the useful device/circuit level;
+- transistor networks implementing restoring gates;
+- delay, capacitance, fan-out, power, noise margin, and timing;
+- combinational and sequential circuits, setup/hold, metastability, and
+  clocking;
+- RTL, HDL simulation, synthesis, netlists, and physical-design overview;
+- ALU, register file, control, datapath, a simple CPU, then pipelining,
+  hazards, caches, TLB/MMU, and memory interfaces;
+- an end-to-end trace from a simple C task to instructions, control signals,
+  gate transitions, and transistor-level charge/voltage changes.
+
+Use SystemVerilog/Verilog, waveform simulation, Yosys/Verilator or Icarus, and
+small ngspice experiments where useful. The goal is not professional analog
+IC design; it is a physically grounded understanding of how software causes
+computation. Keep the ToyOS/software track and CPU/chip track connected at the
+ISA boundary.
+
+The user approved this direction. After completing the three prepared review
+modules, the next learner-facing package should be
+`04-cpu-and-chip-design/`. The guided ToyOS track follows after enough CPU,
+RTL, timing, and toolchain foundations are in place.
+
 ### 2026-09-24 — Learner-first topic folders
 
 The user approved a topic-first root layout so finished materials are visible
