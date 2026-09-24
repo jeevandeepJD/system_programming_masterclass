@@ -437,3 +437,16 @@ contains:
 Each week has one overview, seven maintainable daily source sections, labs,
 and one consolidated PDF. Prepared Weeks 2–3 do not advance the learner's
 resume point or imply mastery.
+
+### 2026-09-24 — Clickable challenge links in weekly PDFs
+
+The user requested challenge links inside the PDFs. `bin/build_week.py` now
+appends each day's relevant challenge links immediately after that daily
+lesson section. C, assembly, Python, and shell labs include copy-paste
+commands using repository-relative paths. HTML labs include a copy-paste
+local-server command and clickable `localhost` URL. A GitHub source link is
+retained as a portable fallback. Do not embed machine-specific `file://`
+paths.
+
+Rebuild a weekly PDF after adding or renaming a challenge so its generated
+links remain accurate.

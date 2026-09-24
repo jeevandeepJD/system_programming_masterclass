@@ -77,6 +77,12 @@ cd /path/to/masterclass
 ./bin/week lesson
 ```
 
+Each daily section in the consolidated PDF ends with links to its relevant
+challenges. C, assembly, Python, and shell labs include copy-paste commands
+that use repository-relative paths. HTML labs include a local-server command
+and clickable `localhost` link. GitHub links remain available for portable
+source viewing.
+
 Open or serve the optional challenge:
 
 ```bash

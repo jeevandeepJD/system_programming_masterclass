@@ -21,6 +21,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("source", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--base-url",
+        type=Path,
+        help="base directory used to resolve relative links and images",
+    )
     parser.add_argument("--no-open", action="store_true")
     args = parser.parse_args()
 
@@ -136,7 +141,12 @@ strong { color: #17202a; }
 """
     )
 
-    HTML(string=document, base_url=str(source.parent)).write_pdf(
+    base_url = (
+        args.base_url.expanduser().resolve()
+        if args.base_url
+        else source.parent
+    )
+    HTML(string=document, base_url=str(base_url)).write_pdf(
         output, stylesheets=[css]
     )
     print(f"wrote {output}")
