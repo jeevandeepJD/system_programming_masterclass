@@ -23,7 +23,7 @@ why each abstraction became necessary, not as a list of dates to memorize.
 
 ## Resume here
 
-Open [`WEEKLY_PROGRESS.md`](WEEKLY_PROGRESS.md). It records the current module,
+Open [`metadata/WEEKLY_PROGRESS.md`](metadata/WEEKLY_PROGRESS.md). It records the current module,
 unfinished evidence, and exact next action.
 
 Current curriculum position:
@@ -36,36 +36,46 @@ Current curriculum position:
 
 ```text
 .
-├── README.md                 repository entry point
-├── WEEKLY_PROGRESS.md        weekly module resume tracker
-├── AGENT_CONTEXT.md          teaching workflow and decision log
-├── MASTERCLASS.md            detailed historical handoff
-├── Systems_Engineering_Masterclass_Curriculum_Tracker.docx
-│                             authoritative curriculum tracker
-├── weekly/
-│   ├── week-001/
-│   │   ├── overview.md       weekly cover, roadmap, and mastery goal
-│   │   ├── lessons/          seven editable daily sections
-│   │   └── challenges/       HTML, Python, C, and terminal labs
-│   └── pdf/                  one consolidated PDF per week
-├── tracker/                  topic-specific exercises and evidence
-├── source-materials/
+├── README.md
+├── 01-foundations-to-cpu/
+│   ├── week-01-material.pdf
+│   ├── overview.md
+│   ├── sections/
+│   └── challenges/
+├── 02-assembly-memory-and-c/
+│   ├── week-02-material.pdf
+│   ├── overview.md
+│   ├── sections/
+│   └── challenges/
+├── 03-c-toolchain-and-startup/
+│   ├── week-03-material.pdf
+│   ├── overview.md
+│   ├── sections/
+│   └── challenges/
+├── references/
 │   ├── README.md             catalog of selected references
 │   └── library/              local third-party library; Git-ignored
-└── bin/
-    ├── build_lesson.py       Markdown-to-PDF renderer
-    ├── build_week.py         overview + daily sections → one weekly PDF
-    └── week                  weekly lesson/challenge launcher
+├── tools/
+│   ├── build_lesson.py       Markdown-to-PDF renderer
+│   ├── build_week.py         overview + sections → one topic PDF
+│   ├── generate_quizzes.py   theory-check generator
+│   └── week                  lesson/challenge launcher
+├── metadata/
+│   ├── AGENT_CONTEXT.md
+│   ├── MASTERCLASS.md
+│   ├── WEEKLY_PROGRESS.md
+│   └── curriculum-tracker.docx
+└── archive/                  superseded prototypes and context PDF
 ```
 
 ## Sources of truth
 
-1. `Systems_Engineering_Masterclass_Curriculum_Tracker.docx` controls the
+1. `metadata/curriculum-tracker.docx` controls the
    curriculum sequence, objectives, exercises, and mastery checks. Its
    original week labels describe ordering, not calendar deadlines.
-2. `WEEKLY_PROGRESS.md` records where the learner actually stopped.
-3. `AGENT_CONTEXT.md` records teaching preferences and operational decisions.
-4. `MASTERCLASS.md` preserves detailed history and prior discoveries.
+2. `metadata/WEEKLY_PROGRESS.md` records where the learner actually stopped.
+3. `metadata/AGENT_CONTEXT.md` records teaching preferences and operational decisions.
+4. `metadata/MASTERCLASS.md` preserves detailed history and prior discoveries.
 
 ## Weekly use
 
@@ -73,7 +83,7 @@ Build and open the latest weekly PDF:
 
 ```bash
 cd /path/to/masterclass
-./bin/week lesson
+./tools/week lesson
 ```
 
 Each daily section in the consolidated PDF ends with links to its relevant
@@ -87,7 +97,7 @@ Each daily section also includes a self-contained HTML theory check with four
 MCQs. Regenerate all theory checks after editing `quizzes.json`:
 
 ```bash
-python3 ./bin/generate_quizzes.py
+python3 ./tools/generate_quizzes.py
 ```
 
 Sections also include coding challenges when implementation provides useful
@@ -97,19 +107,19 @@ self-checks rather than presenting completed answers immediately.
 Open or serve the optional challenge:
 
 ```bash
-./bin/week challenge
+./tools/week challenge
 ```
 
 List all available weekly artifacts:
 
 ```bash
-./bin/week list
+./tools/week list
 ```
 
 Build a particular week manually:
 
 ```bash
-python3 ./bin/build_week.py 1
+python3 ./tools/build_week.py 1
 ```
 
 The weekly builder uses `pypdf` to preserve literal relative link annotations
@@ -118,7 +128,7 @@ inside the merged PDF (`python3-pypdf` on Fedora).
 Select another week:
 
 ```bash
-MC_WEEK=2 ./bin/week lesson
+MC_WEEK=2 ./tools/week lesson
 ```
 
 ## Completion standard
