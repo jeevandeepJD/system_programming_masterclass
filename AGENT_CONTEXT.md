@@ -421,3 +421,19 @@ sources and labs under `weekly/week-001/`. `bin/build_week.py` renders the
 weekly overview plus all seven daily sections and merges them into one
 `weekly/pdf/week-001-*.pdf`. Keep daily source sections for maintainability,
 but present one consolidated PDF to the learner.
+
+### 2026-09-24 — Three complete weekly packages
+
+After removing incomplete untracked Week 2–5 drafts from an interrupted
+generation, the user requested three complete weeks. The weekly branch now
+contains:
+
+- Week 1: physical state through CPU control and privilege;
+- Week 2: x86-64/RISC-V assembly, ABI, memory hierarchy/cache, layout/NUMA,
+  and the C abstract machine;
+- Week 3: pointers/lifetime/aggregates/atomics through compilation, linking,
+  ELF loading, and program startup.
+
+Each week has one overview, seven maintainable daily source sections, labs,
+and one consolidated PDF. Prepared Weeks 2–3 do not advance the learner's
+resume point or imply mastery.

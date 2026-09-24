@@ -46,6 +46,39 @@ The authoritative curriculum remains
 The seven sections are assembled into one PDF. Completion still requires the
 labs and mastery evidence; reading the combined file is not sufficient.
 
+## Prepared Week 2 package
+
+- Consolidated PDF:
+  `weekly/pdf/week-002-assembly-memory-hierarchy-and-the-c-abstract-machine.pdf`
+- Sources and labs: `weekly/week-002/`
+- Suggested workload: approximately 21 focused hours
+- Daily path:
+  1. x86-64 assembly foundations;
+  2. stack frames and System V AMD64 calling conventions;
+  3. RISC-V and ISA comparison;
+  4. RAM, locality, and the memory wall;
+  5. cache organization;
+  6. alignment, endianness, and NUMA;
+  7. C's execution model and data types.
+
+## Prepared Week 3 package
+
+- Consolidated PDF:
+  `weekly/pdf/week-003-c-memory-compilation-linking-and-program-startup.pdf`
+- Sources and labs: `weekly/week-003/`
+- Suggested workload: approximately 21 focused hours
+- Daily path:
+  1. pointers, arrays, and strings;
+  2. structures, unions, and function pointers;
+  3. dynamic memory and lifetime;
+  4. qualifiers, atomics, and undefined behavior;
+  5. source to object file;
+  6. linking and libraries;
+  7. ELF loading and `main`.
+
+Weeks 2 and 3 are prepared ahead. They are not marked complete and do not
+change the current resume point.
+
 ## Pacing comparison checkpoint
 
 The weekly branch intentionally covers a broader scope per module than either
