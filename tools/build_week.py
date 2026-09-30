@@ -60,13 +60,19 @@ def lesson_with_challenge_links(
     if not day_match:
         return lesson
 
+    candidates = [
+        path
+        for path in (module / "challenges").glob(f"{day_match.group(1)}-*")
+        if path.is_file()
+    ]
+    has_shell_runner = any(path.suffix.lower() == ".sh" for path in candidates)
+    has_python_runner = any(path.suffix.lower() == ".py" for path in candidates)
     challenges = sorted(
         (
             path
-            for path in (module / "challenges").glob(
-                f"{day_match.group(1)}-*"
-            )
-            if path.is_file()
+            for path in candidates
+            if not (has_shell_runner and path.suffix.lower() == ".sv")
+            and not (has_python_runner and path.suffix.lower() == ".cir")
         ),
         key=lambda path: (
             0 if "theory-check" in path.stem else 1,
@@ -82,6 +88,8 @@ def lesson_with_challenge_links(
         ".c": "C lab",
         ".s": "assembly lab",
         ".sh": "shell lab",
+        ".cir": "ngspice circuit lab",
+        ".sv": "SystemVerilog source",
     }
     lines = [
         "",
@@ -212,6 +220,12 @@ def challenge_description(path: Path) -> str:
             if line:
                 return line
 
+    if path.suffix.lower() == ".cir":
+        for raw_line in text.splitlines()[:12]:
+            line = raw_line.strip().lstrip("*").strip()
+            if line and not line.lower().startswith(("run", "batch")):
+                return line
+
     friendly = re.sub(r"^day-\d+-", "", path.stem).replace("-", " ")
     return f"Use this {friendly} exercise to test the section's model."
 
@@ -230,6 +244,16 @@ def runnable_command(path: Path, module: Path) -> str:
 
     if suffix == ".sh":
         return f"bash {relative}"
+
+    if suffix == ".cir":
+        output_dir = f"/tmp/{path.stem}"
+        return (
+            f"mkdir -p {output_dir} && "
+            f"(cd {output_dir} && ngspice -b \"$OLDPWD/{relative}\")"
+        )
+
+    if suffix == ".sv":
+        return f"verilator --lint-only -Wall {relative}"
 
     if suffix == ".s":
         output = f"/tmp/{path.stem}.o"

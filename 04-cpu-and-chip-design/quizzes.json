@@ -1,0 +1,355 @@
+{
+  "week": 4,
+  "days": [
+    {
+      "day": 1,
+      "title": "The MOSFET as a Controlled Switch",
+      "questions": [
+        {
+          "prompt": "In the useful first-order model of an enhancement-mode nMOS, what primarily controls whether a conductive channel forms?",
+          "options": [
+            "The gate-to-source voltage relative to threshold",
+            "A steady current through the insulated gate",
+            "The drain voltage alone, independent of the source",
+            "The Boolean name assigned to the drain node"
+          ],
+          "answer": 0,
+          "explanation": "An electric field produced by gate-to-source voltage changes channel conductivity. The insulated gate ideally draws negligible steady current; real behavior also depends on terminal voltages, geometry, process, and temperature."
+        },
+        {
+          "prompt": "Why is a MOSFET called a controlled switch only as an abstraction?",
+          "options": [
+            "It can represent only decimal values",
+            "Its output changes without moving charge",
+            "It is either a perfect short or perfect open at every voltage",
+            "It has finite resistance, capacitance, leakage, and a gradual voltage-dependent transition"
+          ],
+          "answer": 3,
+          "explanation": "The switch model is useful for logic reasoning, but a real device has analog current-voltage behavior, parasitic capacitance, finite on-resistance, subthreshold leakage, and process/temperature variation."
+        },
+        {
+          "prompt": "What physically changes when a MOSFET-driven output node rises in voltage?",
+          "options": [
+            "The insulated gate supplies a continuous DC output current",
+            "Every transistor connected to the node becomes an ideal wire",
+            "Charge accumulates on the node's effective capacitance",
+            "The node's Boolean label changes without energy transfer"
+          ],
+          "answer": 2,
+          "explanation": "A node includes device, wire, and receiver capacitances. Raising its voltage requires moving charge onto that capacitance; lowering it removes charge."
+        },
+        {
+          "prompt": "Why is a lone nMOS pass device poor at passing a strong logic-high level in the simple threshold model?",
+          "options": [
+            "A logic high requires no current path",
+            "As the output rises, gate-to-source voltage falls until channel conduction weakens near a threshold below the gate voltage",
+            "nMOS devices can conduct only when their drain is exactly zero",
+            "The source node cannot hold charge"
+          ],
+          "answer": 1,
+          "explanation": "With a fixed high gate, a rising source reduces VGS. Conduction weakens as VGS approaches threshold, so the passed high is degraded; complementary CMOS avoids relying on that weak-high path for restoration."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "CMOS Inverter and Noise Margins",
+      "questions": [
+        {
+          "prompt": "For a settled CMOS inverter with a low input, which intended conduction state produces a high output?",
+          "options": [
+            "pMOS on and nMOS off",
+            "pMOS off and nMOS on",
+            "Both devices held fully on",
+            "Both devices held fully off with no previous charge"
+          ],
+          "answer": 0,
+          "explanation": "A low input turns the pMOS pull-up on and the nMOS pull-down off, providing a path to VDD and no intended DC path to ground."
+        },
+        {
+          "prompt": "What does logic-level restoration mean?",
+          "options": [
+            "Every input voltage is copied exactly to the output",
+            "The inverter stores its output forever without power",
+            "Noise is mathematically impossible on a CMOS wire",
+            "An input within a valid logic range drives the output toward a supply rail rather than reproducing every analog deviation"
+          ],
+          "answer": 3,
+          "explanation": "A restoring gate maps valid but imperfect input ranges to outputs near the rails, allowing digital stages to compose despite bounded analog disturbance."
+        },
+        {
+          "prompt": "What does a positive noise margin quantify?",
+          "options": [
+            "The time between two clock edges",
+            "The maximum DC current through an ideal gate oxide",
+            "The allowable separation between a guaranteed output level and the next gate's required input threshold",
+            "The number of transistors in the inverter"
+          ],
+          "answer": 2,
+          "explanation": "High and low noise margins compare guaranteed output levels with accepted input thresholds. They measure how much disturbance can be tolerated while preserving logical interpretation."
+        },
+        {
+          "prompt": "Why can a CMOS inverter draw transient supply current while switching even if settled static current is small?",
+          "options": [
+            "The gate oxide becomes an intentional DC resistor",
+            "It must charge or discharge capacitance, and both networks may partially conduct during the transition",
+            "The output changes without any charge movement",
+            "Only leakage exists during transitions"
+          ],
+          "answer": 1,
+          "explanation": "Dynamic charging current and brief short-circuit current occur during transitions. Idealized low settled static current does not imply zero switching energy."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Static CMOS Logic Networks",
+      "questions": [
+        {
+          "prompt": "In a two-input CMOS NAND pull-down network, how are the nMOS devices arranged?",
+          "options": [
+            "In series, so both inputs must be high to pull the output low",
+            "In parallel, so either high input pulls the output low",
+            "As two permanently conducting resistors",
+            "Disconnected from the output"
+          ],
+          "answer": 0,
+          "explanation": "The NAND output is low only for A=1 and B=1, so its nMOS pull-down path requires both series devices to conduct. The complementary pMOS pull-up devices are parallel."
+        },
+        {
+          "prompt": "Why must the pull-up network implement the complement of the pull-down conduction condition?",
+          "options": [
+            "Both networks must provide a permanent VDD-to-ground path",
+            "It guarantees zero propagation delay",
+            "It changes a NAND into an analog amplifier only",
+            "For each valid settled input, exactly one network should provide the restoring path to a rail"
+          ],
+          "answer": 3,
+          "explanation": "Complementary conduction avoids an undefined floating output and avoids an intended static short between rails for valid settled inputs."
+        },
+        {
+          "prompt": "What Boolean transformation is especially useful when deriving complementary series/parallel CMOS networks?",
+          "options": [
+            "Two's-complement negation only",
+            "ASCII encoding",
+            "De Morgan's laws",
+            "The quadratic formula"
+          ],
+          "answer": 2,
+          "explanation": "De Morgan's laws relate complemented AND/OR functions and mirror the way series and parallel conditions exchange between pull-down and pull-up networks."
+        },
+        {
+          "prompt": "Why is a complex CMOS gate not accurately described by its truth table alone?",
+          "options": [
+            "All logically equivalent networks have identical analog behavior",
+            "Topology, transistor sizing, internal capacitance, input order, and loading affect delay and power",
+            "Truth tables already specify exact wire geometry",
+            "Boolean behavior determines a unique transistor layout"
+          ],
+          "answer": 1,
+          "explanation": "The truth table specifies settled logic behavior, while physical topology and loading determine transition behavior, energy, and robustness."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Delay, Capacitance, Fan-Out, and Power",
+      "questions": [
+        {
+          "prompt": "Why does increasing a gate's capacitive load usually increase propagation delay?",
+          "options": [
+            "Finite drive current must move more charge to change the node voltage",
+            "Capacitance removes the need for current",
+            "The Boolean function gains another truth-table row",
+            "A larger load always lowers the supply voltage to zero"
+          ],
+          "answer": 0,
+          "explanation": "A larger effective capacitance requires more charge for the same voltage swing. With finite drive strength, that generally lengthens rise or fall time and threshold-crossing delay."
+        },
+        {
+          "prompt": "What does fan-out mean in the electrical timing discussion?",
+          "options": [
+            "The number of source-code files in a module",
+            "The number of clock cycles in a program",
+            "The number of voltage rails",
+            "The load presented by driven inputs and interconnect, not merely an abstract count"
+          ],
+          "answer": 3,
+          "explanation": "Receiver gates and wires contribute capacitance. A count can be a shorthand only when those loads are comparable; electrical load is what affects the driver."
+        },
+        {
+          "prompt": "In the approximation Pdynamic ≈ alpha C V² f, what does alpha represent?",
+          "options": [
+            "Static leakage resistance",
+            "Clock-to-Q delay",
+            "Switching activity: the fraction/rate of relevant charging transitions",
+            "A universal transistor count"
+          ],
+          "answer": 2,
+          "explanation": "Alpha captures activity. The relation is a useful proportional model, not a complete chip power equation; glitching, short-circuit current, leakage, and clock distribution also matter."
+        },
+        {
+          "prompt": "Why can logically correct combinational logic still fail in a synchronous CPU?",
+          "options": [
+            "A correct Boolean function always has zero delay",
+            "Its worst-case result may arrive too late for the capture register's setup requirement",
+            "Truth tables prohibit clocks",
+            "Registers accept data only when no gates are present"
+          ],
+          "answer": 1,
+          "explanation": "Boolean correctness says what value eventually results. Timing correctness asks whether it arrives within the required clock window across relevant paths and conditions."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Sequential Timing and Metastability",
+      "questions": [
+        {
+          "prompt": "What does a setup-time requirement constrain?",
+          "options": [
+            "How long input data must be stable before the active capture edge",
+            "How long the clock must remain permanently high",
+            "The number of transistors in the data source",
+            "Only the output voltage after reset"
+          ],
+          "answer": 0,
+          "explanation": "Setup time defines a pre-edge stability window needed for reliable capture under the characterized conditions."
+        },
+        {
+          "prompt": "What does a hold-time requirement constrain?",
+          "options": [
+            "The maximum period between clock edges",
+            "How long reset must remain asserted before power-on",
+            "Only combinational outputs with no register",
+            "How long input data must remain stable after the active capture edge"
+          ],
+          "answer": 3,
+          "explanation": "Hold time is the post-edge stability requirement. Fast contamination paths and clock skew can violate hold even when the clock period is made longer."
+        },
+        {
+          "prompt": "What is metastability in a bistable storage element?",
+          "options": [
+            "A deterministic one-cycle delay inserted by every flip-flop",
+            "A synthesis syntax error",
+            "An analog condition that can take an unbounded-in-principle time to resolve after a timing violation",
+            "A third architectural bit value software can reliably read"
+          ],
+          "answer": 2,
+          "explanation": "A violated sampling window can leave internal nodes near an unstable balance. Resolution probability improves with time, but no finite synchronizer makes the risk mathematically zero."
+        },
+        {
+          "prompt": "Why is a two-flop synchronizer appropriate for a single asynchronous control bit but not a complete solution for an arbitrary multi-bit bus?",
+          "options": [
+            "Metastability occurs only in combinational gates",
+            "Bits can resolve or be sampled in different cycles, so the bus may be incoherent",
+            "Two flip-flops cannot store Boolean values",
+            "Multi-bit buses never cross clock domains"
+          ],
+          "answer": 1,
+          "explanation": "Independent bit synchronization does not preserve a coherent multi-bit word. Handshakes, Gray codes, asynchronous FIFOs, or other CDC protocols are used according to the transfer."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "SystemVerilog RTL and Simulation",
+      "questions": [
+        {
+          "prompt": "Why should an always_comb block assign its output on every control path?",
+          "options": [
+            "Otherwise retaining the previous value implies unintended storage rather than pure combinational logic",
+            "Because combinational logic may contain only one operator",
+            "Because a simulator cannot evaluate if statements",
+            "To force every output permanently to zero"
+          ],
+          "answer": 0,
+          "explanation": "Complete assignment defines an output for every input combination. Missing paths request value retention, which requires state and commonly indicates accidental latch inference."
+        },
+        {
+          "prompt": "Why are nonblocking assignments conventionally used for clocked sequential RTL?",
+          "options": [
+            "They make all arithmetic execute instantly in silicon",
+            "They are the only assignments a simulator accepts",
+            "They automatically create an asynchronous clock",
+            "Their update scheduling models simultaneous register sampling and avoids order-dependent procedural races"
+          ],
+          "answer": 3,
+          "explanation": "Clocked processes conceptually sample old state at the edge and publish updates afterward. Nonblocking assignment scheduling represents that behavior and reduces source-order artifacts."
+        },
+        {
+          "prompt": "In the ALU register-stage lab, what is the architectural distinction between alu_result and result_out?",
+          "options": [
+            "result_out is a testbench-only print operation",
+            "alu_result stores data through power loss",
+            "alu_result is combinational next data; result_out is state captured on a clock edge",
+            "Both are independent clocks"
+          ],
+          "answer": 2,
+          "explanation": "The ALU result responds combinationally to current inputs and operation selection. The output register changes at an active edge according to reset/valid behavior."
+        },
+        {
+          "prompt": "What can an RTL simulation demonstrate directly?",
+          "options": [
+            "That every possible input sequence is correct from one test",
+            "Behavior of the simulated model for the applied stimulus and assertions",
+            "Final post-route timing across all silicon corners",
+            "A transistor-accurate power number without device models"
+          ],
+          "answer": 1,
+          "explanation": "Simulation is evidence about a particular model and exercised scenarios. Coverage, properties, synthesis, timing, and physical analyses answer additional questions."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Synthesis, Netlists, and Physical-Design Overview",
+      "questions": [
+        {
+          "prompt": "Which sequence best describes the conceptual RTL synthesis path?",
+          "options": [
+            "Elaboration, generic inference, optimization, then technology mapping",
+            "Routing, C compilation, transistor fabrication, then simulation",
+            "Placement, page-table walk, linking, then elaboration",
+            "Simulation alone followed directly by silicon"
+          ],
+          "answer": 0,
+          "explanation": "Elaboration resolves the concrete design, inference creates generic operations/state, optimization transforms equivalent structure, and mapping selects target-supported resources."
+        },
+        {
+          "prompt": "Why might a source-level addition not remain as one adder cell in the final netlist?",
+          "options": [
+            "Synthesis tools cannot implement arithmetic",
+            "Every plus operator is treated as a simulator delay",
+            "Placement always deletes arithmetic",
+            "Constant propagation, width reduction, target mapping, or other equivalent rewrites can reshape or remove it"
+          ],
+          "answer": 3,
+          "explanation": "Synthesis preserves required behavior rather than source spelling. An addition by zero can disappear, constants can simplify it, and a target can implement arithmetic with different primitive structures."
+        },
+        {
+          "prompt": "What has not been created merely because Yosys emitted a mapped generic netlist?",
+          "options": [
+            "Any inferred combinational logic",
+            "Any named top module",
+            "Physical placement, routed wires, extracted parasitics, and signoff timing",
+            "Any representation of connectivity"
+          ],
+          "answer": 2,
+          "explanation": "A logical netlist captures cells/operations and connections. Physical implementation and signoff require target-specific floorplanning, placement, clocking, routing, extraction, and checks."
+        },
+        {
+          "prompt": "How does this synthesis lesson reconnect to systems programming?",
+          "options": [
+            "It requires every systems programmer to specialize in ASIC layout",
+            "It explains the implementation beneath ISA-visible state before returning to microarchitecture, MMU/privilege, exceptions, and ToyOS",
+            "It replaces the need to understand the ISA or operating systems",
+            "It proves software source maps one-to-one onto transistors"
+          ],
+          "answer": 1,
+          "explanation": "The chip material supplies causal depth beneath the ISA. The course then moves upward through CPU mechanisms used by kernels: pipelines, memory translation, privilege, exceptions, and OS construction."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,355 @@
+{
+  "week": 5,
+  "days": [
+    {
+      "day": 1,
+      "title": "An RV32I Subset and Its Datapath Contract",
+      "questions": [
+        {
+          "prompt": "Which statement about RV32I ADD belongs to the architectural contract rather than this course's implementation?",
+          "options": [
+            "It must pass through one physical ripple-carry adder.",
+            "It writes the low 32 bits of rs1 + rs2 to rd, with a write to x0 having no retained effect.",
+            "It must complete in one clock cycle.",
+            "It must use separate instruction and data memories."
+          ],
+          "answer": 1,
+          "explanation": "The ISA specifies the visible 32-bit result and x0 behavior. Adder structure, cycle count, and memory-port organization are microarchitectural choices."
+        },
+        {
+          "prompt": "Why is this lesson's chosen instruction set called a subset rather than a new ISA?",
+          "options": [
+            "Every included operation retains its official RV32I encoding and behavior; the lesson merely omits other instructions.",
+            "The Python model is allowed to redefine included instructions.",
+            "The subset replaces RISC-V registers with host Python variables architecturally.",
+            "A subset must contain every privileged instruction but no integer instruction."
+          ],
+          "answer": 0,
+          "explanation": "Selecting fewer official instructions narrows what the teaching core implements. It does not permit changing the semantics of an instruction that remains included."
+        },
+        {
+          "prompt": "For an S-type SW instruction, what role do instruction bits 11:7 have?",
+          "options": [
+            "They always name the destination register.",
+            "They select a hidden condition-code register.",
+            "They hold the low five bits of the split store immediate.",
+            "They encode the physical cache set."
+          ],
+          "answer": 2,
+          "explanation": "Field locations can be extracted uniformly, but their meaning depends on format. In S-type, bits 11:7 contribute immediate bits and there is no rd."
+        },
+        {
+          "prompt": "Which item is microarchitectural state rather than architectural RV32I integer state?",
+          "options": [
+            "The value visible in x5",
+            "The current instruction-address state",
+            "A byte written by an architecturally completed SW",
+            "A cache-line valid bit"
+          ],
+          "answer": 3,
+          "explanation": "Cache metadata exists because of one implementation's memory hierarchy. Software-visible registers, sequencing, and completed memory effects belong to the architectural model."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "ALU, Register File, and Program Counter",
+      "questions": [
+        {
+          "prompt": "For bit patterns a=0xffffffff and b=1, what do SLT and SLTU respectively produce?",
+          "options": [
+            "SLT produces 1 because signed -1 < 1; SLTU produces 0 because unsigned 0xffffffff is greater than 1.",
+            "Both produce 1 because the bit patterns are identical inputs.",
+            "SLT produces 0 and SLTU produces 1 because sign is stored in the register file.",
+            "Both raise an integer-overflow exception."
+          ],
+          "answer": 0,
+          "explanation": "Registers hold bit patterns without a permanent signed type. The selected operation supplies signed or unsigned interpretation; neither comparison raises overflow."
+        },
+        {
+          "prompt": "Why does the lab enforce x0 both when reading and when accepting writes?",
+          "options": [
+            "RV32I requires x0 to preserve the most recent discarded value.",
+            "Reads must always return zero, while attempted writes must have no architectural effect.",
+            "The OS periodically resets x0 between instructions.",
+            "The ALU cannot operate when either source register is zero."
+          ],
+          "answer": 1,
+          "explanation": "The two paths express both halves of the invariant. A physical implementation can omit row zero, but its observable behavior must remain the same."
+        },
+        {
+          "prompt": "What happens in the lab when x5 contains 7 and a rising edge writes 9 to x5?",
+          "options": [
+            "The combinational read shows 9 before the edge.",
+            "The read remains 7 permanently because reads are combinational.",
+            "The read shows 7 before the edge and 9 after the nonblocking state update.",
+            "The write is architecturally forbidden because source and destination names match."
+          ],
+          "answer": 2,
+          "explanation": "The register file's read is combinational from retained state, while the write changes that state at the edge. Actual memory macros can require explicit bypass for related timing cases."
+        },
+        {
+          "prompt": "Which description of the PC path is most precise?",
+          "options": [
+            "The PC increments itself automatically after decode.",
+            "The compiler writes the PC register after every instruction.",
+            "A branch target replaces the current PC before comparison.",
+            "Combinational logic forms candidates such as pc+4 and a target; control selects one for the PC register to capture."
+          ],
+          "answer": 3,
+          "explanation": "The PC is state. Adders and target logic form candidate values, selection chooses one, and a clocked update retains it."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Decoder, Control, and Single-Cycle Paths",
+      "questions": [
+        {
+          "prompt": "Why is recognizing only the seven-bit major opcode insufficient to validate every instruction in the lesson subset?",
+          "options": [
+            "funct3 and sometimes funct7 distinguish legal operations and widths inside an opcode family.",
+            "The opcode exists only after register writeback.",
+            "Every major opcode identifies exactly one instruction on all RISC-V systems.",
+            "Legality is determined by the cache replacement policy."
+          ],
+          "answer": 0,
+          "explanation": "For families such as OP and LOAD, function fields select the exact operation. Ignoring them can turn an unsupported encoding into an unintended architectural write."
+        },
+        {
+          "prompt": "For LW in the single-cycle datapath, which combination is correct?",
+          "options": [
+            "ALU B selects rs2, memory is written, and writeback selects pc+4.",
+            "ALU B selects the sign-extended immediate, memory is read, and writeback selects loaded data.",
+            "The branch target is used as the data address and no register is written.",
+            "The immediate selects a physical page-table entry directly."
+          ],
+          "answer": 1,
+          "explanation": "LW adds rs1 to its I-type immediate to form the effective address, reads data memory, and writes the returned word to rd."
+        },
+        {
+          "prompt": "Why should the decoder's illegal default deassert register and memory write enables?",
+          "options": [
+            "It makes every unknown word a valid NOP in official RISC-V.",
+            "It reduces the number of instruction fields.",
+            "It prevents unsupported encodings from committing accidental architectural effects before a real trap mechanism handles them.",
+            "It guarantees physical timing closure."
+          ],
+          "answer": 2,
+          "explanation": "Failing closed protects architectural state. A complete core would also report an illegal-instruction exception; silently executing arbitrary controls is incorrect."
+        },
+        {
+          "prompt": "Why can a load determine the clock period of a textbook single-cycle core?",
+          "options": [
+            "Every ADD is translated through the page table twice.",
+            "Loads are the only instructions with an opcode.",
+            "The OS schedules one process per load.",
+            "The load path can cross instruction fetch, decode/register read, address addition, data memory, and writeback before one capture edge."
+          ],
+          "answer": 3,
+          "explanation": "The global period must accommodate the longest enabled register-to-register path. Faster instructions still wait for that same edge in this design."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Integrating and Running a Tiny RV32I Core",
+      "questions": [
+        {
+          "prompt": "What distinguishes a combinational candidate from an architectural state update in the tiny core?",
+          "options": [
+            "Candidates are calculated from current state; only enabled writes and the selected next PC are retained at the commit boundary.",
+            "Every candidate changes memory as soon as Python evaluates it.",
+            "Architectural state exists only in assembly source.",
+            "Candidates are OS policy, while state is cache policy."
+          ],
+          "answer": 0,
+          "explanation": "The model first derives ALU, memory, branch, writeback, and next-PC values without mutation. Its clock method then commits the enabled architectural changes."
+        },
+        {
+          "prompt": "Why does the included four-element loop execute 25 model cycles?",
+          "options": [
+            "Every instruction takes five pipeline stages.",
+            "Three setup instructions run once, five loop instructions run four times, and two final memory instructions run once.",
+            "The data cache misses exactly 25 times.",
+            "The branch is taken four times and flushes one instruction each time."
+          ],
+          "answer": 1,
+          "explanation": "The count is 3 + (5 × 4) + 2 = 25. This Day 4 model commits one instruction per abstract cycle and does not yet model a pipeline or cache."
+        },
+        {
+          "prompt": "The second array word is -2 and is stored as bytes fe ff ff ff. What does LW place in the register?",
+          "options": [
+            "A Python negative integer that is not a 32-bit pattern",
+            "Only the low byte 0xfe",
+            "The 32-bit pattern 0xfffffffe reconstructed in little-endian order",
+            "A sign flag plus the magnitude 2"
+          ],
+          "answer": 2,
+          "explanation": "LW reconstructs four little-endian bytes into a 32-bit pattern. Signed display or signed operations interpret those bits later; the register has no persistent signed tag."
+        },
+        {
+          "prompt": "Why is the model stopping on a misaligned LW not yet evidence of a modeled RISC-V trap?",
+          "options": [
+            "RISC-V defines no memory exceptions.",
+            "Misalignment can be detected only by Linux.",
+            "Python exceptions are architecturally identical to machine traps.",
+            "The model lacks trap CSRs, a saved faulting PC/cause, privilege transition, trap vector, and restart path."
+          ],
+          "answer": 3,
+          "explanation": "A host-language error safely stops the lab but does not implement the architectural exception mechanism that systems software depends on."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Pipelining and Throughput",
+      "questions": [
+        {
+          "prompt": "For stage delays 180, 220, 250, 210, and 140 ps with 60 ps register/clock overhead, what is the modeled pipeline clock period?",
+          "options": [
+            "310 ps",
+            "200 ps",
+            "1060 ps",
+            "1550 ps"
+          ],
+          "answer": 0,
+          "explanation": "The period is bounded by the slowest stage plus boundary overhead: max(180,220,250,210,140) + 60 = 310 ps."
+        },
+        {
+          "prompt": "Why can the five-stage pipeline improve throughput while one instruction's time latency increases?",
+          "options": [
+            "It removes stages from each instruction.",
+            "Different instructions overlap in different stages, but one instruction still crosses all stages and pays each boundary.",
+            "It executes every dependence simultaneously.",
+            "It changes the ISA to permit approximate results."
+          ],
+          "answer": 1,
+          "explanation": "Overlap raises completion rate after filling. In the lesson numbers, one instruction takes 5 × 310 = 1550 ps, longer than the 1060 ps single-cycle path."
+        },
+        {
+          "prompt": "How many ideal cycles do N independent instructions require in a k-stage pipeline, including fill and drain?",
+          "options": [
+            "N/k",
+            "kN",
+            "k + N - 1",
+            "N - k"
+          ],
+          "answer": 2,
+          "explanation": "The first instruction needs k stages, and each subsequent independent instruction can finish one cycle later in the ideal single-issue model."
+        },
+        {
+          "prompt": "Why must an interstage register carry rd, controls, and validity with a computed value?",
+          "options": [
+            "The ISA requires software to read pipeline registers.",
+            "It reduces every stage's physical delay to zero.",
+            "The OS uses rd as a cache tag.",
+            "Later stages must know which instruction owns the value, what effect is allowed, and whether the stage contains real work."
+          ],
+          "answer": 3,
+          "explanation": "A number alone cannot say whether to write a register, access memory, report an exception, or do nothing. Identity and valid/kill metadata preserve ownership."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "Hazards, Forwarding, Stalls, and Branches",
+      "questions": [
+        {
+          "prompt": "What makes add x5,x1,x2 followed by sub x6,x5,x3 a RAW dependence?",
+          "options": [
+            "The younger SUB must read the value the older ADD produces in x5.",
+            "Both instructions write x5.",
+            "The ADD reads a value that the SUB will later overwrite.",
+            "Both instructions require a page-table walk."
+          ],
+          "answer": 0,
+          "explanation": "The data flow is write x5 then read x5. The chosen pipeline must forward or stall so the consumer receives the producer's value."
+        },
+        {
+          "prompt": "Why does an immediately dependent ALU instruction often stall one cycle after LW even when forwarding exists?",
+          "options": [
+            "Loads never produce register values.",
+            "The loaded data becomes available near the end of MEM, after the consumer would need it at the start of EX.",
+            "Forwarding can operate only on x0.",
+            "The OS must approve each bypass."
+          ],
+          "answer": 1,
+          "explanation": "Forwarding cannot send a value backward in time. The interlock delays the consumer until the load data exists and can be bypassed."
+        },
+        {
+          "prompt": "Why do WAR and WAW names not require stalls in this lesson's single-issue in-order five-stage pipeline?",
+          "options": [
+            "RISC-V forbids two instructions from naming one register.",
+            "Register renaming is mandatory in every RV32I implementation.",
+            "Reads and writes occur in order, so their timing cannot invert in this pipeline.",
+            "WAR and WAW apply only to memory addresses."
+          ],
+          "answer": 2,
+          "explanation": "The dependencies exist as name relationships, but this schedule performs ID reads and WB writes in order. Out-of-order timing can make false dependencies operationally important."
+        },
+        {
+          "prompt": "After a predict-not-taken branch resolves as taken in EX, what must happen to younger sequential-path instructions?",
+          "options": [
+            "They must retire before the branch.",
+            "They become kernel instructions.",
+            "Their register writes are allowed but stores are blocked.",
+            "They are invalidated and prevented from committing any architectural effect while fetch redirects to the target."
+          ],
+          "answer": 3,
+          "explanation": "Prediction may start speculative work but cannot change the ISA result. Recovery kills all wrong-path effects and redirects the front end."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Cache, TLB, MMU, and End-to-End Task Trace",
+      "questions": [
+        {
+          "prompt": "A user load misses in the TLB, and a hardware walk finds a valid user-readable leaf PTE. What can happen without an OS trap?",
+          "options": [
+            "The walker can fill the TLB and retry or continue the load using the translated physical address.",
+            "The task must be terminated because every TLB miss is a page fault.",
+            "The data cache may return any line with the same virtual offset.",
+            "The compiler must emit a replacement load."
+          ],
+          "answer": 0,
+          "explanation": "A TLB miss means only that cached translation is absent. A successful hardware walk can restore the fast path without raising an architectural page-fault exception."
+        },
+        {
+          "prompt": "Why can a store to VA 0x4004 fault even after a load brought its physical cache line into the D-cache?",
+          "options": [
+            "A cache line can never be written after being read.",
+            "Cache residency does not grant permission; the translation metadata can permit reads while denying writes.",
+            "Every D-cache hit causes a protection exception.",
+            "Stores require the same bytes to be present in the I-cache."
+          ],
+          "answer": 1,
+          "explanation": "Permission checking is part of translation/protection and must precede use of cached data. A cache hit cannot bypass OS-configured read-only policy."
+        },
+        {
+          "prompt": "With 4 KiB pages, which virtual-address portion remains unchanged when an ordinary PTE replaces the VPN with a PPN?",
+          "options": [
+            "The complete virtual page number",
+            "The ASID",
+            "The low 12-bit page offset",
+            "The cache tag"
+          ],
+          "answer": 2,
+          "explanation": "Translation selects a physical page while preserving the byte position within that page, so PA = (PPN << 12) | offset."
+        },
+        {
+          "prompt": "Which responsibility assignment is correct for the C sum trace?",
+          "options": [
+            "The ISA chooses cache replacement and the OS chooses transistor widths.",
+            "The TLB stores array values and the D-cache stores process permissions.",
+            "The MMU decides whether Linux should kill a process.",
+            "The ISA defines visible instruction effects; microarchitecture implements caches and stalls; the OS creates mappings and handles faults; physical circuits move charge."
+          ],
+          "answer": 3,
+          "explanation": "The four layers cooperate but own different decisions. Hardware reports and enforces architectural mechanisms; the kernel supplies policy; physical devices realize the implementation."
+        }
+      ]
+    }
+  ]
+}

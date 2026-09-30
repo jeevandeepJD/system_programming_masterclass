@@ -1,0 +1,50 @@
+* Day 4: inverter delay and supply energy versus capacitive load
+* Educational models only; no foundry or proprietary model data.
+* Run one nominal point directly:
+*   ngspice -b 04-cpu-and-chip-design/challenges/day-004-delay-power.cir
+* Run the documented sweep with day-004-delay-power.py.
+
+.param VDDVAL=1.8
+.param CLOAD=8f
+.param KNSCALE=1
+.param KPSCALE=1
+.param TEMPERATURE=25
+
+VPOWER vdd 0 {VDDVAL}
+VIN in 0 PULSE(0 {VDDVAL} 1n 40p 40p 3.96n 8n)
+
+MP out in vdd vdd PMOD W=4u L=1u
+MN out in 0 0 NMOD W=2u L=1u
+CLOAD_DEVICE out 0 {CLOAD}
+
+* The deliberately simple level-1 models make the RC trends visible.
+.model NMOD NMOS LEVEL=1 VTO=0.45 KP={200u*KNSCALE} LAMBDA=0.02
++ GAMMA=0.35 PHI=0.7 TOX=20n CGSO=0.20n CGDO=0.20n
+.model PMOD PMOS LEVEL=1 VTO=-0.45 KP={100u*KPSCALE} LAMBDA=0.02
++ GAMMA=0.35 PHI=0.7 TOX=20n CGSO=0.20n CGDO=0.20n
+
+.options TEMP={TEMPERATURE}
+.tran 2p 18n
+
+* Use the second edge so startup does not contaminate the measurements.
+.measure tran TPHL TRIG v(in) VAL={VDDVAL/2} RISE=2
++ TARG v(out) VAL={VDDVAL/2} FALL=2
+.measure tran TPLH TRIG v(in) VAL={VDDVAL/2} FALL=2
++ TARG v(out) VAL={VDDVAL/2} RISE=2
+.measure tran TFALL TRIG v(out) VAL={0.9*VDDVAL} FALL=2
++ TARG v(out) VAL={0.1*VDDVAL} FALL=2
+.measure tran TRISE TRIG v(out) VAL={0.1*VDDVAL} RISE=2
++ TARG v(out) VAL={0.9*VDDVAL} RISE=2
+
+* Current through VPOWER is negative while the source delivers charge.
+.measure tran QSUPPLY INTEG i(VPOWER) FROM=8n TO=16n
+
+.control
+set wr_vecnames
+set wr_singlescale
+tran 2p 18n
+wrdata day-004-waveform.dat time v(in) v(out) i(VPOWER)
+quit
+.endc
+
+.end

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 5 · Day 7 Theory Check — Cache, TLB, MMU, and End-to-End Task Trace</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:#07111b; --panel:#102031; --panel2:#162a3e; --line:#2d4861;
+    --text:#eaf3fa; --muted:#9db0c2; --accent:#5bc8ff;
+    --ok:#56df9b; --bad:#ff7589; --warn:#ffd06d;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:linear-gradient(145deg,#07111b,#0d1b29);
+    color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  main { width:min(880px,100%); margin:auto; padding:32px 18px 80px; }
+  header, .question, .result {
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:22px; margin-bottom:18px;
+  }
+  .eyebrow {
+    color:var(--accent); font:700 12px ui-monospace,monospace;
+    letter-spacing:.1em; text-transform:uppercase;
+  }
+  h1 { margin:.35rem 0 .5rem; font-size:clamp(25px,5vw,40px); line-height:1.12; }
+  .lede { color:var(--muted); margin:.4rem 0 0; }
+  fieldset { border:0; padding:0; margin:0; }
+  legend { font-weight:700; margin-bottom:14px; width:100%; }
+  .option {
+    display:flex; gap:11px; align-items:flex-start; padding:11px 13px;
+    margin:8px 0; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); cursor:pointer;
+  }
+  .option:hover { border-color:var(--accent); }
+  .option.correct { border-color:var(--ok); background:#123629; }
+  .option.wrong { border-color:var(--bad); background:#3a1822; }
+  input { margin-top:.28rem; accent-color:var(--accent); }
+  .feedback {
+    display:none; margin-top:13px; padding:11px 13px;
+    border-left:3px solid var(--accent); color:var(--muted); background:#0a1723;
+  }
+  .feedback.show { display:block; }
+  .unanswered { border-color:var(--warn); }
+  .actions { display:flex; gap:12px; flex-wrap:wrap; margin:24px 0; }
+  button {
+    border:1px solid var(--accent); border-radius:9px; padding:11px 18px;
+    background:#173c55; color:var(--text); font:700 15px inherit; cursor:pointer;
+  }
+  button.secondary { border-color:var(--line); background:transparent; }
+  button:hover { filter:brightness(1.14); }
+  .result { display:none; text-align:center; }
+  .result.show { display:block; }
+  .score { color:var(--accent); font-size:32px; font-weight:800; }
+  code { font-family:ui-monospace,monospace; color:#bdeaff; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Week 5 · Day 7 · Theory check</div>
+    <h1>Cache, TLB, MMU, and End-to-End Task Trace</h1>
+    <p class="lede">Predict first. Submit once. Explanations remain hidden until
+    every question has an attempted answer.</p>
+  </header>
+  <form id="quiz"></form>
+  <div class="actions">
+    <button type="button" id="submit">Submit answers</button>
+    <button type="button" class="secondary" id="reset">Reset</button>
+  </div>
+  <section class="result" id="result" aria-live="polite">
+    <div class="score" id="score"></div>
+    <p id="summary"></p>
+  </section>
+</main>
+<script>
+const questions = [{"prompt": "A user load misses in the TLB, and a hardware walk finds a valid user-readable leaf PTE. What can happen without an OS trap?", "options": ["The walker can fill the TLB and retry or continue the load using the translated physical address.", "The task must be terminated because every TLB miss is a page fault.", "The data cache may return any line with the same virtual offset.", "The compiler must emit a replacement load."], "answer": 0, "explanation": "A TLB miss means only that cached translation is absent. A successful hardware walk can restore the fast path without raising an architectural page-fault exception."}, {"prompt": "Why can a store to VA 0x4004 fault even after a load brought its physical cache line into the D-cache?", "options": ["A cache line can never be written after being read.", "Cache residency does not grant permission; the translation metadata can permit reads while denying writes.", "Every D-cache hit causes a protection exception.", "Stores require the same bytes to be present in the I-cache."], "answer": 1, "explanation": "Permission checking is part of translation/protection and must precede use of cached data. A cache hit cannot bypass OS-configured read-only policy."}, {"prompt": "With 4 KiB pages, which virtual-address portion remains unchanged when an ordinary PTE replaces the VPN with a PPN?", "options": ["The complete virtual page number", "The ASID", "The low 12-bit page offset", "The cache tag"], "answer": 2, "explanation": "Translation selects a physical page while preserving the byte position within that page, so PA = (PPN << 12) | offset."}, {"prompt": "Which responsibility assignment is correct for the C sum trace?", "options": ["The ISA chooses cache replacement and the OS chooses transistor widths.", "The TLB stores array values and the D-cache stores process permissions.", "The MMU decides whether Linux should kill a process.", "The ISA defines visible instruction effects; microarchitecture implements caches and stalls; the OS creates mappings and handles faults; physical circuits move charge."], "answer": 3, "explanation": "The four layers cooperate but own different decisions. Hardware reports and enforces architectural mechanisms; the kernel supplies policy; physical devices realize the implementation."}];
+const quiz = document.querySelector("#quiz");
+
+function build() {
+  quiz.innerHTML = "";
+  questions.forEach((q, qi) => {
+    const section = document.createElement("section");
+    section.className = "question";
+    section.dataset.question = qi;
+    const fieldset = document.createElement("fieldset");
+    const legend = document.createElement("legend");
+    legend.textContent = `${qi + 1}. ${q.prompt}`;
+    fieldset.appendChild(legend);
+    q.options.forEach((option, oi) => {
+      const label = document.createElement("label");
+      label.className = "option";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `q${qi}`;
+      input.value = oi;
+      label.append(input, document.createTextNode(option));
+      fieldset.appendChild(label);
+    });
+    const feedback = document.createElement("div");
+    feedback.className = "feedback";
+    section.append(fieldset, feedback);
+    quiz.appendChild(section);
+  });
+}
+
+document.querySelector("#submit").addEventListener("click", () => {
+  let score = 0;
+  let unanswered = 0;
+  questions.forEach((q, qi) => {
+    const section = quiz.querySelector(`[data-question="${qi}"]`);
+    const selected = section.querySelector("input:checked");
+    section.classList.toggle("unanswered", !selected);
+    const feedback = section.querySelector(".feedback");
+    section.querySelectorAll(".option").forEach((label, oi) => {
+      label.classList.remove("correct", "wrong");
+      if (oi === q.answer) label.classList.add("correct");
+      if (selected && Number(selected.value) === oi && oi !== q.answer)
+        label.classList.add("wrong");
+    });
+    if (!selected) {
+      unanswered++;
+      feedback.textContent = "Choose an answer before reviewing this explanation.";
+    } else {
+      if (Number(selected.value) === q.answer) score++;
+      feedback.textContent = q.explanation;
+    }
+    feedback.classList.add("show");
+  });
+  const result = document.querySelector("#result");
+  result.classList.add("show");
+  document.querySelector("#score").textContent = `${score} / ${questions.length}`;
+  document.querySelector("#summary").textContent = unanswered
+    ? `${unanswered} question(s) were unanswered. Review, reset, and try again.`
+    : score === questions.length
+      ? "All correct. Now explain the causal reason for each answer without the options."
+      : "Use the explanations to identify the weak concept, not merely the missed option.";
+  result.scrollIntoView({behavior:"smooth", block:"center"});
+});
+
+document.querySelector("#reset").addEventListener("click", () => {
+  build();
+  document.querySelector("#result").classList.remove("show");
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+build();
+</script>
+</body>
+</html>

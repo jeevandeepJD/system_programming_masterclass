@@ -1,0 +1,61 @@
+* Day 3: complementary static-CMOS NAND/NOR and inverter restoration
+* Educational models only: these are not tied to a fabrication process.
+* Run directly:
+*   ngspice -b 04-cpu-and-chip-design/challenges/day-003-cmos-networks.cir
+*
+* The transient visits (A,B) = 00, 10, 01, 11 in two-nanosecond windows.
+* Output files are written in the process working directory.
+
+.param VDDVAL=1.8
+.param LCH=1u
+.param WN=2u
+.param WP=4u
+
+VPOWER vdd 0 {VDDVAL}
+VA a 0 PWL(0n 0 1.98n 0 2.02n {VDDVAL} 3.98n {VDDVAL}
++ 4.02n 0 5.98n 0 6.02n {VDDVAL} 8n {VDDVAL})
+VB b 0 PWL(0n 0 3.98n 0 4.02n {VDDVAL} 8n {VDDVAL})
+
+* NAND2: parallel pMOS pull-up, series nMOS pull-down.
+MPNA ynand a vdd vdd PMOD W={WP} L={LCH}
+MPNB ynand b vdd vdd PMOD W={WP} L={LCH}
+MNNA ynand a nstack 0 NMOD W={WN} L={LCH}
+MNNB nstack b 0 0 NMOD W={WN} L={LCH}
+CNAND ynand 0 12f
+
+* NOR2: series pMOS pull-up, parallel nMOS pull-down.
+MPRA ynor a pstack vdd PMOD W={WP} L={LCH}
+MPRB pstack b vdd vdd PMOD W={WP} L={LCH}
+MNRA ynor a 0 0 NMOD W={WN} L={LCH}
+MNRB ynor b 0 0 NMOD W={WN} L={LCH}
+CNOR ynor 0 12f
+
+* A separate inverter is swept slowly to expose analog restoration.
+VSWEEP ain 0 0
+MPI yinv ain vdd vdd PMOD W={WP} L={LCH}
+MNI yinv ain 0 0 NMOD W={WN} L={LCH}
+
+* Classical square-law teaching models. TOX enables the level-1 charge model.
+.model NMOD NMOS LEVEL=1 VTO=0.45 KP=200u LAMBDA=0.02
++ GAMMA=0.35 PHI=0.7 TOX=20n CGSO=0.20n CGDO=0.20n
+.model PMOD PMOS LEVEL=1 VTO=-0.45 KP=100u LAMBDA=0.02
++ GAMMA=0.35 PHI=0.7 TOX=20n CGSO=0.20n CGDO=0.20n
+
+.options TEMP=25
+
+.control
+set wr_vecnames
+set wr_singlescale
+set numdgt=12
+
+tran 5p 8n
+wrdata day-003-truth-waveforms.dat v(a) v(b) v(ynand) v(ynor)
+
+dc VSWEEP 0 1.8 0.01
+wrdata day-003-inverter-transfer.dat v(ain) v(yinv)
+
+echo "Wrote day-003-truth-waveforms.dat and day-003-inverter-transfer.dat"
+quit
+.endc
+
+.end

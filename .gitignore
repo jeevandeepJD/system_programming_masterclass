@@ -5,3 +5,8 @@
 # Python-generated caches.
 __pycache__/
 *.pyc
+
+# Generated simulation/synthesis artifacts.
+*.vcd
+*.raw
+abc.history

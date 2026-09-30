@@ -1662,3 +1662,18 @@ question → design → predict → implement → observe → break/debug
 The custom CPU track and ToyOS track meet at the ISA boundary. Do not start
 ToyOS by copying a finished template before assembly, ABI, linker/ELF, CPU
 state, privilege, and exception foundations are understood.
+
+#### Scope correction
+
+This is not an HDL or ASIC-specialization track. The learner wants only the
+hardware depth necessary for a systems programmer to understand CPU behavior.
+Prepared packages:
+
+- `04-cpu-and-chip-design/` — transistor/gate/timing foundations, one small
+  RTL exercise, and one synthesis observation;
+- `05-riscv-cpu-microarchitecture/` — simple RV32I datapath/control, runnable
+  core model, pipeline/hazards, cache/TLB/MMU, and end-to-end task trace.
+
+Return to OS/kernel construction after these modules. Treat analog circuit
+design, fabrication, advanced verification, and physical-design expertise as
+out of scope unless a later systems question genuinely requires them.

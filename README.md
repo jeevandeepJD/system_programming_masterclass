@@ -34,15 +34,15 @@ Current curriculum position:
 
 ## Approved next direction
 
-After the three prepared review modules:
+After the three review modules:
 
-1. Create `04-cpu-and-chip-design/`.
-2. Progress through MOSFET/CMOS, gates, delay/power, sequential timing,
-   SystemVerilog, simulation, synthesis, ALU/register-file design, and a
-   simple RISC-V CPU.
+1. Use `04-cpu-and-chip-design/` for the minimum physical and RTL depth
+   needed to understand CPU behavior.
+2. Use `05-riscv-cpu-microarchitecture/` to build and trace a simple RISC-V
+   datapath, pipeline, hazards, cache, TLB, and MMU interactions.
 3. Trace a compiled C task through instructions, datapath control, gates, and
    transistor-level voltage/charge changes.
-4. Begin the guided x86-64 ToyOS build-along after the CPU/RTL foundations.
+4. Begin the guided x86-64 ToyOS build-along after these foundations.
 
 The chip-design and ToyOS tracks meet at the ISA boundary:
 
@@ -69,6 +69,16 @@ C / assembly → kernel → ToyOS
 │   └── challenges/
 ├── 03-c-toolchain-and-startup/
 │   ├── week-03-material.pdf
+│   ├── overview.md
+│   ├── sections/
+│   └── challenges/
+├── 04-cpu-and-chip-design/
+│   ├── week-04-material.pdf
+│   ├── overview.md
+│   ├── sections/
+│   └── challenges/
+├── 05-riscv-cpu-microarchitecture/
+│   ├── week-05-material.pdf
 │   ├── overview.md
 │   ├── sections/
 │   └── challenges/

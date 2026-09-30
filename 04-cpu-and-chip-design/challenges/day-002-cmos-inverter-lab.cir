@@ -1,0 +1,55 @@
+* Day 2: CMOS inverter DC transfer and transient behavior
+* Batch run from repository root:
+*   mkdir -p /tmp/cmos-inverter-lab
+*   ngspice -b -o /tmp/cmos-inverter-lab/ngspice.log \
+*     04-cpu-and-chip-design/challenges/day-002-cmos-inverter-lab.cir
+*
+* Generic educational models, not foundry or commercial CPU models.
+
+.model NDEV NMOS (LEVEL=1 VTO=0.70 KP=200u LAMBDA=0.02
++ CGSO=100p CGDO=100p)
+.model PDEV PMOS (LEVEL=1 VTO=-0.70 KP=100u LAMBDA=0.02
++ CGSO=100p CGDO=100p)
+
+VDD vdd 0 3.3
+VIN in 0 PULSE(0 3.3 20n 2n 2n 40n 80n) DC 0
+
+* pMOS is twice as wide to approximately balance lower hole mobility.
+MP out in vdd vdd PDEV W=20u L=1u
+MN out in 0 0 NDEV W=10u L=1u
+CLOAD out 0 25p
+
+.control
+set noaskquit
+set wr_singlescale
+set wr_vecnames
+
+echo === DC voltage transfer characteristic ===
+dc VIN 0 3.3 0.005
+let gain_mag = -deriv(v(out))
+let supply_current = -i(VDD)
+wrdata /tmp/cmos-inverter-lab/inverter-vtc.dat v(in) v(out) gain_mag supply_current
+
+meas dc voh FIND v(out) AT=0
+meas dc vol FIND v(out) AT=3.295
+meas dc trip WHEN v(out)=v(in) CROSS=1
+meas dc peak_dc_current MAX supply_current
+
+echo === Transient switching ===
+tran 0.1n 180n
+let supply_current_tran = -i(VDD)
+wrdata /tmp/cmos-inverter-lab/inverter-transient.dat time v(in) v(out) supply_current_tran
+
+meas tran tphl TRIG v(in) VAL=1.65 RISE=1
++ TARG v(out) VAL=1.65 FALL=1
+meas tran tplh TRIG v(in) VAL=1.65 FALL=1
++ TARG v(out) VAL=1.65 RISE=1
+meas tran avg_supply_current AVG supply_current_tran FROM=20n TO=180n
+meas tran peak_supply_current MAX supply_current_tran FROM=20n TO=180n
+
+echo Estimate VIL and VIH from gain_mag crossing 1 in inverter-vtc.dat.
+echo Data written under /tmp/cmos-inverter-lab/
+quit
+.endc
+
+.end

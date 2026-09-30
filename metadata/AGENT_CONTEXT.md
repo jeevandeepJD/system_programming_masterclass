@@ -512,6 +512,24 @@ modules, the next learner-facing package should be
 `04-cpu-and-chip-design/`. The guided ToyOS track follows after enough CPU,
 RTL, timing, and toolchain foundations are in place.
 
+### 2026-09-30 — Hardware depth constrained to systems needs
+
+The user explicitly rejected an HDL/chip-design detour. Weeks 4–5 are now
+prepared with this boundary:
+
+- Week 4 uses transistor/CMOS, timing, one minimal RTL lab, and one synthesis
+  observation only to explain what physically exists beneath a CPU.
+- Week 5 returns immediately to CPU datapath/control, a runnable RV32I
+  subset, pipelining/hazards, cache/TLB/MMU, and an end-to-end C task trace.
+
+Do not expand future material into analog design, fabrication, advanced HDL,
+verification methodology, or physical-design specialization unless directly
+required by a systems concept. The next major track after these foundations
+is guided ToyOS.
+
+The VM now has the supporting open-source tools installed:
+ngspice 47, Icarus Verilog 13, Verilator 5.046, GTKWave 3.3, and Yosys 0.67.
+
 ### 2026-09-24 — Learner-first topic folders
 
 The user approved a topic-first root layout so finished materials are visible

@@ -1,0 +1,54 @@
+* Day 1: MOSFET curves and resistor-loaded switch intuition
+* Batch run from repository root:
+*   mkdir -p /tmp/mosfet-switch-lab
+*   ngspice -b -o /tmp/mosfet-switch-lab/ngspice.log \
+*     04-cpu-and-chip-design/challenges/day-001-mosfet-switch-lab.cir
+*
+* Educational long-channel model, not a foundry/process model.
+
+.model NDEV NMOS (LEVEL=1 VTO=0.70 KP=200u LAMBDA=0.02
++ CGSO=100p CGDO=100p)
+
+* One swept gate drives three curve devices at fixed VDS.
+VGATE gate 0 PULSE(0 3.3 100n 2n 2n 200n 400n) DC 0
+VD005 d005 0 0.05
+VD050 d050 0 0.50
+VD330 d330 0 3.30
+M005 d005 gate 0 0 NDEV W=10u L=1u
+M050 d050 gate 0 0 NDEV W=10u L=1u
+M330 d330 gate 0 0 NDEV W=10u L=1u
+
+* Resistor-loaded nMOS inverter. The same gate receives the pulse above.
+VDD vdd 0 3.3
+RPULL vdd out 10k
+MSW out gate 0 0 NDEV W=10u L=1u
+CLOAD out 0 20p
+
+.control
+set noaskquit
+set wr_singlescale
+set wr_vecnames
+
+echo === DC gate sweep: fixed VDS curves ===
+dc VGATE 0 3.3 0.025
+let id005 = -i(VD005)
+let id050 = -i(VD050)
+let id330 = -i(VD330)
+wrdata /tmp/mosfet-switch-lab/nmos-transfer.dat v(gate) id005 id050 id330
+
+echo === Transient resistor-loaded inverter ===
+tran 0.2n 900n
+wrdata /tmp/mosfet-switch-lab/nmos-switch-transient.dat time v(gate) v(out) -i(VDD)
+
+meas tran out_high AVG v(out) FROM=20n TO=80n
+meas tran out_low AVG v(out) FROM=180n TO=280n
+meas tran t_fall TRIG v(gate) VAL=1.65 RISE=1
++ TARG v(out) VAL=1.65 FALL=1
+meas tran t_rise TRIG v(gate) VAL=1.65 FALL=1
++ TARG v(out) VAL=1.65 RISE=1
+
+echo Data written under /tmp/mosfet-switch-lab/
+quit
+.endc
+
+.end
