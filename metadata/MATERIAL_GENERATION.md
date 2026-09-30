@@ -16,6 +16,11 @@ question → source research → derive the model → predict
 
 ## Source hierarchy
 
+Work offline-first: begin with the organized local library, repository
+references, installed manuals/man pages, local source trees, and experiments.
+Internet access is a targeted fallback for missing material and
+version-sensitive verification—not the default research step.
+
 When sources disagree, use this order:
 
 1. Current official specification, standard, or upstream source
@@ -28,6 +33,9 @@ When sources disagree, use this order:
 
 Version-sensitive kernel APIs, structures, Kconfig symbols, source paths, and
 tool commands are always checked against the current target environment.
+If offline sources cannot establish a current, authoritative answer, consult
+the relevant upstream specification, documentation, source, or history rather
+than lowering the lesson's quality.
 
 ## Generation workflow
 

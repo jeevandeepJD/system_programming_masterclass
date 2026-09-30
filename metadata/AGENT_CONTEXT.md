@@ -131,6 +131,16 @@ For each curriculum week/module:
   state, and software policy.
 - Enthusiasm should come from discovery, not artificial praise or excessive
   punctuation.
+- Minimize chat and tool-token usage now that the workflow is established:
+  keep status/final messages brief, avoid rereading known context, search only
+  the relevant scope, batch independent checks, and do not regenerate or
+  explain unchanged material. Do not reduce lesson quality or skip required
+  validation merely to save tokens.
+- Prefer the organized offline library, existing repository references,
+  installed manuals, local source trees, and reproducible VM experiments.
+  Use internet research only when local material is outdated, incomplete, or
+  insufficient for a version-sensitive claim; quality and correctness take
+  priority over staying offline.
 
 ## Mastery framework
 
@@ -610,3 +620,19 @@ Future ToyOS and Linux/kernel lessons must compare entry state, page tables,
 TLB maintenance, context switching, memory barriers, interrupts,
 virtualization, and DMA/IOMMU mechanisms when those differences affect the
 mental model or code.
+
+### 2026-09-30 — Token-efficient operation
+
+The user requested sharply reduced token usage because the course structure
+and generation process are now established. Future sessions should use short
+responses, targeted file reads/searches, batched work, and concise handoffs.
+Preserve technical correctness, validation, persistent context updates, and
+the depth of learner-facing lessons.
+
+### 2026-09-30 — Offline-first source policy
+
+The user requested that lesson generation rely on offline material as much as
+possible without compromising quality. Start with the local reference library,
+repository documentation, installed man pages/tool documentation, local Linux
+source, and experiments. Consult current primary internet sources only to fill
+gaps or verify time-sensitive details.
