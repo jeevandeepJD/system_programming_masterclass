@@ -114,6 +114,21 @@ You do not need that detail today, but it explains why pointer values on
 Linux cluster into recognisable neighbourhoods rather than spreading
 across the full 64-bit range.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+Common 64-bit Linux ABIs for all three targets use eight-byte object
+pointers, but ISO C does not require that width or require every pointer value
+to be a usable integer address. The implemented virtual-address range is also
+smaller than 64 bits and varies by CPU and configuration: x86-64 canonical
+address rules are not AArch64 or RISC-V rules.
+
+Keep pointer arithmetic, bounds, lifetime, and alignment reasoning in the C
+abstract machine. The compiler then maps valid accesses to the target ISA and
+ABI; hardware tolerance of an unaligned access, or a numerically plausible
+address, does not make an invalid C access defined. See the
+[architecture comparison](../../references/ARCHITECTURE_COMPARISON.md) for
+the target-level distinctions.
+
 ---
 
 ## 2. Why `p + 1` does not add one

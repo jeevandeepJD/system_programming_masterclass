@@ -890,6 +890,22 @@ while x86 retains compatibility advantages. “Easier to reason about” does
 not mean “easy to build a competitive server CPU,” and “compatibility” does
 not mean “no innovation is possible.”
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+AArch64 is a useful check against treating “RISC” and “CISC” as two complete
+design packages: like RISC-V it is a fixed-width load/store ISA in its main
+64-bit state, but it has 31 general-purpose registers, an `NZCV` flags
+register, and a conventional link register. RISC-V instead has 32 integer
+registers including `x0` and direct integer compare-and-branch instructions;
+x86-64 combines variable-length encoding, sixteen general-purpose registers,
+flags, and many register-or-memory forms.
+
+Those are independent ISA choices, not performance rankings. AAPCS64, the
+RISC-V psABI, and System V AMD64 separately assign argument, return, and
+preserved-register roles; pipeline depth, µops, fusion, and execution width
+belong to implementations. See
+[Architecture Comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 10. CPU, kernel, and virtualization connections

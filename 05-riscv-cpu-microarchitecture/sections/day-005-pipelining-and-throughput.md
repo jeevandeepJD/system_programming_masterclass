@@ -285,6 +285,23 @@ split fetch or memory access, use multiple execution pipelines, or retire via
 a reorder buffer. ISA conformance constrains visible behavior, not these five
 labels.
 
+### Architecture comparison — pipeline shape is implementation freedom
+
+RISC-V, AArch64, and x86-64 define architectural instruction effects and
+exception/ordering contracts; none defines an IF/ID/EX/MEM/WB pipeline. A
+small implementation of any of them may be in-order, while a high-performance
+implementation may be deep, wide, speculative, and out of order.
+
+Their **ISA** front ends begin with different work: base RISC-V and A64 have
+regular 32-bit encodings, optional RISC-V compressed instructions add
+16-bit lengths, and x86-64 has variable-length instructions that are commonly
+translated to internal micro-operations. After decode, all three permit
+substantial **microarchitectural** freedom: internal operations, queues,
+physical-register renaming, execution ports, and retirement structures are
+not software-visible. The obligation is precise architectural behavior, not
+similar pipeline diagrams. See
+[Architecture Comparison for Systems Programmers](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 6. Pipeline registers carry identity as well as data

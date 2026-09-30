@@ -347,6 +347,22 @@ code must skip the red zone when it builds a signal frame on the user stack.
 Kernel code itself is compiled with `-mno-red-zone`, because an interrupt
 arriving in kernel mode would happily scribble on it.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+The ISA-level call primitive differs: x86-64 `call` pushes a return address,
+AArch64 `bl` writes link register `x30`, and RISC-V `jal` writes a selected
+destination register, conventionally `ra`. AArch64 and RISC-V non-leaf
+functions commonly spill the link register when another call would overwrite
+it; all three still need per-activation storage when values cannot remain in
+registers.
+
+Argument registers, callee-saved sets, stack alignment, red zones, frame
+layout, and unwind rules are ABI contracts—System V AMD64, AAPCS64, and the
+RISC-V psABI make different choices. Whether a compiler keeps a frame pointer
+or spills a particular value is an implementation decision within that
+contract. See
+[Architecture Comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 5. Lab A — frames, arguments, and a promise broken on purpose

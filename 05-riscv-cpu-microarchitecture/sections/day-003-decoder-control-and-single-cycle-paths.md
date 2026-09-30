@@ -123,6 +123,23 @@ families. The lab returns the final control bundle directly, but its lookup
 still performs both conceptual levels. Source organization is not a timing
 claim; synthesis may flatten or restructure the logic.
 
+### Architecture comparison — instruction boundaries and decode work
+
+This lab can index one aligned 32-bit RV32I word before decoding it. With the
+RISC-V `C` extension, the front end must also distinguish 16-bit and 32-bit
+instruction lengths. AArch64 A64 keeps a fixed 32-bit width. x86-64 must find
+boundaries in a variable-length byte stream and decode prefixes, opcode maps,
+addressing forms, and possible memory operands.
+
+These are **ISA** parsing obligations. They do not prescribe one decoder
+stage or imply that one family must execute faster. Implementations of all
+three may use parallel decoders, queues, caches of decoded work, instruction
+fusion, or internal operations unlike the architectural instruction. The
+safe-enable rule remains universal: however decode is organized
+**microarchitecturally**, an illegal or faulting instruction must not acquire
+unintended architectural effects. See
+[Architecture Comparison for Systems Programmers](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 3. The immediate generator is format-dependent wiring

@@ -330,6 +330,30 @@ lab state is the register file. The PC contract is specified and traced here;
 it will join decode and memory in the complete CPU. Keeping the lab bounded
 prevents it from becoming a partial, misleading processor.
 
+### Architecture comparison — flags, registers, and PC
+
+The three ISAs expose different **architectural** dependencies:
+
+- RV32I has 32 integer registers, with `x0` fixed at zero, and conditional
+  branches compare registers directly. `JAL`/`JALR` can write a link to the
+  selected `rd`; the ABI conventionally uses `ra`.
+- AArch64 has 31 general-purpose integer registers plus an encoding that means
+  the zero register or stack pointer by context. `PC` is not a
+  general-purpose register. Some arithmetic forms update `NZCV`, `B.cond`
+  consumes those flags, while instructions such as `CBZ` and `TBZ` test a
+  register without first setting flags; `BL` writes link register `x30`.
+- x86-64 has 16 general-purpose registers. `RIP` and `RFLAGS` are
+  architectural state, although `RIP` is not an ordinary integer register.
+  Many arithmetic instructions update flags that later conditional branches
+  consume.
+
+This changes compiler-visible dependence chains and context state, but it
+does not mandate a physical flags register, register-file port count, or PC
+pipeline. Renaming, bypassing, and next-PC hardware are
+**microarchitectural**; ABI register roles and OS save/restore policy are
+separate contracts. See
+[Architecture Comparison for Systems Programmers](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 6. Read the small RTL lab

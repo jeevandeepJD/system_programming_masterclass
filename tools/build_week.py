@@ -80,7 +80,16 @@ def lesson_with_challenge_links(
         ),
     )
     if not challenges:
-        return lesson
+        lesson_text = lesson.read_text(encoding="utf-8")
+        portable_text = lesson_text.replace(
+            "](../../references/",
+            "](repo-relative:../references/",
+        )
+        if portable_text == lesson_text:
+            return lesson
+        enhanced = temp_dir / lesson.name
+        enhanced.write_text(portable_text, encoding="utf-8")
+        return enhanced
 
     labels = {
         ".html": "interactive HTML lab",
@@ -182,9 +191,18 @@ def lesson_with_challenge_links(
             ]
         )
 
+    # The merged PDF lives at the module root, not beside the Markdown section.
+    # Preserve repository reference links as portable URIs and let
+    # rewrite_relative_links() remove the marker after WeasyPrint renders them.
+    lesson_text = lesson.read_text(encoding="utf-8")
+    lesson_text = lesson_text.replace(
+        "](../../references/",
+        "](repo-relative:../references/",
+    )
+
     enhanced = temp_dir / lesson.name
     enhanced.write_text(
-        lesson.read_text(encoding="utf-8") + "\n".join(lines) + "\n",
+        lesson_text + "\n".join(lines) + "\n",
         encoding="utf-8",
     )
     return enhanced

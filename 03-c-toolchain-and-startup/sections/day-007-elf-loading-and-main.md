@@ -254,6 +254,24 @@ unsigned long page_size = getauxval(AT_PAGESZ);
 inspection tool can display it for a trusted test program, but `getauxval`
 is clearer in the lab.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+The kernel first checks the ELF machine type, then follows the target's ELF
+and process-initialization ABI. Interpreter pathnames are conventions rather
+than one universal name: common examples include
+`/lib64/ld-linux-x86-64.so.2`, `/lib/ld-linux-aarch64.so.1`, and a RISC-V
+name that also reflects the selected ABI, but distributions may arrange them
+differently.
+
+`PT_INTERP` still selects the interpreter and `e_entry` still names an ELF
+entry, but initial register state, stack alignment, relocation processing,
+and `_start` code are architecture-specific. Auxv has a broadly shared
+shape, while entries such as `AT_HWCAP` carry target-specific feature bits;
+`AT_ENTRY` continues to describe the main executable even when the
+interpreter runs first. These are target ABI facts beneath the portable
+hosted-C contract for calling `main`. See the
+[architecture comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 4. `PT_INTERP` hands control to the user-space dynamic linker

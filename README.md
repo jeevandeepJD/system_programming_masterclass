@@ -84,6 +84,8 @@ C / assembly → kernel → ToyOS
 │   └── challenges/
 ├── references/
 │   ├── README.md             catalog of selected references
+│   ├── ARCHITECTURE_COMPARISON.md
+│   │                         x86-64/AArch64/RISC-V systems comparison
 │   └── library/              local third-party library; Git-ignored
 ├── tools/
 │   ├── build_lesson.py       Markdown-to-PDF renderer
@@ -94,6 +96,7 @@ C / assembly → kernel → ToyOS
 │   └── week                  lesson/challenge launcher
 ├── metadata/
 │   ├── AGENT_CONTEXT.md
+│   ├── MATERIAL_GENERATION.md
 │   ├── MASTERCLASS.md
 │   ├── WEEKLY_PROGRESS.md
 │   └── curriculum-tracker.docx
@@ -112,6 +115,12 @@ C / assembly → kernel → ToyOS
    evidence without auto-recording personal completion.
 4. `metadata/AGENT_CONTEXT.md` records teaching preferences and operational decisions.
 5. `metadata/MASTERCLASS.md` preserves detailed history and prior discoveries.
+
+See [`metadata/MATERIAL_GENERATION.md`](metadata/MATERIAL_GENERATION.md) for
+the source hierarchy, generation/validation process, principal references,
+and limitations. Use
+[`references/ARCHITECTURE_COMPARISON.md`](references/ARCHITECTURE_COMPARISON.md)
+when a lesson crosses x86-64, AArch64, and RISC-V boundaries.
 
 ## Weekly use
 

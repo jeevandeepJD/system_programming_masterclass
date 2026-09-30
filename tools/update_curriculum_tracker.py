@@ -140,6 +140,10 @@ def main() -> None:
         "Cross-layer systems depth: memory ordering/coherence, NUMA, PCIe, "
         "DMA/IOMMU/RDMA, scheduler/cgroups/namespaces, storage, networking, "
         "virtualization/confidential computing, and observability.",
+        "Architecture comparison: use x86-64, AArch64, and RISC-V at real "
+        "ISA/ABI, exception, paging/TLB, ordering, toolchain, context-switch, "
+        "virtualization, and IOMMU boundaries. Keep architecture, ABI, "
+        "microarchitecture, platform, and kernel policy distinct.",
     ):
         add_before(anchor, item, "List Bullet")
 

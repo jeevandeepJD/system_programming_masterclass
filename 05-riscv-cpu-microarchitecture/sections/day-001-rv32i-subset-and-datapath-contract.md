@@ -91,6 +91,23 @@ RISC-V Linux system needs privilege, exceptions, interrupts, address
 translation, atomics and other platform facilities beyond this subset.
 RV32I is the clean ISA boundary on which to learn the datapath.
 
+### Architecture comparison — decode is a contract, not a ranking
+
+RV32I is especially convenient for this teaching datapath because base
+instructions are fixed-width, arithmetic is register-to-register, and memory
+is accessed through explicit loads and stores. A64 instructions are also
+fixed 32-bit words and use a load/store model. x86-64 instead has
+variable-length instructions and permits many register/memory forms, so its
+architectural decode rules are denser.
+
+Those are **ISA** differences, not performance rankings or required internal
+pipelines. An x86-64 core may decode instructions into internal
+micro-operations; an AArch64 or RISC-V core may also crack, fuse, or otherwise
+transform instructions. Those choices are **microarchitecture** so long as
+retired behavior preserves the ISA. The subset and single-cycle organization
+used here are teaching choices, not consequences of “RISC.” See
+[Architecture Comparison for Systems Programmers](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 2. The chosen subset

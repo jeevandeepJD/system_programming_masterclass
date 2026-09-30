@@ -482,6 +482,21 @@ This is the misleading claim:
 
 > Every C type maps permanently to one assembly instruction.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+The same defined C expression can lower differently across x86-64, AArch64,
+and RISC-V because their instructions, register sets, condition mechanisms,
+and available extensions differ. The target C implementation also chooses
+facts such as the data model, plain-`char` signedness, alignment, and
+endianness; common 64-bit Linux targets often share LP64 and little-endian
+choices, but C does not require that combination.
+
+Keep the layers separate: C specifies language behavior, the platform ABI
+fixes binary layout and calling conventions, the ISA supplies architectural
+operations, and a compiler chooses a valid lowering. Pipeline and cache
+details may change cost but not the required C result. See
+[Architecture Comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 8. Floating point: enough orientation to read the boundary

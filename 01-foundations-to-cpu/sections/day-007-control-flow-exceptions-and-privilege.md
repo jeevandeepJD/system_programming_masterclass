@@ -528,6 +528,22 @@ IDT exception, even though both produce exceptional control flow and a
 privilege transition. Keep the common concept—controlled entry—separate from
 the exact architecture-specific path.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+- x86-64 Linux normally uses `syscall`, CPL 3/0, and IDT-based exception
+  vectors; AArch64 uses `svc`, EL0/EL1, vector tables selected through
+  `VBAR_ELx`, and `eret`; RISC-V uses `ecall`, U/S privilege modes,
+  `stvec` plus trap CSRs such as `sepc` and `scause`, and `sret`.
+- These are architectural entry and privilege mechanisms. The syscall number,
+  argument registers, and error-return convention form an OS ABI; Linux entry
+  code, saved-frame layout, scheduling decisions, and the chosen external
+  interrupt controller are implementation and platform details.
+
+All three provide controlled entry rather than an unrestricted jump into
+privileged code, but their saved state and return paths are not
+interchangeable. See
+[Architecture Comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 9. Observe: compile and trace a loop at instruction level

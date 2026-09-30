@@ -340,6 +340,31 @@ Current processors use substantially richer predictors. Their structures are
 microarchitectural and vendor-specific. The architectural requirement remains:
 wrong-path work must not alter architectural state.
 
+### Architecture comparison — branch dependencies and memory order
+
+The branch's architectural inputs differ. RV32I branches compare two
+registers directly. AArch64 supports flag-consuming conditional branches as
+well as direct register zero/bit tests; x86-64 conditional branches commonly
+consume `RFLAGS` set by an earlier instruction. Hazard logic must therefore
+track the dependencies defined by its **ISA**, but predictor design,
+resolution stage, speculation depth, and recovery machinery remain
+**microarchitectural** choices on all three.
+
+Do not extend this lesson's in-order stage schedule into a claim about memory
+ordering. x86-64 provides a relatively strong TSO-style architectural model
+but still permits effects such as store buffering. AArch64 is more weakly
+ordered and supplies acquire/release operations and barriers. RISC-V base
+systems use RVWMO, with fences and extension-dependent atomic mechanisms such
+as acquire/release bits, AMOs, and LR/SC. These are **architectural**
+constraints on observable memory behavior, not statements that a pipeline
+literally performs every access in source order.
+
+Language atomics express a language-level contract; compilers select the
+required ISA operations, and kernels use architecture-specific barrier APIs
+and mapping rules as **software policy**. `volatile` alone does not establish
+inter-core ordering. See
+[Architecture Comparison for Systems Programmers](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 8. Exceptions connect flushing to precise state

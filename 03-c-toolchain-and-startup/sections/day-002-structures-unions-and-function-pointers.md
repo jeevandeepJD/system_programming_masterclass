@@ -262,6 +262,21 @@ Object pointers and function pointers are distinct categories in portable C.
 POSIX `dlsym` lives at an implementation boundary with POSIX guarantees;
 do not generalize its idioms into ISO C.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+Structure offsets and call sequences are target-ABI facts. The common
+x86-64 System V ABI, AAPCS64, and RISC-V psABI may give a simple structure
+the same layout, but their rules for alignment, aggregate arguments and
+returns, variadic calls, register ownership, and unwind state are not
+interchangeable.
+
+For example, integer arguments begin in `RDI` on x86-64, `x0` on AArch64,
+and `a0` on RISC-V; return-address and stack conventions also differ. A
+compatible C function-pointer type expresses the language contract, while
+the compiler implements that call using the selected ABI. Never derive a
+wire format or cross-target callback interface from one native build. See the
+[architecture comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ### Callback: invert control deliberately
 
 A callback API receives behavior to invoke later or for each item:

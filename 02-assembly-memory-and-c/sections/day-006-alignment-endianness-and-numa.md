@@ -137,6 +137,23 @@ The safe conclusion is not “architecture X always allows unaligned access.”
 It is: consult the language rule first, then the ISA instruction and memory
 type, then measure the actual processor.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+x86-64 ordinary integer instructions generally tolerate unaligned addresses.
+AArch64 permits many unaligned accesses to normal memory but varies by access
+type and configuration. In RISC-V, naturally aligned accesses have the base
+guarantees, while the execution environment determines whether a misaligned
+access completes, traps for emulation, or fails. Even where an ISA permits
+the access, a particular core may charge extra for cache-line or page
+crossings.
+
+Mainstream Linux deployments of all three are normally little-endian, but
+that is not a portable C or wire-format guarantee. The ISA defines available
+load/store behavior, an ABI fixes type alignment and aggregate layout for
+binary interoperability, and C still forbids an invalid typed access even
+when hardware could execute it. See
+[Architecture Comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 2. Why structs contain bytes you did not declare

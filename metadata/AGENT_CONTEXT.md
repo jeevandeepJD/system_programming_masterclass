@@ -115,6 +115,17 @@ For each curriculum week/module:
   physics → logic → CPU → machine code → C → OS → kernel → hardware.
 - Connect to Linux, kernel, QEMU/KVM, and virtualization experience where it
   genuinely clarifies the topic.
+- Compare x86-64, AArch64, and RISC-V at real architecture boundaries:
+  ISA/ABI, exception entry and privilege, paging/TLB behavior, memory
+  ordering and atomics, alignment/endianness, ELF/toolchain conventions,
+  context switching, virtualization, and IOMMU behavior.
+- Do not force the same comparison into every lesson. State whether each
+  difference belongs to the ISA, ABI, microarchitecture, platform, compiler,
+  kernel policy, or runtime configuration. Use POWER, s390, LoongArch, or
+  32-bit variants only when they expose an otherwise hidden assumption.
+- Use `references/ARCHITECTURE_COMPARISON.md` as the reusable comparison map,
+  then verify detailed claims against current architecture manuals, ABI
+  specifications, and Linux architecture code.
 - Encourage “Where does that actually exist?” and similar questions.
 - Distinguish specification, encoding, physical implementation, runtime
   state, and software policy.
@@ -583,3 +594,19 @@ approaches as explicit backups:
 Interactive theory checks use conversational labels such as “Now check your
 understanding,” appear after the relevant lesson section, and keep practical
 labs alongside them. Continue future work on `master` using weekly packages.
+
+### 2026-09-30 — Cross-architecture comparison policy
+
+The user requested differences among major architectures wherever they are
+necessary, including updates to existing material. The primary comparison set
+is x86-64, AArch64, and RISC-V. Add concise architecture lenses at genuine
+boundaries rather than repeating a generic RISC-versus-CISC sidebar.
+
+Every comparison must separate architecture from ABI, microarchitecture,
+platform, toolchain, kernel policy, and runtime configuration. Existing Weeks
+1–3 and 5 now include targeted comparisons, and
+`references/ARCHITECTURE_COMPARISON.md` is the maintained reusable reference.
+Future ToyOS and Linux/kernel lessons must compare entry state, page tables,
+TLB maintenance, context switching, memory barriers, interrupts,
+virtualization, and DMA/IOMMU mechanisms when those differences affect the
+mental model or code.

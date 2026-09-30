@@ -386,6 +386,23 @@ front end but require more instructions or bytes for a task. A rich
 variable-length encoding can express work compactly but demand sophisticated
 fetch and decode machinery.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+- x86-64 instructions are 1–15 bytes, expose sixteen general-purpose
+  registers, and often use `RFLAGS` plus register-or-memory operand forms.
+- AArch64 A64 instructions are fixed at 32 bits, expose thirty-one
+  general-purpose registers plus context-dependent `SP`/zero-register
+  encodings, and normally use explicit loads and stores; `NZCV` holds
+  condition flags.
+- Base RISC-V instructions are 32 bits, with optional 16-bit compressed
+  encodings; its 32 integer registers include fixed-zero `x0`, and integer
+  branches compare registers without a general condition-code register.
+
+Those are ISA contracts. Argument-register names and preserved-register
+rules come from an ABI, while decode width, physical registers, and internal
+operations belong to a processor implementation. See
+[Architecture Comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ### There is no free encoding field
 
 Suppose Cedar-16 has only 16 bits per instruction:

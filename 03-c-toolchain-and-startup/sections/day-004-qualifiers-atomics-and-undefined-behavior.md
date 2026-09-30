@@ -419,6 +419,21 @@ their contracts is unsafe.
 a weaker spelling of `_Atomic`, and `_Atomic` is not a general device-register
 API.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+The same C atomic order can compile differently. x86-64's relatively strong
+TSO-style ordering often lets acquire loads and release stores use ordinary
+load/store instructions, while AArch64 commonly uses acquire/release
+instructions or barriers. RISC-V uses RVWMO plus fences, `aq`/`rl` bits,
+AMOs, or LR/SC when the selected ISA extensions provide them.
+
+Those mappings do not weaken or strengthen the source-level contract: a C
+data race remains undefined on x86-64, and release/acquire publication has
+the same C meaning on all three. Lock-free status and the instruction
+sequence are implementation and target properties, so check rather than
+infer them. See the
+[architecture comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 6. Observe

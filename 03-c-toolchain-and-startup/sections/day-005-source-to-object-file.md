@@ -295,6 +295,22 @@ objdump -dr source.o
 `objdump -dr` is powerful because it places relocation annotations beside
 the instruction bytes they qualify.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+ELF is a shared container format, not a shared instruction or relocation
+language. `e_machine` identifies targets such as `EM_X86_64`, `EM_AARCH64`,
+or `EM_RISCV`, and each target ABI defines its own relocation types,
+instruction fields, range checks, and addend rules. A relocation that repairs
+an x86-64 relative call is therefore not portable metadata for an AArch64 or
+RISC-V call sequence.
+
+AArch64 and RISC-V address construction also commonly spans paired
+instructions and relocations, while linkers may relax eligible sequences
+under target-specific rules. The C translation unit can remain portable even
+though its `.o` is unavoidably target-specific; inspect `readelf -h` and
+`readelf -r` together. See the
+[architecture comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 5. Lab: stop at every stage

@@ -225,6 +225,20 @@ readelf -Wr program
 readelf -dW program
 ```
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+PIC, GOT, and PLT are ELF ABI concepts with target-specific realizations.
+x86-64 commonly uses RIP-relative references; AArch64 commonly builds
+PC-relative addresses with instruction pairs; RISC-V commonly uses
+`AUIPC`-based pairs. Their relocation names, PLT entry code, call ranges, and
+linker-generated veneers or stubs differ.
+
+The linker may also relax a GOT or call sequence when visibility, range, and
+interposition rules permit, so one disassembly is not a universal PLT
+template. Keep the portable C declaration and ABI compatibility question
+separate from the mechanism chosen by a particular target linker. See the
+[architecture comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ### Security connection: RELRO
 
 GOT entries must be writable while relocations are applied. RELRO lets the

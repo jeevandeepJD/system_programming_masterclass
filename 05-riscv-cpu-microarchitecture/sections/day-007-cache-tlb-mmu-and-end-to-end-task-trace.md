@@ -376,6 +376,40 @@ identity and commonly at cache-line granularity. Coherence does not replace:
 For this tiny single-core observation model, coherence is intentionally out
 of scope. The model has only one cache hierarchy and no second observer.
 
+### Architecture comparison — memory systems, privilege, and virtualization
+
+Across x86-64, AArch64, and RISC-V, cache and TLB capacities, associativity,
+replacement, split/unified organization, and walk-cache design are
+**microarchitectural**. The **architecture** instead defines translation
+formats, permissions, faults, maintenance operations, privilege state, and
+memory-ordering guarantees:
+
+- x86-64 commonly uses `CR3`-rooted multilevel tables, 4 KiB base pages and
+  larger pages; supported address widths and level counts are feature
+  dependent. Privilege is expressed through CPL/rings and page permissions.
+  VMX/SVM systems can add EPT/NPT second-level translation.
+- AArch64 uses translation regimes selected through system registers, with
+  architected 4 KiB, 16 KiB, and 64 KiB granules. EL0–EL3 describe exception
+  levels; EL2 and stage-2 translation support virtualization.
+- RISC-V selects a supported scheme through `satp`: RV32 commonly uses Sv32,
+  while RV64 systems may implement Sv39, Sv48, or Sv57. U/S/M modes define
+  privilege; the optional hypervisor extension adds HS/VS/VU state and
+  two-stage translation.
+
+Page-table entry layouts, fault reports, invalidation instructions, and
+virtualization control state therefore differ. All three still need
+translation caching, permission checks, precise faults, and synchronization
+after mapping changes. Their ordering contracts also differ: x86-64 is
+relatively strong and TSO-style, while AArch64 and RISC-V RVWMO permit weaker
+ordering with explicit acquire/release and barrier/fence mechanisms.
+
+The **OS or hypervisor policy** remains distinct: software allocates page
+tables, chooses mappings and permissions, handles faults, performs required
+TLB maintenance, and decides whether a guest or task resumes. Linux and KVM
+provide common abstractions, but architecture-specific code supplies these
+mechanisms. See
+[Architecture Comparison for Systems Programmers](../../references/ARCHITECTURE_COMPARISON.md).
+
 ---
 
 ## 7. Runnable safe observation lab

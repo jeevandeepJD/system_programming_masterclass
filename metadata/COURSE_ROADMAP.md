@@ -12,6 +12,12 @@
 - Build a guided ToyOS to reconstruct known mechanisms, not invent a production OS.
 - Treat distributed systems, cloud, and AI infrastructure as deferred context pieces—not the main track, near-term capstone, or reason to dilute kernel depth.
 - Treat memory ordering, NUMA/data movement, Linux isolation/resource control, storage and network paths, virtualization/confidential computing, and observability as required cross-layer systems threads—not optional breadth.
+- Use x86-64, AArch64, and RISC-V as the primary architecture comparison set.
+  Compare them where ISA/ABI, exception entry, paging/TLBs, memory ordering,
+  ELF/toolchain behavior, context switching, virtualization, or IOMMU
+  behavior changes the software model. Label architecture, ABI,
+  microarchitecture, platform, and kernel-policy facts explicitly; do not
+  turn “RISC versus CISC” into a performance ranking.
 - Make kernel/systems interview readiness an explicit secondary outcome: every major concept must be explainable concisely, traceable on a whiteboard, implementable in C where relevant, and defensible through trade-offs and debugging evidence.
 - Immediate priority is foundation confidence. Do not activate specialization pivots, market-driven detours, ToyOS expansion, or upstream patch targeting until the corresponding confidence gate is met.
 - Treat each “week” as a mastery module, not a calendar deadline.
@@ -389,5 +395,10 @@ Use the existing [C practice plan](C_PRACTICE_TRACKER.md) as a parallel implemen
 - Do not mark the kernel-engineer roadmap complete without public upstream review experience and the meaningful contribution evidence package, even if all reading modules are finished.
 - Keep job search and skill building coupled: market feedback may reorder supporting topics, but must not replace foundational C/kernel competence or encourage dishonest resume claims.
 - Use interview questions as retrieval and communication tests for the same underlying model; never replace implementation/debugging work with answer memorization.
+- Use [the architecture comparison reference](../references/ARCHITECTURE_COMPARISON.md)
+  as a reusable map, while verifying detailed claims against current ISA
+  manuals, ABI specifications, and Linux `arch/` code. Mention additional
+  architectures only when they reveal a hidden assumption or become relevant
+  to a selected subsystem or role.
 - Maintain one active learning focus at a time: current foundation module first, prepared future material second, specialization/upstream/deferred breadth only after their gates.
 - Confidence is demonstrated by explanation, implementation, debugging, and transfer—not by rereading or quiz score alone.

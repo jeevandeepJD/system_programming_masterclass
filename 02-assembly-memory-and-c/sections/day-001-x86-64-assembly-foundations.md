@@ -137,6 +137,23 @@ useful today are:
 Flags are state, not a hidden Boolean attached permanently to a value. Another
 flag-writing instruction replaces them.
 
+## Architecture lens — x86-64, AArch64, and RISC-V
+
+x86-64 exposes sixteen general-purpose registers and variable-length
+instructions that may combine an arithmetic operation with one memory
+operand. AArch64 exposes thirty-one general-purpose registers in A64 state
+and fixed 32-bit load/store instructions; RISC-V exposes 32 integer registers
+including fixed-zero `x0`, with 32-bit base instructions and optional 16-bit
+compressed encodings. AArch64 has `NZCV` condition flags, while base RISC-V
+integer branches compare registers directly rather than reading an x86-like
+flags register.
+
+Those register files, encodings, and instruction semantics belong to each
+ISA. Names such as x86-64 `rdi`, AArch64 `x0`, or RISC-V `a0` becoming the
+first argument are ABI choices; register renaming, decode strategy, and
+execution width are implementation choices. See
+[Architecture Comparison](../../references/ARCHITECTURE_COMPARISON.md).
+
 ## 3. Reading AT&T syntax without guessing
 
 GNU tools often display AT&T syntax:
