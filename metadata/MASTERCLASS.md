@@ -1677,3 +1677,38 @@ Prepared packages:
 Return to OS/kernel construction after these modules. Treat analog circuit
 design, fabrication, advanced verification, and physical-design expertise as
 out of scope unless a later systems question genuinely requires them.
+
+### 42. FUNDAMENTALS-FIRST GATES AND CAREER PIVOT — 2026-09-30
+
+`metadata/COURSE_ROADMAP.md` is the canonical strategic plan. The original
+66-week tracker remains authoritative for detailed topic objectives, but
+active progression is controlled by confidence gates:
+
+- **Gate A:** CPU, C, assembly, ABI, memory hierarchy, toolchain, ELF, and
+  debugging clarity.
+- **Gate B:** transistor/gate/timing-to-CPU boundary, minimal RTL/synthesis,
+  microarchitecture, pipeline, cache/TLB/MMU, and end-to-end task trace.
+- **Gate C:** syscall/exception/interrupt/scheduler/page-fault paths plus
+  simplified OS mechanisms and ToyOS/xv6/Linux comparison.
+
+Required continuous lanes:
+
+- systems-oriented C coding and toolchain inspection;
+- user-space and kernel-level debugging;
+- core-kernel execution-path atlas;
+- deep CPU-scheduler mental model and tracing;
+- interview explanation/coding/debugging practice;
+- cross-layer kernel systems topics such as ordering, NUMA, PCIe/DMA/IOMMU,
+  storage, networking, virtualization, isolation, and observability.
+
+Career specialization is adaptive but deferred until foundations. KVM/x86/AMD
+virtualization remains the default differentiator inside a broad
+kernel/platform profile. Networking/eBPF, embedded/BSP, PCIe/accelerator, and
+storage paths are tested later with bounded proof-of-fit sprints and real job
+market evidence.
+
+Upstream contribution is a required final outcome, not an immediate excuse to
+skip foundations. During foundation work: read lore, build/test upstream
+kernels, and review patches. After Gate C: select/reproduce a real issue,
+implement/test a focused fix, submit it publicly, and respond to maintainer
+review.

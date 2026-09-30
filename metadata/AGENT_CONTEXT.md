@@ -11,22 +11,26 @@ of each masterclass session.
 
 Use it together with:
 
-1. `metadata/curriculum-tracker.docx` — authoritative
+1. `metadata/COURSE_ROADMAP.md` — approved fundamentals-first strategy,
+   confidence gates, required skill lanes, specialization policy, and
+   upstream outcome.
+2. `metadata/curriculum-tracker.docx` — authoritative
    curriculum order, objectives, exercises, and mastery checkpoints.
-2. `metadata/MASTERCLASS.md` — detailed historical handoff and learning
+3. `metadata/MASTERCLASS.md` — detailed historical handoff and learning
    record.
-3. This file — current operating rules, preferences, suggestions, and updates.
+4. This file — current operating rules, preferences, suggestions, and updates.
 
 ## Required agent workflow
 
 Before creating or continuing a lesson:
 
 1. Read this file.
-2. Read the current checkpoint in `metadata/MASTERCLASS.md`.
-3. Consult the relevant week in the authoritative `.docx` tracker.
-4. Inspect existing weekly lessons and challenges to avoid repetition.
-5. Read `metadata/WEEKLY_PROGRESS.md` for the exact resume point and unfinished work.
-6. Continue from demonstrated understanding, not merely from the calendar.
+2. Read `metadata/COURSE_ROADMAP.md` and preserve its foundation gates.
+3. Read the current checkpoint in `metadata/MASTERCLASS.md`.
+4. Consult the relevant week in the authoritative `.docx` tracker.
+5. Inspect existing weekly lessons and challenges to avoid repetition.
+6. Read `metadata/WEEKLY_PROGRESS.md` for prepared modules/evidence.
+7. Continue from demonstrated understanding, not merely from the calendar.
 
 After every user suggestion, correction, preference, or planning update:
 
@@ -134,8 +138,12 @@ Use exercises to expose gaps rather than merely generate a score.
 - Topic — Electricity, States, Bits, and Information
 - Active branch: `master`
 - Current module: Week 1 — From Physical State to CPU Control
+- Active confidence gate: Gate A — CPU, C, assembly, and toolchain clarity
 - Week 1 contains seven daily sections in one consolidated PDF.
 - Weekly modules are the approved official format.
+- Specialization pivots, proof-of-fit sprints, active upstream issue
+  selection, and ToyOS expansion are planned but deferred until their
+  foundation gates.
 
 ## Decision and Update Log
 
@@ -529,6 +537,24 @@ is guided ToyOS.
 
 The VM now has the supporting open-source tools installed:
 ngspice 47, Icarus Verilog 13, Verilator 5.046, GTKWave 3.3, and Yosys 0.67.
+
+### 2026-09-30 — Fundamentals-first roadmap and tracker synchronization
+
+The user approved a fundamentals-first strategy. `metadata/COURSE_ROADMAP.md`
+is the canonical repository roadmap and the DOCX tracker contains the same
+strategy addendum. Active work remains on one foundation module at a time.
+
+Three confidence gates control later pivots:
+
+- Gate A: CPU/C/assembly/toolchain clarity
+- Gate B: hardware/software boundary
+- Gate C: operating-system mental model
+
+Kernel debugging, CPU scheduling, cross-layer subsystem paths, interview
+readiness, and C practice are continuous required lanes. Market-validation
+sprints, specialization changes, active upstream issue selection, and ToyOS
+expansion start only after their corresponding gates. Passive market
+observation and upstream reading/testing may continue during foundations.
 
 ### 2026-09-24 — Learner-first topic folders
 

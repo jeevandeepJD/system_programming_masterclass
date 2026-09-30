@@ -89,6 +89,8 @@ C / assembly → kernel → ToyOS
 │   ├── build_lesson.py       Markdown-to-PDF renderer
 │   ├── build_week.py         overview + sections → one topic PDF
 │   ├── generate_quizzes.py   theory-check generator
+│   ├── update_curriculum_tracker.py
+│   │                         roadmap-to-DOCX strategy synchronizer
 │   └── week                  lesson/challenge launcher
 ├── metadata/
 │   ├── AGENT_CONTEXT.md
@@ -100,12 +102,16 @@ C / assembly → kernel → ToyOS
 
 ## Sources of truth
 
-1. `metadata/curriculum-tracker.docx` controls the
+1. [`metadata/COURSE_ROADMAP.md`](metadata/COURSE_ROADMAP.md) defines the
+   approved fundamentals-first phases, confidence gates, required skill
+   lanes, specialization policy, and upstream outcome.
+2. `metadata/curriculum-tracker.docx` controls the
    curriculum sequence, objectives, exercises, and mastery checks. Its
    original week labels describe ordering, not calendar deadlines.
-2. `metadata/WEEKLY_PROGRESS.md` records where the learner actually stopped.
-3. `metadata/AGENT_CONTEXT.md` records teaching preferences and operational decisions.
-4. `metadata/MASTERCLASS.md` preserves detailed history and prior discoveries.
+3. `metadata/WEEKLY_PROGRESS.md` defines prepared packages and mastery
+   evidence without auto-recording personal completion.
+4. `metadata/AGENT_CONTEXT.md` records teaching preferences and operational decisions.
+5. `metadata/MASTERCLASS.md` preserves detailed history and prior discoveries.
 
 ## Weekly use
 

@@ -46,6 +46,17 @@ The seven sections are assembled into one PDF. Completion still requires the
 theory checks, labs, and mastery evidence; reading the combined file is not
 sufficient.
 
+## Foundation-gate policy
+
+- **Active:** Gate A — CPU, C, assembly, and toolchain clarity
+- **Prepared but inactive:** Gate B — hardware/software boundary
+- **Planned after Gate B:** Gate C — operating-system mental model
+- **Deferred until gates:** specialization pivots, proof-of-fit sprints,
+  active upstream issue selection, and ToyOS expansion
+
+No gate is completed automatically from reading, quiz scores, or elapsed
+time. Required evidence is defined in `metadata/COURSE_ROADMAP.md`.
+
 ## Prepared Week 2 package
 
 - Consolidated PDF:
