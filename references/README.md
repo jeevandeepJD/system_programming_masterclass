@@ -14,6 +14,14 @@ and imported code. This catalog may be committed safely.
 These are references, not a cover-to-cover reading queue. Daily lessons
 should select only the pages or examples needed for the current tracker topic.
 
+## Course-created references
+
+- [`ARCHITECTURE_COMPARISON.md`](ARCHITECTURE_COMPARISON.md) — reusable
+  x86-64, AArch64, and RISC-V comparison map.
+- [`electronics/transistor-family-primer.pdf`](electronics/transistor-family-primer.pdf)
+  — optional overview of BJTs, JFETs, MOSFET modes, FinFETs, GAAFETs, and why
+  dense CPU logic uses CMOS. The Markdown source is retained beside the PDF.
+
 ## Books
 
 ### Foundations, architecture, C, and toolchain

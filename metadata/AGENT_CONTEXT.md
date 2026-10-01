@@ -652,3 +652,12 @@ delay/power, storage cells, clocking, buses, and physical data movement should
 appear where they explain the path from transistors to CPUs and kernel-visible
 hardware. Keep the depth bounded by systems-programming needs and connect each
 circuit concept upward to architecture, C, Linux, drivers, or debugging.
+
+### 2026-10-01 — Optional transistor-family curiosity primer
+
+The learner requested slight coverage of transistor families beyond NMOS/PMOS
+without expanding the core curriculum. Keep this material in the optional
+`references/electronics/transistor-family-primer.pdf` and link it from Week 4
+Day 1. The required CPU path remains centered on MOSFET/CMOS; the primer
+provides bounded context on BJTs, JFETs, enhancement/depletion devices,
+FinFETs, GAAFETs, and power-device relatives.

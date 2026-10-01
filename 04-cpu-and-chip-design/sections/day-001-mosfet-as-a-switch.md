@@ -73,6 +73,12 @@ remain useful in different applications. The important engineering sequence
 is that each technology changed the limits on speed, size, reliability,
 drive, and power.
 
+If you are curious about the wider family, use the optional
+[Transistor Family Primer](../../references/electronics/transistor-family-primer.pdf).
+It briefly compares BJTs, JFETs, enhancement/depletion MOSFETs, planar
+MOSFETs, FinFETs, GAAFETs, and power-device relatives, then returns to why
+CMOS is the relevant path for CPU logic.
+
 ---
 
 ## 2. Four terminals, three voltages, one useful abstraction
