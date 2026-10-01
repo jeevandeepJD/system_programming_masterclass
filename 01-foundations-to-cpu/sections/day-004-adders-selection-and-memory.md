@@ -611,6 +611,22 @@ Draw the complete state graph yourself. It has four nodes—`00`, `01`, `10`,
 `11`. With `load=0`, each node has a self-loop. With `load=1`, each node can
 transition to the input-selected destination.
 
+### Register storage is not every kind of memory
+
+A flip-flop stores one logical bit under a timing contract; a register groups
+flip-flops so a word can be captured together. That is the right model for
+CPU state in this lesson, but large memories use different physical
+organizations. An SRAM cell uses a small feedback circuit to retain a bit
+while powered and is addressed through array wiring. A DRAM cell represents a
+bit with charge on a tiny capacitor; leakage and reading require sensing and
+periodic refresh. SRAM is generally faster and less dense than DRAM, while
+DRAM trades more complex sensing and refresh for much greater density.
+
+These are qualitative boundaries, not circuit schematics. The lab models
+logical values, enables, clock edges, and state transitions. It does not model
+analog node voltages, stored charge, leakage, sense amplifiers, refresh, or
+the timing aperture of a physical storage element.
+
 ---
 
 ## 12. Put the pieces around one addition

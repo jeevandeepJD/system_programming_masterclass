@@ -469,6 +469,33 @@ one port in the same cycle. This is a microarchitectural convenience.
 Whether the programmer sees one address space, whether code is writable, and
 how caches remain coherent are separate platform questions.
 
+### A memory port is not a memory array
+
+For this lesson, “instruction memory” and “data memory” are bounded
+architectural-facing request abstractions: an address and operation
+eventually produce instruction bytes, load data, a completed store, or an
+exception. The ISA specifies the visible result of `LW` and `SW`; it does not
+specify these ports or require combinational response.
+
+The implementation can translate one request through caches and controllers
+to very different physical storage:
+
+```text
+teaching request port
+  → cache/memory protocol and buffering
+  → SRAM tag/data arrays on chip
+  → memory controller and channel
+  → bank/row/column operations in DRAM
+```
+
+An SRAM array contains addressed storage cells with wordlines, bitlines, and
+sense/write circuitry. Commodity DRAM is organized into banks and rows of
+capacitor-based cells with activation, sensing/restoration, precharge, and
+refresh requirements. Neither structure is implied by the source-level
+`memory[address]` notation, and neither normally promises this lesson's
+single-cycle combinational timing. Day 7 follows one cache miss through that
+lower path and back to the waiting load.
+
 ---
 
 ## 7. Exceptions are deferred, not erased

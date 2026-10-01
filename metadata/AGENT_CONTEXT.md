@@ -141,6 +141,12 @@ For each curriculum week/module:
   Use internet research only when local material is outdated, incomplete, or
   insufficient for a version-sensitive claim; quality and correctness take
   priority over staying offline.
+- The learner has an electronics background but wants dormant knowledge
+  reactivated. Use short recall cues, first-principles reconstruction,
+  circuit/timing diagrams, and simulation evidence where electronics explains
+  a CPU, memory, bus, or device mechanism. Do not assume either complete
+  recall or complete unfamiliarity, and do not create a detached electronics
+  or ASIC syllabus.
 
 ## Mastery framework
 
@@ -636,3 +642,13 @@ possible without compromising quality. Start with the local reference library,
 repository documentation, installed man pages/tool documentation, local Linux
 source, and experiments. Consult current primary internet sources only to fill
 gaps or verify time-sensitive details.
+
+### 2026-10-01 — Reactivate prior electronics knowledge
+
+The learner comes from an electronics background but reports that much of the
+knowledge has faded. Electronics material should therefore function as
+structured retrieval and reconnection: voltage/current/charge, MOSFET/CMOS,
+delay/power, storage cells, clocking, buses, and physical data movement should
+appear where they explain the path from transistors to CPUs and kernel-visible
+hardware. Keep the depth bounded by systems-programming needs and connect each
+circuit concept upward to architecture, C, Linux, drivers, or debugging.

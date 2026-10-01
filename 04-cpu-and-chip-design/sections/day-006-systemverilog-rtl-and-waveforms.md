@@ -207,6 +207,14 @@ updated on the rising edge. Reset is synchronous in this example: `rst` is
 observed at a rising edge. Merely changing `rst` between edges does not
 immediately clear the outputs.
 
+This is an RTL **register abstraction**: it specifies when state is captured
+and how the next value is chosen. It does not specify a transistor-level
+storage circuit. For this small stage, synthesis will normally infer a bank
+of flip-flops; the source is not a drawing of a 6T SRAM cell, a DRAM cell, or
+an architectural register file. Day 5's bit cells answer “how can one array
+retain charge or feedback state?” while `always_ff` answers “what clocked
+state behavior does this RTL require?”
+
 That is a design choice, not the universal meaning of reset. CPUs and SoCs
 use synchronous resets, asynchronous resets, reset synchronizers, retention,
 and power-domain sequencing according to implementation needs.

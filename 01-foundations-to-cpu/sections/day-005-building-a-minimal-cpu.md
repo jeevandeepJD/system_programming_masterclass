@@ -171,6 +171,11 @@ timing margins of the state elements. A faster clock is not free: if the next
 edge arrives before the combinational result is valid, the CPU may capture the
 wrong state.
 
+For now, use that as a conceptual timing contract. Week 4 returns to the
+quantitative constraints—setup and hold time, clock-to-Q delay, critical
+paths, asynchronous inputs, synchronizers, and metastability—in
+[Sequential Timing and Metastability](../../04-cpu-and-chip-design/sections/day-005-sequential-timing-and-metastability.md).
+
 ### A snapshot is not the whole cycle
 
 When a trace prints one line per edge, it hides continuous activity between

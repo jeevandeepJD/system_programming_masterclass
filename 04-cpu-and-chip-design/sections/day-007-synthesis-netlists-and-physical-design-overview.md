@@ -63,6 +63,25 @@ always_ff @(posedge clk)
 correct physical behavior. “Synthesis succeeded” does not prove the design
 meets its specification. They provide different evidence.
 
+### Evidence hands off; it does not accumulate into a silicon proof
+
+The Week 4 tools answer different bounded questions:
+
+```text
+ngspice circuit experiment   analog voltage/current behavior of the supplied
+                             circuit and device models
+HDL simulation              scheduled RTL behavior for exercised stimulus
+synthesis reports/netlists  inferred and transformed implementation structure
+```
+
+The ngspice observations from earlier days support claims about behavior
+within their educational transistor models; they do not characterize a
+fabricated process. Day 6's HDL waveform supports a behavioral claim, not a
+claim about analog delay or metastability. Today's synthesis artifacts
+support a structural claim, not final silicon timing, placement, routing,
+layout, power, or manufacturability. Passing all three kinds of experiment
+does not erase those boundaries.
+
 ### Four-state values are a model
 
 `X` can reveal uninitialized or conflicting state and `Z` can represent
@@ -394,6 +413,8 @@ Preserve:
 - the optional Icarus simulation result;
 - generic and mapped statistics;
 - one generic cell and its mapped structural replacement;
+- a three-line handoff stating what ngspice, HDL simulation, and synthesis
+  each establish;
 - one sentence for each conclusion the artifacts cannot support.
 
 ### Build

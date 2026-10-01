@@ -166,6 +166,18 @@ any of countless values between. Real circuits also face:
 - manufacturing differences,
 - and changing temperature.
 
+### A quick electronics bridge: charge, current, and capacitance
+
+Voltage describes an electrical potential difference; **current is the rate
+at which charge flows**. A circuit node also has capacitance, so changing its
+voltage means changing stored charge. In the simple capacitor model,
+`Q = CV`: for capacitance `C`, moving a node through a voltage change requires
+charge to move into or out of it. Thus changing a physical bit is not an
+abstract relabeling—transistors briefly conduct current to move charge and
+raise or lower node voltages. This intuition is enough for Week 1; Week 4
+develops [capacitance, delay, fanout, and power](../../04-cpu-and-chip-design/sections/day-004-delay-capacitance-fanout-and-power.md)
+quantitatively.
+
 A practical digital receiver therefore does not demand two perfect voltage
 points. It recognizes ranges. As an illustrative example:
 

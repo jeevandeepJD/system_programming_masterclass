@@ -204,6 +204,46 @@ The model below charges one cycle for a hit and eight extra cycles for a
 fill. Those numbers are teaching parameters, not claims about RISC-V or real
 silicon.
 
+### Below the cache: one bounded physical path
+
+A cache lookup commonly reads SRAM-like tag and data arrays: address bits
+select entries, tag-compare logic determines a hit, and data-selection logic
+returns the requested bytes. Custom cache arrays need not be built like the
+Day 2 RTL register file, and this organization is a microarchitectural
+choice, not an ISA property.
+
+On a miss, one representative path is:
+
+```text
+physical cache-line request
+  → lower cache/interconnect, if present
+  → memory controller schedules a DRAM command sequence
+  → activate a bank row
+  → sense amplifiers resolve small bitline changes and restore row data
+  → transfer selected columns as cache-line beats
+  → precharge/equalize the bank for a later row
+  → return beats through the controller
+  → fill cache data/tag arrays and mark the line valid
+  → select the requested load bytes and wake the waiting core operation
+```
+
+Activation raises a row's wordline and connects many DRAM cells to bitlines.
+Sense amplification turns the resulting small voltage differences into
+logic levels; because the read disturbs cell charge, sensing also restores
+the row. Precharge prepares the bitlines before another row is activated.
+Separately, periodic refresh must revisit rows before charge decays too far
+and can delay demand traffic. Open-row hits, controller scheduling, bank
+parallelism, lower cache levels, channel width, and exact command timing vary
+by system; not every miss performs an immediate precharge in exactly this
+order.
+
+The controller, queues, cache-fill state, and command policy are
+microarchitecture. Wordlines, bitlines, sense amplifiers, charge leakage,
+restoration, and switching are circuit/physical mechanisms. The
+architectural fact is only that the load eventually returns the required
+value or reports an exception; software does not observe “row activation” as
+part of `LW`.
+
 ### Why caches normally use physical identity
 
 Virtual aliases can map different virtual addresses to the same physical
@@ -764,6 +804,52 @@ C: s += a[i]
 
 The causal chain runs downward to physics and back upward through committed
 architectural state. No layer makes the others unnecessary.
+
+### End-to-end evidence workflow using existing artifacts
+
+This is a correlation workflow, not a new lab and not a formal equivalence
+proof:
+
+1. **Fix the software artifact.** Reuse Week 3's
+   [source-to-object workflow](../../03-c-toolchain-and-startup/sections/day-005-source-to-object-file.md)
+   and [ELF/loading workflow](../../03-c-toolchain-and-startup/sections/day-007-elf-loading-and-main.md).
+   Record the source, compiler options, ELF `Machine`, symbol, section bytes,
+   and disassembly around one selected C operation. `readelf` proves metadata
+   encoded in that ELF; `objdump` proves its decoding of those bytes for the
+   file's declared architecture. Existing host-architecture disassembly must
+   not be presented as RV32I machine code.
+2. **State the compiler correlation carefully.** Use source locations,
+   symbols, and dataflow to identify the instruction or sequence implementing
+   the operation. Optimized C need not map one statement to one instruction,
+   and disassembly alone does not prove runtime execution.
+3. **Trace architectural and microarchitectural effects.** Reuse the Week 5
+   [tiny-core trace](day-004-integrating-and-running-a-tiny-rv32i-core.md) for
+   tested PC/register/memory transitions and this day's
+   [cache/TLB trace](#7-runnable-safe-observation-lab) for modeled translation,
+   permission, hit/miss, fill, stall, and fault events. These Python traces
+   prove behavior of their teaching models for the exercised inputs, not of
+   the ELF artifact or a fabricated CPU.
+4. **Observe RTL state and synthesis.** Reuse Week 4's
+   [HDL/waveform evidence](../../04-cpu-and-chip-design/sections/day-006-systemverilog-rtl-and-waveforms.md)
+   to show tested combinational outputs and edge-triggered capture, then its
+   [Yosys evidence](../../04-cpu-and-chip-design/sections/day-007-synthesis-netlists-and-physical-design-overview.md)
+   to show how the selected RTL is transformed into a netlist under recorded
+   synthesis settings. Simulation does not prove physical timing; synthesis
+   does not prove that separate Week 5 models are equivalent to that RTL.
+5. **Observe circuit switching.** Reuse Week 4's
+   [CMOS gate/ngspice evidence](../../04-cpu-and-chip-design/sections/day-003-cmos-nand-nor-and-gate-networks.md)
+   and [delay/capacitance evidence](../../04-cpu-and-chip-design/sections/day-004-delay-capacitance-fanout-and-power.md).
+   The simulated voltages, currents, delays, and charging events prove the
+   stated circuit and device models under the applied stimulus. They do not
+   measure a physical cache, DRAM chip, or the energy of the selected C
+   operation on a real processor.
+6. **Close the chain with explicit boundaries.** Correlate the selected C
+   data dependency with an architectural instruction effect, a matching
+   teaching-model datapath event, synthesized logic of the same operation
+   class, and transistor-level switching in a representative gate. Label
+   every arrow as measured, simulated, decoded, modeled, synthesized, or
+   inferred. The combined evidence supports a physically plausible causal
+   account without claiming all artifacts are one implementation.
 
 ---
 

@@ -8,6 +8,12 @@
 > one bit to a processor that can fetch instructions, branch, cross privilege
 > boundaries, and enter an operating-system handler.
 
+**Route through the curriculum:** use Week 1 for the conceptual chain from
+physical state to a minimal CPU. Revisit the device physics and quantitative
+electrical behavior in [Week 4](../04-cpu-and-chip-design/overview.md), then
+follow a full instruction trace through an implemented processor in
+[Week 5](../05-riscv-cpu-microarchitecture/overview.md).
+
 ## Why these seven days belong together
 
 The modern CPU is easy to memorize as a block diagram and difficult to

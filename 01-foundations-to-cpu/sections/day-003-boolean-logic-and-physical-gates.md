@@ -121,6 +121,12 @@ MOSFETs are arranged so an input voltage controls conducting paths toward the
 power rail or ground. No single transistor is “the Boolean algebra.” The
 **network topology** makes the Boolean function.
 
+> **CMOS preview:** the transistor sketches here support Boolean intuition;
+> they are not yet a device-level treatment. Week 4 develops the
+> [CMOS inverter and its noise margins](../../04-cpu-and-chip-design/sections/day-002-cmos-inverter-and-noise-margins.md)
+> before building
+> [CMOS NAND, NOR, and gate networks](../../04-cpu-and-chip-design/sections/day-003-cmos-nand-nor-and-gate-networks.md).
+
 That causal chain matters:
 
 ```text

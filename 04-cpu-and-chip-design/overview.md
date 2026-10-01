@@ -14,6 +14,12 @@ accesses before the course returns to CPU microarchitecture, MMU/privilege,
 and ToyOS. It is **necessary depth, not a divergent specialization** in
 professional ASIC or physical design.
 
+Week 1 introduced physical bits, feedback, registers, a minimal CPU,
+architectural state, and addressed memory. Week 4 revisits only the mechanisms
+needed to support those abstractions: transistor switching, restoring logic,
+bit-cell storage, timing, RTL, and synthesis. It does not replace the Week 1
+programmer-visible model with circuit details; it connects the layers.
+
 “Week” names a mastery module, not a calendar deadline. Spend longer when a
 waveform, timing diagram, or synthesized netlist contradicts a prediction.
 Reading all seven sections is not completion: preserve evidence across
@@ -30,6 +36,8 @@ MOSFET controlled conduction
   → restoring logic gates
   → delay, capacitance, fan-out, energy, and noise constraints
   → clocked state with setup/hold and clock-to-Q timing
+  → SRAM feedback and DRAM charge as array bit-cell mechanisms
+  → register/cache/main-memory latency, density, and cost tradeoffs
   → SystemVerilog RTL and simulation
   → elaborated design and generic cells
   → optimized, technology-mapped netlist
@@ -109,11 +117,13 @@ Lesson:
 **Evidence:** annotate a loaded gate waveform, compare fan-out cases, and use
 `P_dynamic ≈ α C V² f` without treating it as a complete chip power equation.
 
-### Day 5 — Sequential Timing and Metastability
+### Day 5 — Storage Cells, Sequential Timing, and Metastability
 
-Move from feedback to latches and edge-triggered registers. Use setup, hold,
-clock-to-Q, skew, jitter, metastability, and clock-domain crossing discipline
-to explain when state transfer is reliable.
+Move from feedback to 6T SRAM, DRAM charge storage, latches, and edge-triggered
+registers. Distinguish a bit-cell circuit from architectural memory; connect
+register/cache/DRAM density, cost, and latency to cache misses; then use setup,
+hold, clock-to-Q, skew, jitter, metastability, and clock-domain crossing
+discipline to explain when state transfer is reliable.
 
 Lesson:
 
@@ -121,9 +131,9 @@ Lesson:
 04-cpu-and-chip-design/sections/day-005-sequential-timing-and-metastability.md
 ```
 
-**Evidence:** draw a register-to-register path, check setup and hold
-relationships, and explain why synchronizers reduce rather than eliminate
-metastability risk.
+**Evidence:** explain SRAM read/retention and DRAM sensing/restoration/refresh,
+draw a register-to-register path, check setup and hold relationships, and
+explain why synchronizers reduce rather than eliminate metastability risk.
 
 ### Day 6 — SystemVerilog RTL and Waveforms
 
@@ -139,7 +149,8 @@ Lesson:
 ```
 
 **Evidence:** simulate reset and enable cases, annotate state changes by clock
-edge, and explain why synthesizable RTL is only a subset of everything a
+edge, identify `always_ff` as a register abstraction rather than a bit-cell
+schematic, and explain why synthesizable RTL is only a subset of everything a
 SystemVerilog simulator can execute.
 
 ### Day 7 — Synthesis, Netlists, and Physical-Design Overview
@@ -164,7 +175,9 @@ Challenges:
 
 **Evidence:** preserve optional simulation output plus generic/mapped
 statistics, netlists, and DOT graphs from the single lab; identify inferred
-mux/adder/flop structures and state what those artifacts cannot prove.
+mux/adder/flop structures and state the evidence handoff explicitly:
+ngspice supports analog-model behavior, HDL simulation supports exercised
+behavior, and synthesis supports structure—not silicon timing or layout.
 
 ## Adjustable workload guide
 
@@ -175,7 +188,7 @@ Day 1   3 h   MOS device model and switching observations
 Day 2   3 h   CMOS inverter, restoration, noise margins
 Day 3   3 h   NAND/NOR and complementary gate networks
 Day 4   3 h   delay, loading, fan-out, dynamic/static power
-Day 5   3 h   registers, setup/hold, metastability, CDC
+Day 5   3 h   SRAM/DRAM cells, registers, timing, metastability, CDC
 Day 6   3 h   SystemVerilog RTL, ALU/register, waveforms
 Day 7   3 h   one synthesis observation and systems bridge
 ```
@@ -196,21 +209,25 @@ Without notes, tell one connected story:
 2. complementary transistor networks produce restoring logic levels;
 3. finite resistance, capacitance, activity, and leakage create delay and
    power costs;
-4. timed sequential elements divide combinational work into state
+4. 6T SRAM uses cross-coupled feedback while DRAM uses capacitor charge,
+   destructive sensing/restoration, leakage management, and refresh;
+5. a bit-cell circuit is not architectural memory, and density/cost/latency
+   tradeoffs help explain registers, cache SRAM, main DRAM, and cache misses;
+6. timed sequential elements divide combinational work into state
    transitions;
-5. SystemVerilog expresses intended combinational and sequential behavior;
-6. simulation executes a model over time, while synthesis constructs and
+7. SystemVerilog expresses intended combinational and sequential behavior;
+8. simulation executes a model over time, while synthesis constructs and
    transforms an implementation graph;
-7. elaboration resolves parameters, hierarchy, widths, and generate choices;
-8. generic synthesis infers operations and storage, optimization changes
+9. elaboration resolves parameters, hierarchy, widths, and generate choices;
+10. generic synthesis infers operations and storage, optimization changes
    structure while preserving required behavior, and technology mapping
    selects target-supported cells/resources;
-9. constraints define clocks, I/O assumptions, and design limits used to
+11. constraints define clocks, I/O assumptions, and design limits used to
    judge candidate implementations;
-10. synthesis still has not placed or routed physical resources;
-11. timing, area, and power pressure feeds back into CPU choices such as
+12. synthesis still has not placed or routed physical resources;
+13. timing, area, and power pressure feeds back into CPU choices such as
     pipeline depth, datapath width, cache organization, and clock frequency;
-12. the ISA hides those implementation details while exposing the state and
+14. the ISA hides those implementation details while exposing the state and
     events on which compilers, kernels, and ToyOS depend.
 
 ### Draw
@@ -219,6 +236,8 @@ Produce one diagram containing:
 
 - an NMOS/PMOS CMOS inverter and one two-input CMOS gate;
 - a loaded gate with a capacitance and delayed output;
+- a 6T SRAM cell at qualitative block level and a 1T1C DRAM cell, clearly
+  labeled “bit cells, not architectural memory”;
 - launch register → combinational path → capture register, with setup and
   hold windows;
 - synthesizable RTL for a selected add feeding a register;
@@ -242,6 +261,9 @@ Keep a compact evidence bundle:
 - Yosys version and commands;
 - generic and mapped `stat` output from the single Day 7 observation;
 - its generated generic/mapped netlists and DOT graphs;
+- a bounded handoff: ngspice demonstrates analog behavior of its model, HDL
+  simulation demonstrates exercised model behavior, and synthesis exposes
+  structure; none establishes final silicon timing or layout;
 - a short note explaining why cell counts can change with optimization and
   target mapping.
 
@@ -273,10 +295,14 @@ Trace one software-visible value through the entire stack:
 4. Which mux, adder, and flip-flop structures can synthesis infer?
 5. How do restoring gates compose those structures?
 6. How does transistor conduction move charge to change a represented bit?
-7. Why do fan-out, setup/hold, and propagation delay constrain the clock?
-8. Why do area and power constrain datapath, pipeline, and cache choices?
-9. What does the ISA expose while hiding those implementation choices?
-10. Why do MMU, privilege, exception, and interrupt mechanisms form the next
+7. How do SRAM feedback and DRAM capacitor charge retain array bits, and why
+   is neither cell by itself architectural memory?
+8. How can a cache miss turn an architectural load into a lower-level DRAM
+   access and line fill?
+9. Why do fan-out, setup/hold, and propagation delay constrain the clock?
+10. Why do area and power constrain datapath, pipeline, and cache choices?
+11. What does the ISA expose while hiding those implementation choices?
+12. Why do MMU, privilege, exception, and interrupt mechanisms form the next
     bridge from CPU hardware back to kernels and ToyOS?
 
 Mastery is demonstrated when every arrow names both the representation and

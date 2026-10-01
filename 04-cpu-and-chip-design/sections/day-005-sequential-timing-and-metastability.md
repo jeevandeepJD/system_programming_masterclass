@@ -36,6 +36,9 @@ the wrong time can become metastable.
 By the end, you should be able to:
 
 - explain how controlled feedback preserves state;
+- distinguish an SRAM or DRAM bit cell from architectural memory;
+- explain qualitatively why registers, caches, and main memory use different
+  storage organizations;
 - distinguish a level-sensitive latch from an edge-triggered flip-flop;
 - explain what a clock coordinates and what it does not compute;
 - reason about setup, hold, clock-to-Q, skew, and jitter;
@@ -100,7 +103,120 @@ have clean architectural moments.
 
 ---
 
-## 2. A latch is open for a level; a flip-flop samples around an edge
+## 2. Bit cells are physical mechanisms, not architectural memory
+
+Week 1 treated a register and memory as boxes that preserve bits so a minimal
+CPU could fetch instructions and retain results. We can now unpack those
+boxes one level without turning this into a memory-circuit design course.
+
+A **bit cell** is a circuit that physically retains one bit under specified
+electrical conditions. **Architectural memory** is the programmer-visible
+model: addressed bytes or words, load/store behavior, ordering rules, and
+faults. Between those layers are register files, caches, controllers, buses,
+error correction, coherence, address translation, and packaging. An
+architectural load does not directly select “a transistor”; it initiates a
+memory-system operation that may encounter several structures.
+
+### 6T SRAM: feedback stores the state
+
+A common six-transistor SRAM cell contains:
+
+- two cross-coupled CMOS inverters, four transistors total, whose outputs
+  reinforce the stable states `Q=1, Q_bar=0` or `Q=0, Q_bar=1`;
+- two access transistors controlled together by a **word line**;
+- two complementary **bit lines**, conventionally `BL` and `BL_bar`, shared
+  by many cells in a column.
+
+```text
+                 cross-coupled inverters
+                    Q ◀──────▶ Q_bar
+                    │             │
+BL ── access ───────┘             └────── access ── BL_bar
+          ▲                                  ▲
+          └──────────── word line ───────────┘
+```
+
+With the word line inactive, the access transistors isolate the cell and the
+cross-coupled inverters hold its state while powered. To write, peripheral
+circuits drive `BL` and `BL_bar` to opposite levels strongly enough that
+asserting the word line forces the cell into the requested stable state.
+
+For a read, the two bit lines are typically precharged. The word line then
+connects the selected cell. The side storing zero causes one bit line to
+discharge slightly relative to the other; a sense amplifier detects that
+small differential rather than waiting for the cell to drive a long,
+capacitive column to a full logic level. The read must not overpower and flip
+the cell. Its cross-coupled feedback retains and restores full internal logic
+levels after the small read disturbance and after the word line closes.
+
+This is SRAM—**static** RAM—because feedback retains the bit without periodic
+refresh while power and operating conditions remain valid. “Static” does not
+mean nonvolatile, zero-power, or zero-latency.
+
+### DRAM: charge stores the state
+
+A simplified DRAM cell uses one access transistor and one capacitor. The word
+line controls the transistor; the bit line connects the capacitor to sensing
+and write circuitry:
+
+```text
+bit line ── access transistor ── storage capacitor
+                    ▲
+                 word line
+```
+
+The stored charge is approximately:
+
+```text
+Q = C V
+```
+
+A charged versus less-charged capacitor represents the bit. Because the cell
+capacitor is tiny, reading shares its charge with a much larger bit line and
+creates only a small voltage change. A sense amplifier detects and amplifies
+that change to a full logic level. This sensing disturbs the original charge,
+so an ordinary DRAM read is internally **destructive** and the sensed value is
+written back as part of activation/restoration.
+
+Charge also leaks through real devices. An RC picture gives useful intuition:
+a finite leakage path gradually changes capacitor voltage. DRAM controllers
+therefore refresh rows before leakage makes their state ambiguous. Real DRAM
+adds row buffers, banks, activation/precharge commands, timing rules, and
+refresh scheduling; the one-transistor/one-capacitor cell is only its storage
+core.
+
+### Why the hierarchy uses different storage
+
+No single implementation simultaneously gives minimum latency, many ports,
+maximum density, and minimum cost per bit:
+
+```text
+CPU registers   few bits, very close and heavily ported; lowest access latency,
+                but expensive in transistors, wiring, clock load, and area
+cache SRAM      denser arrays with decoder/sense circuitry; fast enough to
+                keep recently used blocks near the core, but costly per bit
+main DRAM       much denser 1T1C cells and lower cost per bit; access requires
+                array commands, sensing/restoration, and sometimes refresh
+```
+
+These are organization-level tendencies, not guarantees for every product.
+Registers are often built from flip-flops or specialized register-file cells,
+not ordinary 6T cache SRAM cells. Caches contain SRAM arrays plus tags,
+comparators, replacement state, and control. Main memory contains far more
+than isolated DRAM capacitors.
+
+This distinction explains a cache miss physically without confusing layers.
+The requested architectural address was not found in a nearby cache's SRAM
+tags/data, so the cache controller obtains a whole block from a lower level,
+potentially reaching DRAM with its longer command, sensing, and restoration
+path. The CPU may stall or continue other work, then retry or complete the
+load after the block is installed. The software-visible operation is still a
+load; the miss is a microarchitectural event caused by where a copy was—or
+was not—present.
+
+---
+
+## 3. A latch is open for a level; a flip-flop samples around an edge
 
 ### Level-sensitive latch
 
@@ -149,7 +265,7 @@ a foundation, not a claim that every state bit uses one identical cell.
 
 ---
 
-## 3. What the clock does—and does not do
+## 4. What the clock does—and does not do
 
 The clock provides coordinated sampling boundaries. It lets many state
 elements distinguish old state from new state.
@@ -181,7 +297,7 @@ conditions, designers can reason cycle by cycle.
 
 ---
 
-## 4. Setup timing: can data arrive before the next edge?
+## 5. Setup timing: can data arrive before the next edge?
 
 Consider two registers separated by combinational logic:
 
@@ -230,7 +346,7 @@ problems. Timing pressure changes architecture.
 
 ---
 
-## 5. Hold timing: can old data remain stable after this edge?
+## 6. Hold timing: can old data remain stable after this edge?
 
 Setup asks about arrival before a future capture. Hold asks whether the old
 value remains stable briefly after the current capture edge.
@@ -268,7 +384,7 @@ time to amplify a small voltage difference into a full logic level.
 
 ---
 
-## 6. Clock skew and jitter spend margin
+## 7. Clock skew and jitter spend margin
 
 The clock is distributed through real buffers and wires. It does not arrive
 at every register simultaneously.
@@ -294,7 +410,7 @@ that silicon meets either setup or hold.
 
 ---
 
-## 7. Metastability is unresolved analog competition
+## 8. Metastability is unresolved analog competition
 
 If data changes inside the sampling aperture, the storage element can enter
 a delicately balanced internal condition. Its output may remain near a
@@ -349,7 +465,7 @@ Examples relevant to systems programmers include:
 
 ---
 
-## 8. A synchronizer buys resolution time
+## 9. A synchronizer buys resolution time
 
 For a slowly changing single-bit level, a common structure is two destination
 clocked flip-flops in series:
@@ -417,7 +533,7 @@ works.
 
 ---
 
-## 9. Why a kernel or driver engineer should care
+## 10. Why a kernel or driver engineer should care
 
 CDC is normally implemented below software, but its contract appears in
 software-visible behavior:
@@ -449,7 +565,7 @@ The symptoms can look similar while the responsible layer differs.
 
 ---
 
-## 10. Timing exercises
+## 11. Timing exercises
 
 ### Exercise A — setup budget
 
@@ -499,13 +615,16 @@ Do not answer every case with “two flip-flops.”
 
 ---
 
-## 11. Mastery evidence
+## 12. Mastery evidence
 
 ### Explain
 
 Without notes:
 
 - explain how feedback permits remembered state;
+- distinguish 6T SRAM feedback from DRAM capacitor charge and restoration;
+- distinguish either bit cell from architectural memory;
+- connect register/cache/DRAM tradeoffs to a cache miss;
 - distinguish latch transparency from flip-flop edge sampling;
 - explain why the clock coordinates capture but does not perform computation;
 - derive the simple setup and hold inequalities;
@@ -548,6 +667,9 @@ Answer:
 A strong answer separates the architectural abstraction from the electrical
 contract that makes the abstraction reliable.
 
+Also be able to state why that register abstraction does not imply that cache
+SRAM, main-memory DRAM, and CPU registers use the same bit cell.
+
 ---
 
 ## Why? notebook
@@ -589,5 +711,6 @@ contract that makes the abstraction reliable.
 
 **Next bridge:** now that a register-to-register transfer has a physical
 timing contract, Day 6 uses one small RTL design to expose how engineers
-describe that transfer, simulate its scheduled behavior, and inspect a
-waveform—then returns immediately to the CPU datapath.
+describe that transfer as an `always_ff` register abstraction—not as a 6T
+SRAM or DRAM cell—simulate its scheduled behavior, and inspect a waveform,
+then returns immediately to the CPU datapath.

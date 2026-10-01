@@ -215,6 +215,23 @@ synchronous reads. A high-performance CPU may use banked, replicated,
 multiported, renamed, or bypassed structures. Any implementation must
 preserve architectural behavior.
 
+### RTL array, physical cells, and ports
+
+`logic [31:0] registers [31:0]` describes indexed state and the lab's access
+behavior; it does not declare a literal floorplan of 1,024 independent
+flip-flops. A synthesis flow for a small target may implement the array with
+flip-flops and muxes. An FPGA tool may infer distributed RAM or block RAM.
+An ASIC may use a custom or generated register-file macro whose dense storage
+cells, wordlines, bitlines, read sensing, and write drivers differ from both.
+
+Ports are physical resources, not just function arguments. Two simultaneous
+reads and one write may require a true multiported cell, duplicated read
+structures, banking, time-multiplexing, or bypass logic. Those choices affect
+area, delay, energy, and collision behavior while preserving the same
+architectural register semantics. Therefore say “this RTL models a
+two-read/one-write register file,” not “all register files are flip-flop
+arrays” or “every RTL port becomes one identical physical port.”
+
 ### Why there is no bulk reset
 
 RV32I does not promise that x1–x31 become zero at reset. Clearing every entry

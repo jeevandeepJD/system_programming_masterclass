@@ -334,6 +334,21 @@ core therefore uses multicycle control, pipelines, caches, handshakes, or
 some combination. The single-cycle model is valuable because it exposes
 dependencies, not because it is a competitive implementation template.
 
+Carry this path forward in two steps:
+
+- [Day 5](day-005-pipelining-and-throughput.md) places fetch and data-memory
+  work in pipeline stages, making latency and stage boundaries explicit.
+- [Day 7](day-007-cache-tlb-mmu-and-end-to-end-task-trace.md) replaces the
+  assumed combinational response with request/response backpressure, cache
+  hit or miss handling, line fill, and a lower-memory return path.
+
+In that realistic timing model, decode still requests `LW`, but `RegWrite`
+is permission for eventual completion, not permission to capture nonexistent
+data at the next edge. The core must retain the load's destination and
+control state while the memory hierarchy responds, suppress writeback on a
+fault, and commit only when valid data returns. Exact cycle counts are
+microarchitectural; the load result or exception remains architectural.
+
 ---
 
 ## 7. Laboratory — interrogate the decoder

@@ -69,7 +69,9 @@ Challenge:
 
 **Evidence:** decode R/I/S/B/U/J examples, trace one complete architectural
 transition, reject unsupported words safely, and label every claim as ISA or
-teaching-implementation behavior.
+teaching-implementation behavior. Keep the model's instruction/data request
+ports distinct from the SRAM arrays, cache hierarchy, memory controller, and
+DRAM banks that may implement those requests.
 
 ### Day 2 — ALU, Register File, and Program Counter
 
@@ -93,7 +95,10 @@ Challenges:
 
 **Evidence:** preserve clean lint/simulation output, compare `SLT` with
 `SLTU`, demonstrate that writes to `x0` have no effect, and explain
-current-PC state versus next-PC candidates.
+current-PC state versus next-PC candidates. Treat the RTL register array as
+one implementation model: physical register files may use custom cells,
+banking, replication, or synthesized flops, and their ports need not map
+one-for-one to the source-level array.
 
 ### Day 3 — Decoder, Control, and Single-Cycle Paths
 
@@ -115,7 +120,9 @@ Challenge:
 
 **Evidence:** inspect legal arithmetic/load/store/branch controls, reconstruct
 a negative branch immediate, prove illegal encodings disable architectural
-writes, and draw the load critical path.
+writes, and draw the load critical path. Carry the request forward to the
+stallable cache and lower-memory path rather than assuming every physical
+memory responds combinationally.
 
 ### Day 4 — Integrating and Running a Tiny RV32I Core
 
@@ -206,7 +213,10 @@ Challenge:
 **Evidence:** annotate TLB and cache hit/miss paths, observe a page-table walk,
 prove that a read-only PTE blocks a store even when the line is cached,
 distinguish absent mapping from denied permission, and assign every decision
-to architecture, microarchitecture, OS policy, or physics.
+to architecture, microarchitecture, OS policy, or physics. Follow one miss
+below the cache through SRAM tag/data lookup, line fill, a memory controller,
+and a bounded DRAM row operation before tracing the response back to the
+waiting load.
 
 ## Adjustable workload guide
 
@@ -274,6 +284,38 @@ Preserve a compact evidence bundle:
 - Day 6 forwarding, stall, structural-conflict, and flush traces;
 - Day 7 cache/TLB trace and all self-test PASS lines;
 - one statement per lab describing what its model cannot prove.
+
+### Correlate existing evidence end to end
+
+Do not create a new lab. Reuse the existing artifacts as a cross-layer
+workflow:
+
+1. Start with the Week 3
+   [source-to-object evidence](../03-c-toolchain-and-startup/sections/day-005-source-to-object-file.md)
+   and [ELF loading evidence](../03-c-toolchain-and-startup/sections/day-007-elf-loading-and-main.md).
+   `readelf` proves container metadata for the inspected file; `objdump`
+   proves how that tool decodes that file's bytes for its declared machine.
+   Host-architecture output is not RISC-V CPU evidence.
+2. Select one operation in the C source and correlate it with the
+   compiler-selected instructions only when source locations, symbols, and
+   the actual disassembly support the match. Then use the Week 5 CPU and
+   cache traces to demonstrate the chosen teaching model's architectural
+   updates, stalls, hits, misses, and fills.
+3. Reuse the Week 4
+   [RTL and waveform evidence](../04-cpu-and-chip-design/sections/day-006-systemverilog-rtl-and-waveforms.md)
+   and [Yosys synthesis evidence](../04-cpu-and-chip-design/sections/day-007-synthesis-netlists-and-physical-design-overview.md).
+   Simulation proves tested RTL behavior; synthesis proves the selected RTL
+   was transformed into a netlist under the recorded script and cell model.
+   Neither proves that the Week 5 Python core is that RTL.
+4. Reuse the Week 4
+   [CMOS/ngspice evidence](../04-cpu-and-chip-design/sections/day-003-cmos-nand-nor-and-gate-networks.md)
+   and [delay/power evidence](../04-cpu-and-chip-design/sections/day-004-delay-capacitance-fanout-and-power.md)
+   to observe voltage, current, delay, and charging in the simulated circuit.
+   That proves behavior of the stated device models and stimulus, not the
+   transistor implementation or energy of a fabricated RISC-V core.
+
+The result is an evidence-backed causal chain, not a claim that these
+separate teaching artifacts form one formally equivalent implementation.
 
 ### Build
 

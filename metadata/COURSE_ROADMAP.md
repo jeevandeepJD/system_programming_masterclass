@@ -9,6 +9,11 @@
 - Build one connected model: physical state → gates → CPU/ISA → C/toolchain → OS → Linux kernel/drivers → storage/networking/virtualization.
 - Use history to explain why each abstraction appeared, but avoid detached timelines.
 - Use only the chip-design depth needed to understand CPU/system behavior; do not drift into analog IC or HDL specialization.
+- Treat the learner's prior electronics education as dormant knowledge to
+  reactivate. Use compact recall, derivation, diagrams, and ngspice/RTL
+  evidence to connect voltage, charge, transistor networks, timing, storage
+  cells, and physical data movement to CPU, memory, drivers, and kernel-visible
+  behavior.
 - Build a guided ToyOS to reconstruct known mechanisms, not invent a production OS.
 - Treat distributed systems, cloud, and AI infrastructure as deferred context pieces—not the main track, near-term capstone, or reason to dilute kernel depth.
 - Treat memory ordering, NUMA/data movement, Linux isolation/resource control, storage and network paths, virtualization/confidential computing, and observability as required cross-layer systems threads—not optional breadth.
@@ -57,7 +62,9 @@ Do not move the active focus beyond Weeks 1–3 until the learner can:
 
 ## Phase 2 — Necessary CPU/chip depth
 Use:
-- [Week 4](../04-cpu-and-chip-design/week-04-material.pdf): MOSFET/CMOS, restoring gates, delay/power, sequential timing, one minimal RTL exercise, and one synthesis observation.
+- [Week 4](../04-cpu-and-chip-design/week-04-material.pdf): MOSFET/CMOS,
+  restoring gates, delay/power, SRAM/DRAM storage mechanisms, sequential
+  timing, one minimal RTL exercise, and one synthesis observation.
 - [Week 5](../05-riscv-cpu-microarchitecture/week-05-material.pdf): RV32I datapath/control, runnable tiny core, pipeline/hazards, cache/TLB/MMU, and end-to-end C-to-transistor trace.
 
 Exit artifact:

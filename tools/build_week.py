@@ -82,8 +82,11 @@ def lesson_with_challenge_links(
     if not challenges:
         lesson_text = lesson.read_text(encoding="utf-8")
         portable_text = lesson_text.replace(
-            "](../../references/",
-            "](repo-relative:../references/",
+            "](../../",
+            "](repo-relative:../",
+        ).replace(
+            "](day-",
+            "](repo-relative:sections/day-",
         )
         if portable_text == lesson_text:
             return lesson
@@ -192,12 +195,15 @@ def lesson_with_challenge_links(
         )
 
     # The merged PDF lives at the module root, not beside the Markdown section.
-    # Preserve repository reference links as portable URIs and let
+    # Preserve cross-module repository links as portable URIs and let
     # rewrite_relative_links() remove the marker after WeasyPrint renders them.
     lesson_text = lesson.read_text(encoding="utf-8")
     lesson_text = lesson_text.replace(
-        "](../../references/",
-        "](repo-relative:../references/",
+        "](../../",
+        "](repo-relative:../",
+    ).replace(
+        "](day-",
+        "](repo-relative:sections/day-",
     )
 
     enhanced = temp_dir / lesson.name
@@ -367,7 +373,17 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix=f"{args.week}-") as temp:
         temp_dir = Path(temp)
-        sources = [(overview, module, False)]
+        overview_text = overview.read_text(encoding="utf-8")
+        portable_overview = overview_text.replace(
+            "](../",
+            "](repo-relative:../",
+        )
+        if portable_overview != overview_text:
+            rendered_overview = temp_dir / overview.name
+            rendered_overview.write_text(portable_overview, encoding="utf-8")
+            sources = [(rendered_overview, module, True)]
+        else:
+            sources = [(overview, module, False)]
         for lesson in lessons:
             rendered_source = lesson_with_challenge_links(
                 lesson, module, temp_dir

@@ -107,7 +107,9 @@ def main() -> None:
     add_before(anchor, "Foundation Gate B — hardware/software boundary", "Heading 2")
     for item in (
         "Explain transistor/gate/timing behavior using bounded simulation "
-        "evidence without turning the course into an HDL/ASIC specialty.",
+        "evidence; reactivate prior electronics knowledge through voltage, "
+        "charge, CMOS, SRAM/DRAM storage, and timing without turning the "
+        "course into an HDL/ASIC specialty.",
         "Trace a teaching RISC-V core cycle by cycle and distinguish ISA, "
         "microarchitecture, OS policy, and physical behavior.",
         "Connect a C task to instructions, datapath/control, pipeline hazards, "
