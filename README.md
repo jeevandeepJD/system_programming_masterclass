@@ -42,7 +42,15 @@ After the three review modules:
    datapath, pipeline, hazards, cache, TLB, and MMU interactions.
 3. Trace a compiled C task through instructions, datapath control, gates, and
    transistor-level voltage/charge changes.
-4. Begin the guided x86-64 ToyOS build-along after these foundations.
+4. After the foundation gates are demonstrated, use the prepared
+   [Week 6](06-toyos-bootstrap-and-exceptions/week-06-material.pdf) and
+   [Week 7](07-memory-processes-and-scheduling/week-07-material.pdf) packages
+   with the continuous [`projects/toyos`](projects/toyos/) kernel.
+
+These later packages are prepared navigation targets, not evidence that the
+current Week 1 resume point or any confidence gate has advanced. Week 7 builds
+ring-0 kernel tasks and scheduling; isolated user processes, ring 3, and
+syscalls remain Week 8 work.
 
 The chip-design and ToyOS tracks meet at the ISA boundary:
 
@@ -82,6 +90,18 @@ C / assembly → kernel → ToyOS
 │   ├── overview.md
 │   ├── sections/
 │   └── challenges/
+├── 06-toyos-bootstrap-and-exceptions/
+│   ├── week-06-material.pdf
+│   ├── overview.md
+│   ├── sections/
+│   └── challenges/
+├── 07-memory-processes-and-scheduling/
+│   ├── week-07-material.pdf
+│   ├── overview.md
+│   ├── sections/
+│   └── challenges/
+├── projects/
+│   └── toyos/                 continuous Week 6–7 x86-64 kernel project
 ├── references/
 │   ├── README.md             catalog of selected references
 │   ├── ARCHITECTURE_COMPARISON.md
@@ -175,6 +195,18 @@ Select another week:
 ```bash
 MC_WEEK=2 ./tools/week lesson
 ```
+
+Weeks 6–7 use one continuous ToyOS project rather than separate copied
+kernels. Build and test both profiles from the repository root:
+
+```bash
+make -C projects/toyos week6 week7
+make -C projects/toyos test-week6 test-week7
+```
+
+See [`projects/toyos/README.md`](projects/toyos/README.md) for run, expected
+fault, and GDB targets. The offline boot path uses installed GRUB2 tooling and
+the Multiboot2 contract under QEMU.
 
 ## Completion standard
 

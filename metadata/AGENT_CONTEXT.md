@@ -171,6 +171,8 @@ Use exercises to expose gaps rather than merely generate a score.
 - Specialization pivots, proof-of-fit sprints, active upstream issue
   selection, and ToyOS expansion are planned but deferred until their
   foundation gates.
+- Weeks 6–7 and the continuous `projects/toyos/` kernel are prepared but
+  inactive; preparation does not advance the Week 1 resume point or any gate.
 
 ## Decision and Update Log
 
@@ -661,3 +663,29 @@ without expanding the core curriculum. Keep this material in the optional
 Day 1. The required CPU path remains centered on MOSFET/CMOS; the primer
 provides bounded context on BJTs, JFETs, enhancement/depletion devices,
 FinFETs, GAAFETs, and power-device relatives.
+
+### 2026-10-05 — Continuous ToyOS Weeks 6–7 prepared
+
+Weeks 6 and 7 are prepared as learner-facing packages:
+
+- `06-toyos-bootstrap-and-exceptions/week-06-material.pdf`
+- `07-memory-processes-and-scheduling/week-07-material.pdf`
+- one continuous implementation under `projects/toyos/`
+
+Do not copy or fork a kernel per week. `CONFIG_MILESTONE=6` preserves the
+bootstrap/exception milestone and `CONFIG_MILESTONE=7` extends the same
+sources with memory management and scheduling. Keep both profiles buildable
+and testable so later work does not erase earlier evidence.
+
+The offline boot contract is GRUB2 plus Multiboot2 under QEMU, not a
+Limine-only workflow. The prepared host has GRUB2 tools 2.12, xorriso 1.5.8,
+QEMU system x86 10.2.2, GDB 17.2, Clang/LLD 22.1.8, and OVMF installed.
+Use the repository Makefile and packaged `grub.cfg`; keep commands and links
+repository-relative. Limine may be evaluated later as an alternative boot
+path, but it is not required by these milestones.
+
+Week 7 schedules two ring-0 kernel tasks sharing one address space. Do not
+describe them as isolated user processes. Ring 3, syscall entry, safe user
+copies, per-process address spaces, user ELF loading, and IPC remain Week 8.
+These prepared artifacts do not change the current Week 1 resume point,
+complete a confidence gate, or establish learner mastery.

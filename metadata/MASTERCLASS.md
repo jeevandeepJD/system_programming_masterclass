@@ -1712,3 +1712,25 @@ skip foundations. During foundation work: read lore, build/test upstream
 kernels, and review patches. After Gate C: select/reproduce a real issue,
 implement/test a focused fix, submit it publicly, and respond to maintainer
 review.
+
+### 43. PREPARED TOYOS CHECKPOINT — 2026-10-05
+
+The next two ToyOS packages and their shared implementation are prepared:
+
+- `06-toyos-bootstrap-and-exceptions/` covers the freestanding build/ELF
+  contract, GRUB2 Multiboot2 boot, x86-64 long-mode entry, serial diagnostics,
+  IDT/TSS/IST exception handling, and fault diagnosis.
+- `07-memory-processes-and-scheduling/` extends that kernel with the boot
+  memory map, frame allocation, 4 KiB mappings, a kernel heap, saved task
+  contexts, cooperative switching, and timer preemption.
+- `projects/toyos/` is the single continuous kernel. Its Week 6 and Week 7
+  build profiles preserve both milestones instead of duplicating source.
+
+The offline path is backed by installed GRUB2/Multiboot2, xorriso, QEMU, GDB,
+and GNU/Clang toolchains. Week 7 runs kernel tasks in ring 0; it does not yet
+implement isolated user processes. Ring 3, syscalls, user ELF loading,
+per-process address spaces, and IPC remain Week 8.
+
+This is a material-generation checkpoint only. The authoritative learner
+resume remains Week 1, no confidence gate has advanced, and no mastery,
+completion, time, or confidence is inferred.

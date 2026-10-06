@@ -377,6 +377,12 @@ def main() -> None:
         portable_overview = overview_text.replace(
             "](../",
             "](repo-relative:../",
+        ).replace(
+            "](sections/",
+            "](repo-relative:sections/",
+        ).replace(
+            "](challenges/",
+            "](repo-relative:challenges/",
         )
         if portable_overview != overview_text:
             rendered_overview = temp_dir / overview.name

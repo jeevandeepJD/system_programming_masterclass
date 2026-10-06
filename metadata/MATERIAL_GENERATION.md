@@ -119,8 +119,17 @@ record.
 - *Operating Systems: Three Easy Pieces*
 - xv6 source and book
 - Linux man-pages
-- QEMU and GDB documentation
-- Limine boot protocol/documentation for the guided ToyOS bootstrap
+- Installed QEMU system-emulator documentation and `qemu-system-x86_64`
+  command help
+- Installed GRUB2 manuals/tool help, including `grub-file`,
+  `grub-mkrescue`, and the Multiboot2 boot contract used by ToyOS
+- Installed GDB documentation for QEMU remote debugging
+- The repository's [`projects/toyos/grub.cfg`](../projects/toyos/grub.cfg),
+  linker script, Makefile, serial logs, and ELF/map artifacts as reproducible
+  evidence for the prepared Week 6–7 boot path
+- Limine protocol/documentation only if a later milestone deliberately
+  evaluates it as an alternative boot path; do not describe the current
+  GRUB2/Multiboot2 implementation as Limine-based
 
 ### Linux kernel
 

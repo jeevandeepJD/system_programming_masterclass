@@ -81,10 +81,19 @@ Before beginning ToyOS or subsystem specialization, demonstrate:
 
 ## Phase 3 — Guided ToyOS and OS foundations
 Create the next topic packages only after evidence from Phases 1–2:
-- `06-toyos-bootstrap-and-exceptions/`: freestanding C, linker script, boot contract, stack, serial output, GDT/TSS/IDT, exception stubs, QEMU/GDB.
-- `07-memory-processes-and-scheduling/`: memory map, page-frame allocator, paging, kernel heap, task state, context switching, timer, cooperative then preemptive scheduling.
+- [Week 6](../06-toyos-bootstrap-and-exceptions/week-06-material.pdf):
+  freestanding C, linker script, GRUB2/Multiboot2 boot contract, stack,
+  serial output, GDT/TSS/IDT, exception stubs, and QEMU/GDB.
+- [Week 7](../07-memory-processes-and-scheduling/week-07-material.pdf):
+  memory map, page-frame allocator, paging, kernel heap, ring-0 kernel task
+  state, context switching, timer, and cooperative then preemptive scheduling.
 - `08-user-mode-syscalls-and-ipc/`: ring 3, syscall entry, user copies, address spaces, ELF user loader, signals, pipes/shared memory, descriptor table.
 - `09-filesystems-and-virtual-devices/`: ramfs/VFS concepts, block I/O path, PCI/MMIO/interrupts/DMA, optional virtio.
+
+Weeks 6–7 use the single continuous
+[`projects/toyos`](../projects/toyos/) implementation with milestone build
+profiles. Week 7 does not claim isolated user processes; user mode and
+syscalls remain Week 8.
 
 Every milestone follows:
 - Question → design → predict → implement → observe → break/debug → compare with xv6 → compare with Linux.

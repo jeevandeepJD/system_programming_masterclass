@@ -1,0 +1,75 @@
+{
+  "week": 7,
+  "days": [
+    {
+      "day": 1,
+      "title": "Multiboot Memory Map and Physical Frames",
+      "questions": [
+        {"prompt": "Why does ToyOS initialize every bitmap bit as used?", "options": ["Unmentioned memory remains unavailable until a validated usable range releases it.", "GRUB requires inverted bits.", "It makes allocation random.", "Every physical frame contains the kernel."], "answer": 0, "explanation": "Starting reserved is fail-closed; only validated, bounded usable ranges become free."},
+        {"prompt": "Why is a memory-map entry advanced by entry_size?", "options": ["To change CR3", "Multiboot2 permits entries larger than the minimum known structure.", "To skip every other region", "Because pages are eight bytes."], "answer": 1, "explanation": "The advertised stride preserves compatibility with extended entries."},
+        {"prompt": "What is the 128 MiB allocator ceiling?", "options": ["An x86-64 architectural maximum", "A Multiboot2 requirement", "A deliberate ToyOS implementation bound", "The size of one page table"], "answer": 2, "explanation": "ToyOS bounds its static bitmap and ignores higher physical RAM."},
+        {"prompt": "What does expected-fault-week7-allocator inject and verify?", "options": ["A second free of the probe is rejected because its bitmap bit is already clear.", "The bitmap safely supports concurrent CPUs.", "Every possible malformed memory map is rejected.", "Allocator exhaustion automatically grows the 128 MiB bound."], "answer": 0, "explanation": "The deterministic profile detects one selected double-free and checks marker plus host status 39; it does not establish concurrency or exhaustion behavior."}
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Page Tables, Mapper, TLBs, and Faults",
+      "questions": [
+        {"prompt": "What does next_table do for an absent intermediate entry?", "options": ["Allocates a zeroed frame and installs it as a table.", "Maps a 1 GiB huge page.", "Raises a syscall.", "Switches tasks."], "answer": 0, "explanation": "The new frame becomes paging-structure storage and is linked with present/write flags."},
+        {"prompt": "Why does map_page execute invlpg?", "options": ["To zero the physical frame", "To invalidate a cached translation for that virtual address", "To enable interrupts", "To flush serial output"], "answer": 1, "explanation": "Changing a PTE does not by itself guarantee the old translation is absent from the TLB."},
+        {"prompt": "Which tuple best diagnoses ToyOS's x86-64 page fault?", "options": ["PIT divisor, PIC mask, stack size", "Only the panic string", "CR2, error code, saved RIP, exact ELF", "Heap base and task ID"], "answer": 2, "explanation": "Address, access classification, continuation, and matching symbols provide complementary evidence."},
+        {"prompt": "Which RISC-V operation is conceptually related to x86 invlpg?", "options": ["ecall", "wfi", "mret", "sfence.vma"], "answer": 3, "explanation": "sfence.vma synchronizes address-translation state, though its exact semantics differ."}
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Kernel Heap and Ownership",
+      "questions": [
+        {"prompt": "Why does ToyOS map heap pages before setting heap_next?", "options": ["Returned virtual pointers must already have backing translations.", "The PIT needs heap memory.", "GRUB allocates C objects.", "The stack grows upward."], "answer": 0, "explanation": "A byte allocator cannot safely return an unmapped virtual range."},
+        {"prompt": "What is a major bump-allocator limitation?", "options": ["It cannot align objects.", "It cannot reclaim individual allocations.", "It always fragments a free list.", "It requires user mode."], "answer": 1, "explanation": "Advancing one cursor is simple, but there is no free or reuse."},
+        {"prompt": "Who owns the two task stacks in this milestone?", "options": ["GRUB", "The page-fault handler", "The scheduler/task subsystem for kernel lifetime", "Each serial byte"], "answer": 2, "explanation": "The task records retain permanent stack pointers; no release path exists."},
+        {"prompt": "What does volatile provide for shared scheduler fields?", "options": ["Mutual exclusion", "Inter-CPU ordering", "Lifetime extension", "Neither locking nor a complete synchronization protocol"], "answer": 3, "explanation": "volatile affects compiler accesses, not ownership or concurrency correctness."}
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Kernel Tasks, Stacks, and Contexts",
+      "questions": [
+        {"prompt": "What are ToyOS Week 7 tasks?", "options": ["Ring-0 kernel tasks sharing one address space", "Isolated user processes", "Linux pthreads", "Hardware TSS tasks"], "answer": 0, "explanation": "They have separate kernel stacks and contexts but no user mode or address-space isolation."},
+        {"prompt": "Why does a new stack contain a zero sentinel?", "options": ["It is the task ID.", "The jump-entered trampoline receives a call-compatible return-address slot.", "It acknowledges IRQ0.", "It stores CR3."], "answer": 1, "explanation": "The crafted stack preserves the ABI entry shape even though context switch jumps."},
+        {"prompt": "How does struct context differ from interrupt_frame?", "options": ["They are byte-for-byte identical.", "Only context stores a vector.", "Context is an ABI continuation; interrupt_frame represents asynchronous entry state.", "interrupt_frame belongs to GRUB."], "answer": 2, "explanation": "They solve different save/restore boundaries and contain different fields."},
+        {"prompt": "Why does expected-fault-week7-context stop before context_switch?", "options": ["The PIC rejects task 0.", "The heap frees its stack.", "validate_context detects that injected RSP no longer has the required 8-mod-16 alignment.", "The task enters ring 3."], "answer": 2, "explanation": "The profile adds one to the valid saved RSP; scheduler validation catches that boundary violation before assembly loads it and the host checks status 41."}
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Cooperative Yield and Context Switch",
+      "questions": [
+        {"prompt": "Why does context_switch save RBX but not RAX?", "options": ["RBX is ABI callee-saved; RAX is caller-saved.", "RAX does not exist in long mode.", "RBX stores CR3.", "The PIC owns RAX."], "answer": 0, "explanation": "A switch at a C call boundary can rely on the AMD64 ABI's volatile/nonvolatile split."},
+        {"prompt": "What is loaded immediately before transferring to another task?", "options": ["Only the task ID", "Its callee-saved registers and RSP, followed by a jump to saved RIP", "A new Multiboot map", "A user syscall table"], "answer": 1, "explanation": "Those fields make the saved execution continuation active."},
+        {"prompt": "Who chooses the next task?", "options": ["The context-switch assembly", "The x86 hardware task switcher", "The C scheduler policy", "GRUB"], "answer": 2, "explanation": "Assembly supplies mechanism; tasks.c supplies fixed round-robin policy."},
+        {"prompt": "What risk follows updating scheduler state with interrupts enabled?", "options": ["ELF sections become writable.", "The CPU leaves long mode.", "The heap becomes physical.", "An interrupt may observe a partially transitioned state."], "answer": 3, "explanation": "Scheduler state updates need a defined critical-section policy."}
+      ]
+    },
+    {
+      "day": 6,
+      "title": "PIT/PIC Interrupt-Driven Preemption",
+      "questions": [
+        {"prompt": "Which vector receives remapped PIT IRQ0?", "options": ["32", "14", "3", "255"], "answer": 0, "explanation": "ToyOS remaps the master PIC base to 0x20, making IRQ0 vector 32."},
+        {"prompt": "Why can task 1 run while task 0 never calls schedule?", "options": ["The compiler inserts yields.", "IRQ0 invokes scheduler_tick and preempts task 0.", "GRUB rotates tasks.", "The mapper changes RIP."], "answer": 1, "explanation": "Timer interrupt dispatch triggers involuntary scheduling."},
+        {"prompt": "What remains on a preempted task's stack while another runs?", "options": ["Nothing", "Only its ID", "Interrupt and C call frames needed to resume", "The other task's heap"], "answer": 2, "explanation": "The intact inactive stack preserves the return chain through handler and iretq."},
+        {"prompt": "What is the appropriate modern x86 contrast?", "options": ["BIOS keyboard polling", "Multiboot checksums", "Only NMI", "Local APIC timers, I/O APIC, MSI/MSI-X, and x2APIC"], "answer": 3, "explanation": "Production interrupt routing and timers generally use APIC-family mechanisms."}
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Scheduler Report and Systems Comparison",
+      "questions": [
+        {"prompt": "What should every scheduler trace event identify?", "options": ["Task states, current task, active stack owner, and transition reason", "Only elapsed wall time", "Only source line numbers", "The Git branch name"], "answer": 0, "explanation": "A useful trace makes state and resource ownership transitions explicit."},
+        {"prompt": "Which xv6-riscv file commonly contains low-level context switching?", "options": ["kernel/fs.c", "kernel/swtch.S", "user/sh.c", "mkfs/mkfs.c"], "answer": 1, "explanation": "Verify the revision, but kernel/swtch.S is the usual architecture switch landmark."},
+        {"prompt": "What does Linux add beyond ToyOS's scheduler model?", "options": ["Exactly two fixed tasks", "No locking", "Per-CPU run queues, classes, synchronization, and process/thread lifecycle", "Only a PIT busy loop"], "answer": 2, "explanation": "The conceptual state transition scales into much richer policy and concurrency."},
+        {"prompt": "Which set correctly pairs the three injected Week 7 failures with their detection boundary?", "options": ["Allocator/PIT, page/heap, context/GRUB", "Allocator/frame_free, page/#PF handler, context/validate_context", "Allocator/syscall, page/scheduler, context/PIC", "All three are detected by context_switch"], "answer": 1, "explanation": "The profiles deliberately exercise allocator metadata validation, architectural page-fault handling, and pre-switch context validation as distinct boundaries."}
+      ]
+    }
+  ]
+}

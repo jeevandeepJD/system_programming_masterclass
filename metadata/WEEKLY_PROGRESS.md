@@ -109,6 +109,40 @@ change the current resume point.
 Weeks 4 and 5 are prepared ahead. They do not change the current resume point
 or imply completion.
 
+## Prepared Week 6 package
+
+- Consolidated PDF:
+  [`06-toyos-bootstrap-and-exceptions/week-06-material.pdf`](../06-toyos-bootstrap-and-exceptions/week-06-material.pdf)
+- Sources and labs:
+  [`06-toyos-bootstrap-and-exceptions/`](../06-toyos-bootstrap-and-exceptions/)
+- Continuous project:
+  [`projects/toyos/`](../projects/toyos/)
+- Scope: freestanding x86-64 C, ELF/linker contract, GRUB2 Multiboot2 boot,
+  long-mode entry, serial/panic/assert diagnostics, IDT exception stubs,
+  TSS/IST, page-fault decoding, and QEMU/GDB fault evidence
+- Project profile: `CONFIG_MILESTONE=6`, kept runnable from the same source
+  tree used by Week 7
+
+## Prepared Week 7 package
+
+- Consolidated PDF:
+  [`07-memory-processes-and-scheduling/week-07-material.pdf`](../07-memory-processes-and-scheduling/week-07-material.pdf)
+- Sources and labs:
+  [`07-memory-processes-and-scheduling/`](../07-memory-processes-and-scheduling/)
+- Continuous project:
+  [`projects/toyos/`](../projects/toyos/)
+- Scope: Multiboot2 memory-map parsing, bounded physical-frame allocation,
+  4 KiB mapping, a small kernel heap, saved task contexts, cooperative
+  switching, and PIT/PIC-driven preemption
+- Project profile: `CONFIG_MILESTONE=7`, extending the Week 6 kernel rather
+  than forking a second implementation
+
+Weeks 6 and 7 are prepared ahead. They do not change the current Week 1
+resume point, complete any foundation gate, or imply learner mastery. Week 7
+contains ring-0 **kernel tasks**, not isolated user processes: ring 3,
+syscalls, user ELF loading, per-process address spaces, and process isolation
+remain Week 8 topics.
+
 ## Approved follow-on track
 
 After Weeks 4–5, begin a guided x86-64 ToyOS under QEMU using C and minimal

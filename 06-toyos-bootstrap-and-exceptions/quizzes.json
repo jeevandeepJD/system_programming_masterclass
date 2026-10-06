@@ -1,0 +1,215 @@
+{
+  "week": 6,
+  "days": [
+    {
+      "day": 1,
+      "title": "Freestanding C and the Project Contract",
+      "questions": [
+        {
+          "prompt": "What does -ffreestanding establish for this kernel build?",
+          "options": ["The compiler cannot assume a hosted C environment with normal startup and the full library.", "All undefined C behavior becomes architecture-defined.", "The CPU begins in 64-bit mode.", "Every external symbol is supplied by GRUB."],
+          "answer": 0,
+          "explanation": "Freestanding compilation removes hosted-environment assumptions. It does not initialize the machine, resolve symbols, or legalize undefined behavior."
+        },
+        {
+          "prompt": "Why does ToyOS compile with -mno-red-zone?",
+          "options": ["To disable page-table writes.", "To prevent compiler temporaries below RSP from being overwritten by asynchronous entry.", "To make the stack grow upward.", "To reserve space for Multiboot2 tags."],
+          "answer": 1,
+          "explanation": "The AMD64 red zone is unsafe for kernel code when interrupts or exceptions can use memory below the interrupted RSP."
+        },
+        {
+          "prompt": "Which part of the kernel_main handoff belongs primarily to the System V AMD64 ABI?",
+          "options": ["The Multiboot2 magic value", "The meaning of CR3", "Placement of the first two integer arguments in EDI and ESI", "The page-fault vector number"],
+          "answer": 2,
+          "explanation": "Multiboot2 defines argument meaning, while the calling convention determines the C argument registers."
+        },
+        {
+          "prompt": "What does a zero undefined-symbol count in the final ELF prove?",
+          "options": ["Every runtime path is correct.", "The image boots on all x86-64 hardware.", "No C operation has undefined behavior.", "Static symbol references in that linked ELF were resolved."],
+          "answer": 3,
+          "explanation": "Link resolution is useful static evidence, but it is not runtime or platform validation."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "ELF, Linker, Multiboot2, and GRUB",
+      "questions": [
+        {
+          "prompt": "Why is ENTRY(_start) distinct from kernel_main?",
+          "options": ["The loader transfers to assembly that must establish machine and ABI state before C.", "C functions cannot appear in ELF files.", "GRUB calls every ELF symbol in order.", "kernel_main is a page-table entry."],
+          "answer": 0,
+          "explanation": "The assembly entry handles the 32-bit protocol and transition before making an ABI-compliant C call."
+        },
+        {
+          "prompt": "What is the best description of an ELF program header?",
+          "options": ["A C preprocessor include", "Loader-facing segment metadata", "A list of quiz questions", "The x86 IDT"],
+          "answer": 1,
+          "explanation": "Program headers describe segments for loading; sections primarily organize linking and analysis."
+        },
+        {
+          "prompt": "What does the Multiboot2 checksum arrange?",
+          "options": ["The entire ISO hashes to zero.", "Every loadable segment has equal size.", "Magic, architecture, length, and checksum sum to zero modulo 2^32.", "GRUB and ToyOS use the same GDT."],
+          "answer": 2,
+          "explanation": "That modular sum is part of header validation, not an integrity hash of the whole image."
+        },
+        {
+          "prompt": "What does grub2-file recognition not prove?",
+          "options": ["That the inspected artifact looks like a Multiboot2 kernel to the tool", "That a header was discoverable", "That the file passed the command's check", "That the image completed bootstrap and ran kernel_main"],
+          "answer": 3,
+          "explanation": "Recognition is static. Execution needs dynamic boot evidence."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Long Mode, Initial Pages, GDT, and Stack",
+      "questions": [
+        {
+          "prompt": "What range do 512 identity-mapped 2 MiB PDEs cover?",
+          "options": ["The first 1 GiB", "The first 2 MiB", "The first 512 GiB", "Only the 1 MiB kernel image"],
+          "answer": 0,
+          "explanation": "512 × 2 MiB equals 1 GiB, with virtual and physical addresses equal in this initial map."
+        },
+        {
+          "prompt": "Why does ToyOS perform a far jump after enabling paging and long-mode support?",
+          "options": ["To clear CR3", "To load a 64-bit code selector and enter the long-mode code path", "To invoke GRUB again", "To allocate the interrupt stack"],
+          "answer": 1,
+          "explanation": "The far transfer loads CS from the bootstrap GDT and reaches 64-bit code."
+        },
+        {
+          "prompt": "Which statement is a ToyOS implementation choice rather than an x86-64 requirement?",
+          "options": ["CR3 identifies paging structures.", "EFER contains the long-mode enable bit.", "The bootstrap identity maps exactly the first 1 GiB using 2 MiB pages.", "A far transfer can load CS."],
+          "answer": 2,
+          "explanation": "The architecture supplies mechanisms; the mapping extent and page-size choice are project policy."
+        },
+        {
+          "prompt": "Why does writing boot_magic to EDI fit the C signature?",
+          "options": ["EDI is the stack pointer.", "Every architecture passes values in EDI.", "Multiboot2 mandates the System V ABI.", "The first AMD64 integer argument is RDI, and a 32-bit write supplies the uint32_t value."],
+          "answer": 3,
+          "explanation": "This is the internal bridge from saved protocol data to the chosen C calling convention."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "COM1 Serial, Panic, and Assert",
+      "questions": [
+        {
+          "prompt": "Why can ToyOS use serial_putc before interrupts are configured?",
+          "options": ["It polls the UART transmitter-ready status.", "GRUB converts every call into a syscall.", "The IDT transmits each byte.", "The linker prints the bytes."],
+          "answer": 0,
+          "explanation": "Polling avoids dependence on an interrupt-driven serial path, though it can spin indefinitely."
+        },
+        {
+          "prompt": "What mechanism does ASSERT(false) use?",
+          "options": ["An x86 page fault", "A normal C branch into ToyOS panic policy", "A hardware double fault", "A Multiboot2 error code"],
+          "answer": 1,
+          "explanation": "The assertion macro calls panic_at; it does not enter through the IDT."
+        },
+        {
+          "prompt": "Why does the QEMU harness check both status and a serial marker?",
+          "options": ["Either value changes the ELF machine type.", "The UART cannot print newlines.", "Together they identify the intended path more narrowly than either alone.", "The status is the page-fault address."],
+          "answer": 2,
+          "explanation": "A marker can precede a hang, and an exit can occur through the wrong path."
+        },
+        {
+          "prompt": "What is not established by COM1 output under QEMU TCG?",
+          "options": ["The guest emitted matching bytes", "The wrapper observed the expected marker", "The selected execution reached serial_write", "Physical UART timing on arbitrary hardware"],
+          "answer": 3,
+          "explanation": "The device is emulated and connected to a host stream; physical timing is outside this evidence."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "IDT, Exception Stubs, and a Uniform Saved Frame",
+      "questions": [
+        {
+          "prompt": "Why does ISR_NOERR push a synthetic zero?",
+          "options": ["To give vectors without a CPU error code the same vector/error frame shape.", "To clear CR2.", "To acknowledge the PIC.", "To select IST zero."],
+          "answer": 0,
+          "explanation": "Normalization lets the common entry and C structure use one layout."
+        },
+        {
+          "prompt": "Why is r15 the first field of interrupt_frame although RAX is pushed first?",
+          "options": ["C reverses every structure.", "The downward-growing stack points at the last pushed register, R15.", "R15 stores the IDT base.", "The compiler alphabetizes registers."],
+          "answer": 1,
+          "explanation": "After all pushes, RSP addresses R15, so the structure follows memory order from that address upward."
+        },
+        {
+          "prompt": "What is the purpose of cld before calling interrupt_handler?",
+          "options": ["Disable interrupts", "Clear debug registers", "Restore the ABI expectation that the direction flag is clear", "Load the data selector"],
+          "answer": 2,
+          "explanation": "Exception entry can interrupt code with DF set; C code expects the ABI's forward direction."
+        },
+        {
+          "prompt": "What does the successful int3 self-test exercise that a non-returning fault does not?",
+          "options": ["Multiboot2 header discovery", "Initial page-table construction", "UART divisor setup only", "Register restoration and iretq back to the interrupted flow"],
+          "answer": 3,
+          "explanation": "The breakpoint handler returns, so the assembly unwind and architectural return path are exercised."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "TSS, IST, Page Faults, and GDB Diagnosis",
+      "questions": [
+        {
+          "prompt": "What does ToyOS primarily use its 64-bit TSS for?",
+          "options": ["Supplying privilege and IST stack pointers", "Hardware scheduling of Week 7 tasks", "Storing the ELF symbol table", "Formatting serial numbers"],
+          "answer": 0,
+          "explanation": "The loaded TSS supplies stack-selection metadata; ToyOS does not use hardware task switching."
+        },
+        {
+          "prompt": "Why should the write to 0x70000000 fault in the Week 6 profile?",
+          "options": ["It is inside the serial I/O range.", "It lies beyond the initial first-1-GiB mapping.", "Every volatile store is forbidden.", "The GDT marks all data read-only."],
+          "answer": 1,
+          "explanation": "The initial identity map ends at 0x3fffffff, so the selected linear address has no present translation."
+        },
+        {
+          "prompt": "Which evidence trio best diagnoses this x86 page fault?",
+          "options": ["GRUB menu, baud rate, and ISO size", "GDT limit, compiler version, and PIT divisor", "CR2 address, page-fault error code, and saved RIP", "Only the panic string"],
+          "answer": 2,
+          "explanation": "Address, access classification, and instruction context are complementary."
+        },
+        {
+          "prompt": "Why must GDB load build/week6-page/toyos.elf for the fault VM?",
+          "options": ["GDB can debug only files named week6-page.", "The normal ELF contains no x86 instructions.", "QEMU reads source through GDB.", "Symbols and source mapping must correspond to the exact fault-profile binary."],
+          "answer": 3,
+          "explanation": "Using another build can map saved addresses to incorrect symbols or lines."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Integrated Fault-Debug Report and Systems Comparison",
+      "questions": [
+        {
+          "prompt": "Which wording most accurately reports objdump evidence?",
+          "options": ["objdump decoded these bytes as the shown x86-64 instruction.", "The instruction executed on every physical CPU.", "The C standard requires this exact opcode.", "Linux generated the instruction."],
+          "answer": 0,
+          "explanation": "Disassembly is static decoding of an artifact; execution and universal code generation need separate evidence."
+        },
+        {
+          "prompt": "What is the closest conceptual xv6-riscv counterpart to ToyOS's interrupt_frame?",
+          "options": ["A disk inode", "A trapframe/register save area", "A page allocator bitmap", "The Makefile"],
+          "answer": 1,
+          "explanation": "Both preserve interrupted register context, although architecture fields and entry mechanisms differ."
+        },
+        {
+          "prompt": "Which comparison between ToyOS and Linux is justified?",
+          "options": ["ToyOS implements Linux demand paging.", "Linux x86 uses the exact ToyOS C structure.", "Both layer architecture entry, saved state, dispatch, and policy, while Linux is far more complete.", "ToyOS and Linux have identical per-CPU entry stacks."],
+          "answer": 2,
+          "explanation": "The conceptual layers correspond, but concrete structures, recovery, concurrency, and policy differ substantially."
+        },
+        {
+          "prompt": "Which item belongs in the limitations section of the Week 6 report?",
+          "options": ["The observed page-fault marker", "The exact ELF hash", "The predicted vector", "No user-mode, nested-fault, or physical-hardware behavior was tested"],
+          "answer": 3,
+          "explanation": "A report must bound its claims to the tested QEMU profiles and explicitly name important untested cases."
+        }
+      ]
+    }
+  ]
+}
