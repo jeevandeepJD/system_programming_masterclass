@@ -12,6 +12,7 @@ struct interrupt_frame {
     uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
     uint64_t rdi, rsi, rbp, rdx, rcx, rbx, rax;
     uint64_t vector, error, rip, cs, rflags;
+    uint64_t rsp, ss;
 };
 
 struct context {
@@ -40,6 +41,7 @@ void arch_init(void);
 void interrupt_handler(struct interrupt_frame *frame);
 void interrupts_enable(void);
 uint64_t timer_ticks(void);
+void arch_set_kernel_stack(uint64_t stack_top);
 
 #if CONFIG_MILESTONE >= 7
 void memory_init(uint64_t multiboot_info);
@@ -52,6 +54,33 @@ void tasks_init(void);
 void tasks_start(void) __attribute__((noreturn));
 void scheduler_tick(void);
 void context_switch(struct context *old_context, struct context *new_context);
+#endif
+
+#if CONFIG_MILESTONE >= 8
+#define PTE_WRITE 0x002ULL
+#define PTE_USER 0x004ULL
+
+uint64_t *address_space_create(void);
+bool map_page_in(uint64_t *root, uint64_t virtual_address, uint64_t physical,
+                 uint64_t flags);
+void address_space_activate(uint64_t *root);
+bool copy_from_user(void *destination, uint64_t user_source, size_t length);
+bool copy_to_user(uint64_t user_destination, const void *source, size_t length);
+
+void process_init(void);
+void process_start(void) __attribute__((noreturn));
+void syscall_dispatch(struct interrupt_frame *frame);
+void enter_user(uint64_t instruction_pointer, uint64_t stack_pointer)
+    __attribute__((noreturn));
+#endif
+
+#if CONFIG_MILESTONE >= 9
+void vfs_init(void);
+int64_t vfs_open(const char *path);
+int64_t vfs_read(unsigned fd, void *buffer, size_t length);
+int64_t vfs_write(unsigned fd, const void *buffer, size_t length);
+void edu_init(void);
+bool edu_checked_write(uint32_t offset, uint32_t value);
 #endif
 
 #endif

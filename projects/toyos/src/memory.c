@@ -8,7 +8,10 @@
 #define HEAP_BASE 0x50000000ULL
 #define HEAP_PAGES 8ULL
 #define PTE_PRESENT 0x001ULL
+#if CONFIG_MILESTONE < 8
 #define PTE_WRITE 0x002ULL
+#define PTE_USER 0x000ULL
+#endif
 #define PTE_HUGE 0x080ULL
 #define PTE_ADDRESS 0x000ffffffffff000ULL
 
@@ -35,6 +38,9 @@ static uint64_t frame_bitmap[BITMAP_WORDS];
 static size_t free_frames;
 static uintptr_t heap_next;
 static uintptr_t heap_end;
+#if CONFIG_MILESTONE >= 8
+static uint64_t *active_root = (uint64_t *)(void *)bootstrap_pml4;
+#endif
 
 static bool frame_is_used(size_t frame)
 {
@@ -129,33 +135,39 @@ void frame_free(uint64_t physical)
     mark_frame(frame, false);
 }
 
-static uint64_t *next_table(uint64_t *table, size_t index)
+static uint64_t *next_table(uint64_t *table, size_t index, uint64_t flags)
 {
     if ((table[index] & PTE_PRESENT) == 0U) {
         const uint64_t frame = frame_alloc();
         if (frame == 0U) {
             return NULL;
         }
-        table[index] = frame | PTE_PRESENT | PTE_WRITE;
+        table[index] = frame | PTE_PRESENT | PTE_WRITE | (flags & PTE_USER);
     }
     if ((table[index] & PTE_HUGE) != 0U) {
         return NULL;
     }
+#if CONFIG_MILESTONE >= 8
+    table[index] |= flags & PTE_USER;
+#endif
     return (uint64_t *)(uintptr_t)(table[index] & PTE_ADDRESS);
 }
 
-bool map_page(uint64_t virtual_address, uint64_t physical, uint64_t flags)
+static bool map_in_root(uint64_t *pml4, uint64_t virtual_address,
+                        uint64_t physical, uint64_t flags)
 {
-    uint64_t *const pml4 = (uint64_t *)(void *)bootstrap_pml4;
-    uint64_t *const pdpt = next_table(pml4, (size_t)((virtual_address >> 39U) & 0x1ffU));
+    uint64_t *const pdpt = next_table(
+        pml4, (size_t)((virtual_address >> 39U) & 0x1ffU), flags);
     if (pdpt == NULL) {
         return false;
     }
-    uint64_t *const pd = next_table(pdpt, (size_t)((virtual_address >> 30U) & 0x1ffU));
+    uint64_t *const pd = next_table(
+        pdpt, (size_t)((virtual_address >> 30U) & 0x1ffU), flags);
     if (pd == NULL) {
         return false;
     }
-    uint64_t *const pt = next_table(pd, (size_t)((virtual_address >> 21U) & 0x1ffU));
+    uint64_t *const pt = next_table(
+        pd, (size_t)((virtual_address >> 21U) & 0x1ffU), flags);
     if (pt == NULL) {
         return false;
     }
@@ -167,6 +179,115 @@ bool map_page(uint64_t virtual_address, uint64_t physical, uint64_t flags)
     __asm__ volatile ("invlpg (%0)" : : "r"(virtual_address) : "memory");
     return true;
 }
+
+bool map_page(uint64_t virtual_address, uint64_t physical, uint64_t flags)
+{
+    return map_in_root((uint64_t *)(void *)bootstrap_pml4,
+                       virtual_address, physical, flags);
+}
+
+#if CONFIG_MILESTONE >= 8
+uint64_t *address_space_create(void)
+{
+    const uint64_t root_frame = frame_alloc();
+    const uint64_t pdpt_frame = frame_alloc();
+    if (root_frame == 0U || pdpt_frame == 0U) {
+        return NULL;
+    }
+    uint64_t *const root = (uint64_t *)(uintptr_t)root_frame;
+    uint64_t *const pdpt = (uint64_t *)(uintptr_t)pdpt_frame;
+    const uint64_t *const kernel_root = (const uint64_t *)(const void *)bootstrap_pml4;
+    const uint64_t *const kernel_pdpt =
+        (const uint64_t *)(uintptr_t)(kernel_root[0] & PTE_ADDRESS);
+    for (size_t i = 0; i < 512U; ++i) {
+        root[i] = kernel_root[i];
+        pdpt[i] = kernel_pdpt[i];
+    }
+    root[0] = pdpt_frame | PTE_PRESENT | PTE_WRITE;
+    return root;
+}
+
+bool map_page_in(uint64_t *root, uint64_t virtual_address, uint64_t physical,
+                 uint64_t flags)
+{
+    if (root == NULL) {
+        return false;
+    }
+    return map_in_root(root, virtual_address, physical, flags);
+}
+
+void address_space_activate(uint64_t *root)
+{
+    ASSERT(root != NULL);
+    active_root = root;
+    __asm__ volatile ("mov %0, %%cr3" : : "r"(root) : "memory");
+}
+
+static bool user_translate(uint64_t address, bool write, uint8_t **kernel_address,
+                           size_t *contiguous)
+{
+    uint64_t *table = active_root;
+    const unsigned shifts[4] = {39U, 30U, 21U, 12U};
+    for (size_t level = 0; level < ARRAY_LEN(shifts); ++level) {
+        const uint64_t entry = table[(address >> shifts[level]) & 0x1ffU];
+        if ((entry & (PTE_PRESENT | PTE_USER)) != (PTE_PRESENT | PTE_USER)
+            || (write && (entry & PTE_WRITE) == 0U)
+            || (entry & PTE_HUGE) != 0U) {
+            return false;
+        }
+        if (level == 3U) {
+            const size_t offset = (size_t)(address & (PAGE_SIZE - 1U));
+            *kernel_address = (uint8_t *)(uintptr_t)
+                ((entry & PTE_ADDRESS) + offset);
+            *contiguous = (size_t)PAGE_SIZE - offset;
+            return true;
+        }
+        table = (uint64_t *)(uintptr_t)(entry & PTE_ADDRESS);
+    }
+    return false;
+}
+
+static bool user_copy(void *kernel_buffer, uint64_t user_address, size_t length,
+                      bool to_user)
+{
+    uint8_t *kernel = kernel_buffer;
+    while (length != 0U) {
+        uint8_t *mapped;
+        size_t available;
+        if (!user_translate(user_address, to_user, &mapped, &available)) {
+            return false;
+        }
+        const size_t count = length < available ? length : available;
+        for (size_t i = 0; i < count; ++i) {
+            if (to_user) {
+                mapped[i] = kernel[i];
+            } else {
+                kernel[i] = mapped[i];
+            }
+        }
+        kernel += count;
+        user_address += count;
+        length -= count;
+    }
+    return true;
+}
+
+bool copy_from_user(void *destination, uint64_t user_source, size_t length)
+{
+    if (destination == NULL || length > 4096U) {
+        return false;
+    }
+    return user_copy(destination, user_source, length, false);
+}
+
+bool copy_to_user(uint64_t user_destination, const void *source, size_t length)
+{
+    if (source == NULL || length > 4096U) {
+        return false;
+    }
+    return user_copy((void *)source, user_destination, length, true);
+}
+#endif
 
 void *kalloc(size_t bytes)
 {

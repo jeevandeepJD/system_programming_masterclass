@@ -1,0 +1,75 @@
+{
+  "week": 9,
+  "days": [
+    {
+      "day": 1,
+      "title": "VFS Objects and Ownership",
+      "questions": [
+        {"prompt": "Which ToyOS object owns the current read/write offset?", "options": ["The open file slot", "The inode path string", "The user descriptor integer", "The PCI BAR"], "answer": 0, "explanation": "Each struct file carries an offset, allowing independent opens of one inode to have independent positions."},
+        {"prompt": "What does a pathname represent?", "options": ["Persistent file bytes", "Input to name resolution, not object identity itself", "An MMIO address", "A process page table"], "answer": 1, "explanation": "A path is resolved to an object; renaming or unlinking illustrates why name and inode identity differ in fuller systems."},
+        {"prompt": "Which VFS-related object is absent from ToyOS?", "options": ["A static inode array", "An open-file array", "A dentry structure/cache", "A file offset"], "answer": 2, "explanation": "ToyOS compares whole stored path strings and has no directory-entry object or lookup cache."},
+        {"prompt": "What lifetime do the Week 9 inode and file arrays have?", "options": ["One syscall", "One user instruction", "Until close frees them", "Static kernel lifetime"], "answer": 3, "explanation": "Both arrays have static storage duration; no allocation, close, or reclamation path exists."}
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Tiny ramfs Lookup and I/O",
+      "questions": [
+        {"prompt": "What does vfs_open return for an unmatched path?", "options": ["-2", "-9", "-24", "-28"], "answer": 0, "explanation": "The exact linear lookup returns -2 when neither static inode path matches."},
+        {"prompt": "Why can a ramfs read return fewer bytes than requested without error?", "options": ["PCI truncates reads.", "The request reached the inode's current size.", "The descriptor changed.", "The path lacks NUL."], "answer": 1, "explanation": "The count is min(request, size-offset), so reaching EOF naturally produces a short read or zero."},
+        {"prompt": "What prevents vfs_write from exceeding the inode data array?", "options": ["A page fault", "A dentry lock", "length > capacity - offset", "A journal transaction"], "answer": 2, "explanation": "The subtraction-based bound avoids an unchecked offset+length overflow under the maintained offset invariant."},
+        {"prompt": "Why does the initialization probe consume four bytes for \"vfs\"?", "options": ["Every file is aligned to four.", "The BAR is 32-bit.", "The path has four characters.", "sizeof(probe) includes the terminating NUL"], "answer": 3, "explanation": "Files are byte sequences; vfs_write receives the array size including its NUL byte."}
+      ]
+    },
+    {
+      "day": 3,
+      "title": "User File Descriptor Syscalls",
+      "questions": [
+        {"prompt": "Where is the open syscall number placed in ToyOS's ABI?", "options": ["RAX", "RDI", "RDX", "CR3"], "answer": 0, "explanation": "RAX carries syscall number 7 on entry and the signed result on return."},
+        {"prompt": "Why does copy_user_string use a kernel array?", "options": ["To persist the path on disk", "To avoid handing an unchecked user pointer to VFS", "To configure PCI", "To share the path by DMA"], "answer": 1, "explanation": "The helper validates user mappings byte by byte and gives VFS a bounded, live kernel string."},
+        {"prompt": "What can happen if copy_to_user fails after vfs_read?", "options": ["The inode is freed.", "The PCI device resets.", "The file offset has already advanced.", "The read becomes a block request."], "answer": 2, "explanation": "VFS advances the offset before copy-out; ToyOS has no rollback policy for a later user-copy failure."},
+        {"prompt": "Which feature is absent from the descriptor model?", "options": ["Descriptor 1 serial policy", "Pipe descriptors 3 and 4", "VFS descriptors 5 through 8", "A per-process fd table with close"], "answer": 3, "explanation": "Descriptor meanings are global conventions in the one-process kernel; close and per-process tables are absent."}
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Storage Stack Boundary",
+      "questions": [
+        {"prompt": "What is authoritative storage for a ToyOS ramfs inode?", "options": ["Its embedded 256-byte data array", "A page-cache copy of disk", "An EDU DMA buffer", "A journal"], "answer": 0, "explanation": "The in-memory array is the only file storage for the boot, not a cache of lower media."},
+        {"prompt": "What does a page cache conceptually coordinate?", "options": ["Only page-table permissions", "Cached file pages, reclaim, dirty state, and writeback", "PCI bus numbering", "Syscall gate privilege"], "answer": 1, "explanation": "Page cache state concerns file content and I/O; CPU page tables solve address translation and protection."},
+        {"prompt": "Which statement about EDU is accurate in Week 9?", "options": ["It stores /hello blocks.", "It journals ramfs.", "It is used only for PCI/MMIO identification and liveness.", "It performs file DMA."], "answer": 2, "explanation": "No file-data, block, IRQ, or DMA path is connected to EDU."},
+        {"prompt": "What does journaling primarily address?", "options": ["Faster path equality", "User pointer translation", "MMIO alignment", "Selected filesystem invariants across crashes"], "answer": 3, "explanation": "A journal controls durable update ordering and recovery; ToyOS has no persistent filesystem to journal."}
+      ]
+    },
+    {
+      "day": 5,
+      "title": "PCI Enumeration and BARs",
+      "questions": [
+        {"prompt": "Which x86 ports implement PCI configuration mechanism #1 here?", "options": ["0xcf8 and 0xcfc", "0x3f8 and 0x3f9", "0x20 and 0x21", "0x60 and 0x64"], "answer": 0, "explanation": "ToyOS writes the encoded config address to 0xcf8 and reads data from 0xcfc."},
+        {"prompt": "Why is the expected ID dword 0x11e81234?", "options": ["BAR flags are appended.", "Device 0x11e8 is high and vendor 0x1234 is low.", "The value is byte-reversed text.", "QEMU reports a physical address."], "answer": 1, "explanation": "Configuration offset zero places the 16-bit device ID above the 16-bit vendor ID."},
+        {"prompt": "What does clearing BAR0's low four bits obtain for this selected device?", "options": ["The IRQ vector", "The device ID", "The aligned memory base address", "The page-cache index"], "answer": 2, "explanation": "Low BAR bits encode resource flags; the remaining bits provide the selected 32-bit memory base."},
+        {"prompt": "What enumeration scope does ToyOS implement?", "options": ["All PCI domains", "Every bus behind bridges", "All functions using header type", "Bus 0, devices 0–31, function 0"], "answer": 3, "explanation": "Bus and function fields remain zero; no bridge or multifunction traversal exists."}
+      ]
+    },
+    {
+      "day": 6,
+      "title": "MMIO Ordering and EDU",
+      "questions": [
+        {"prompt": "What does volatile primarily ensure for edu_mmio accesses?", "options": ["The compiler treats accesses as observable", "DMA buffers are pinned", "All CPUs are locked", "Writes are durable"], "answer": 0, "explanation": "Volatile constrains compiler optimization of the access but does not supply every ordering or lifetime guarantee."},
+        {"prompt": "What does the EDU liveness register return after a write?", "options": ["The device ID", "The bitwise inverse of the written value", "Always zero", "A file descriptor"], "answer": 1, "explanation": "QEMU EDU defines the liveness test so a read returns the inverse of the prior written value."},
+        {"prompt": "Where is offset 3 rejected in the device fault profile?", "options": ["By a PCI bridge", "By an x86 page fault", "In edu_checked_write before MMIO", "By an IRQ handler"], "answer": 2, "explanation": "The helper's exact-offset/alignment policy returns false without issuing the invalid register access."},
+        {"prompt": "Which capability is explicitly not claimed?", "options": ["A 32-bit MMIO ID read", "BAR0 mapping", "Liveness inversion", "IRQ and DMA operation"], "answer": 3, "explanation": "The project has no EDU interrupt routing/completion or DMA ownership/addressing implementation."}
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Integrated Filesystem and Device Report",
+      "questions": [
+        {"prompt": "Which host statuses identify normal, filesystem, and device profiles?", "options": ["33, 47, 49", "0, 1, 2", "16, 23, 24", "35, 43, 45"], "answer": 0, "explanation": "The checked isa-debug-exit encoding yields host statuses 33, 47, and 49 for these profiles."},
+        {"prompt": "What does the filesystem rejection profile test?", "options": ["A user page fault", "A direct kernel lookup of /missing returning -2", "Slot exhaustion", "A journal replay"], "answer": 1, "explanation": "It runs during vfs_init and stops before ring 3, so it does not test user path copying."},
+        {"prompt": "Which relationship between ramfs and EDU is implemented?", "options": ["EDU backs inode data.", "Ramfs submits EDU DMA.", "No file-data path connects them.", "EDU journals /note."], "answer": 2, "explanation": "The filesystem and device are separate teaching slices joined only by boot orchestration."},
+        {"prompt": "What belongs in an unexpected MMIO page-fault report?", "options": ["Only the serial marker", "Only the source line", "Only the vendor ID", "CR2/error bits, saved state, CR3/PTE, BAR, QEMU command, and exact ELF"], "answer": 3, "explanation": "Those facts identify the access, translation, resource, environment, and symbolic artifact needed for causal diagnosis."}
+      ]
+    }
+  ]
+}

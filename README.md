@@ -46,11 +46,19 @@ After the three review modules:
    [Week 6](06-toyos-bootstrap-and-exceptions/week-06-material.pdf) and
    [Week 7](07-memory-processes-and-scheduling/week-07-material.pdf) packages
    with the continuous [`projects/toyos`](projects/toyos/) kernel.
+5. Continue with the prepared
+   [Week 8](08-user-mode-syscalls-and-ipc/overview.md) and
+   [Week 9](09-filesystems-and-virtual-devices/overview.md) packages and the
+   same kernel's Week 8/9 build profiles.
 
 These later packages are prepared navigation targets, not evidence that the
 current Week 1 resume point or any confidence gate has advanced. Week 7 builds
-ring-0 kernel tasks and scheduling; isolated user processes, ring 3, and
-syscalls remain Week 8 work.
+ring-0 kernel tasks and scheduling. Week 8 then adds one ring-3 process,
+per-process paging, embedded ELF loading, bounded user copying, descriptors,
+and small pipe IPC. Its educational syscall path is a DPL3 `int 0x80` gate,
+not `SYSCALL`/`SYSRET`; process, IPC, and signal behavior remains deliberately
+simplified. Week 9 adds a tiny ramfs/VFS and QEMU EDU PCI discovery/BAR/MMIO
+access, but not a real block layer, page cache, journaling, device IRQ, or DMA.
 
 The chip-design and ToyOS tracks meet at the ISA boundary:
 
@@ -100,8 +108,18 @@ C / assembly → kernel → ToyOS
 │   ├── overview.md
 │   ├── sections/
 │   └── challenges/
+├── 08-user-mode-syscalls-and-ipc/
+│   ├── overview.md
+│   ├── sections/
+│   ├── challenges/
+│   └── quizzes.json
+├── 09-filesystems-and-virtual-devices/
+│   ├── overview.md
+│   ├── sections/
+│   ├── challenges/
+│   └── quizzes.json
 ├── projects/
-│   └── toyos/                 continuous Week 6–7 x86-64 kernel project
+│   └── toyos/                 continuous Week 6–9 x86-64 kernel project
 ├── references/
 │   ├── README.md             catalog of selected references
 │   ├── ARCHITECTURE_COMPARISON.md
@@ -196,12 +214,12 @@ Select another week:
 MC_WEEK=2 ./tools/week lesson
 ```
 
-Weeks 6–7 use one continuous ToyOS project rather than separate copied
-kernels. Build and test both profiles from the repository root:
+Weeks 6–9 use one continuous ToyOS project rather than separate copied
+kernels. Build and test all four profiles from the repository root:
 
 ```bash
-make -C projects/toyos week6 week7
-make -C projects/toyos test-week6 test-week7
+make -C projects/toyos week6 week7 week8 week9
+make -C projects/toyos test-all
 ```
 
 See [`projects/toyos/README.md`](projects/toyos/README.md) for run, expected

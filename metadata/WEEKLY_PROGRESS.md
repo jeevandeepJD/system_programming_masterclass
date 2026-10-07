@@ -137,11 +137,42 @@ or imply completion.
 - Project profile: `CONFIG_MILESTONE=7`, extending the Week 6 kernel rather
   than forking a second implementation
 
-Weeks 6 and 7 are prepared ahead. They do not change the current Week 1
-resume point, complete any foundation gate, or imply learner mastery. Week 7
-contains ring-0 **kernel tasks**, not isolated user processes: ring 3,
-syscalls, user ELF loading, per-process address spaces, and process isolation
-remain Week 8 topics.
+## Prepared Week 8 package
+
+- Package entry:
+  [`08-user-mode-syscalls-and-ipc/overview.md`](../08-user-mode-syscalls-and-ipc/overview.md)
+- Sources and labs:
+  [`08-user-mode-syscalls-and-ipc/`](../08-user-mode-syscalls-and-ipc/)
+- Continuous project:
+  [`projects/toyos/`](../projects/toyos/)
+- Scope: one ring-3 process, a process-owned address space, embedded ELF
+  loading, bounded user copying, a small syscall/descriptor model, and a
+  bounded pipe
+- Project profile: `CONFIG_MILESTONE=8`, extending the same Week 6–7 kernel
+- Boundary: syscall entry deliberately uses a DPL3 `int 0x80` interrupt gate,
+  not `SYSCALL`/`SYSRET`; there is no fork/exec, blocking IPC, shared-memory
+  IPC, or implemented signal delivery
+
+## Prepared Week 9 package
+
+- Package entry:
+  [`09-filesystems-and-virtual-devices/overview.md`](../09-filesystems-and-virtual-devices/overview.md)
+- Sources and labs:
+  [`09-filesystems-and-virtual-devices/`](../09-filesystems-and-virtual-devices/)
+- Continuous project:
+  [`projects/toyos/`](../projects/toyos/)
+- Scope: a tiny ramfs/VFS with inode, open-file offset, descriptor, and
+  ring-3 `open`/`read`/`write` paths; plus PCI bus-0 enumeration, QEMU EDU
+  BAR0 mapping, and checked MMIO liveness
+- Project profile: `CONFIG_MILESTONE=9`, extending the same continuous kernel
+- Boundary: there is no actual block layer, page cache, journaling, device
+  IRQ operation, or DMA
+
+Weeks 6–9 are prepared ahead. They do not change the current Week 1 resume
+point, complete any foundation gate, or imply learner mastery. Week 7 contains
+ring-0 **kernel tasks**, while Week 8 introduces only one deliberately bounded
+user process. Week 9 demonstrates ramfs/VFS and PCI/MMIO boundaries without
+claiming a production storage or device stack.
 
 ## Approved follow-on track
 

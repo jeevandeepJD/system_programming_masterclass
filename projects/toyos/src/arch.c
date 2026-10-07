@@ -26,8 +26,11 @@ struct __attribute__((packed)) tss64 {
 };
 
 extern void irq0_stub(void);
+#if CONFIG_MILESTONE >= 8
+extern void syscall_int_stub(void);
+#endif
 
-static uint64_t gdt[5];
+static uint64_t gdt[7];
 static struct tss64 tss;
 static struct idt_entry idt[256];
 static uint8_t interrupt_stack[16384] __attribute__((aligned(16)));
@@ -124,13 +127,14 @@ void panic_at(const char *message, const char *file, unsigned line)
 #endif
 }
 
-static void set_idt_gate(unsigned vector, void (*handler)(void), uint8_t ist)
+static void set_idt_gate(unsigned vector, void (*handler)(void), uint8_t ist,
+                         uint8_t attributes)
 {
     const uint64_t address = (uint64_t)(uintptr_t)handler;
     idt[vector].offset_low = (uint16_t)address;
     idt[vector].selector = 0x08;
     idt[vector].ist = ist;
-    idt[vector].attributes = 0x8e;
+    idt[vector].attributes = attributes;
     idt[vector].offset_middle = (uint16_t)(address >> 16U);
     idt[vector].offset_high = (uint32_t)(address >> 32U);
     idt[vector].reserved = 0;
@@ -143,10 +147,14 @@ static void gdt_init(void)
     gdt[0] = 0;
     gdt[1] = 0x00af9a000000ffffULL;
     gdt[2] = 0x00cf92000000ffffULL;
-    gdt[3] = (limit & 0xffffU) | ((base & 0xffffffU) << 16U)
+#if CONFIG_MILESTONE >= 8
+    gdt[3] = 0x00cff2000000ffffULL;
+    gdt[4] = 0x00affa000000ffffULL;
+#endif
+    gdt[5] = (limit & 0xffffU) | ((base & 0xffffffU) << 16U)
         | (0x89ULL << 40U) | ((limit & 0xf0000U) << 32U)
         | ((base & 0xff000000U) << 32U);
-    gdt[4] = base >> 32U;
+    gdt[6] = base >> 32U;
 
     tss.rsp[0] = (uint64_t)(uintptr_t)(interrupt_stack + sizeof(interrupt_stack));
     tss.ist[0] = tss.rsp[0];
@@ -166,7 +174,7 @@ static void gdt_init(void)
         "movw %%ax, %%ds\n"
         "movw %%ax, %%es\n"
         "movw %%ax, %%ss\n"
-        "movw $0x18, %%ax\n"
+        "movw $0x28, %%ax\n"
         "ltr %%ax\n"
         : : "m"(pointer) : "rax", "memory"
     );
@@ -198,9 +206,12 @@ void arch_init(void)
     gdt_init();
     for (unsigned i = 0; i < 32U; ++i) {
         const uint8_t ist = (i == 2U || i == 8U || i == 14U) ? 1U : 0U;
-        set_idt_gate(i, isr_stub_table[i], ist);
+        set_idt_gate(i, isr_stub_table[i], ist, 0x8e);
     }
-    set_idt_gate(32, irq0_stub, 0);
+    set_idt_gate(32, irq0_stub, 0, 0x8e);
+#if CONFIG_MILESTONE >= 8
+    set_idt_gate(128, syscall_int_stub, 0, 0xee);
+#endif
     const struct descriptor_pointer pointer = {
         .limit = (uint16_t)(sizeof(idt) - 1U),
         .base = (uint64_t)(uintptr_t)idt
@@ -217,6 +228,12 @@ void interrupts_enable(void)
 uint64_t timer_ticks(void)
 {
     return ticks;
+}
+
+void arch_set_kernel_stack(uint64_t stack_top)
+{
+    ASSERT((stack_top & 0xfU) == 0U);
+    tss.rsp[0] = stack_top;
 }
 
 void interrupt_handler(struct interrupt_frame *frame)
@@ -240,6 +257,13 @@ void interrupt_handler(struct interrupt_frame *frame)
 #endif
         return;
     }
+
+#if CONFIG_MILESTONE >= 8
+    if (frame->vector == 128U) {
+        syscall_dispatch(frame);
+        return;
+    }
+#endif
 
     if (frame->vector == 3U) {
         serial_write("SELFTEST: IDT breakpoint frame PASS\n");

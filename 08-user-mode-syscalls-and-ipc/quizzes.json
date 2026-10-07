@@ -1,0 +1,75 @@
+{
+  "week": 8,
+  "days": [
+    {
+      "day": 1,
+      "title": "Ring 3, GDT, TSS, and iretq",
+      "questions": [
+        {"prompt": "What does TSS RSP0 provide on ToyOS's CPL3-to-CPL0 gate transition?", "options": ["The trusted kernel stack pointer", "The user ELF entry", "The active PML4", "The syscall number"], "answer": 0, "explanation": "The CPU loads RSP0 when the interrupt gate changes privilege; the process kernel stack must already be valid."},
+        {"prompt": "What frame order does enter_user construct for iretq?", "options": ["RAX, RDI, RSI", "SS, RSP, RFLAGS, CS, RIP", "CR3, CR2, RIP", "PID, entry, stack"], "answer": 1, "explanation": "Those five values define the less-privileged continuation consumed by iretq."},
+        {"prompt": "Why may CPL3 invoke IDT vector 128?", "options": ["Every IDT gate is user-callable.", "RSP0 bypasses gate checks.", "The gate has DPL3 attributes 0xee.", "Vector 128 is an exception."], "answer": 2, "explanation": "Software INT performs a gate privilege check; ToyOS deliberately gives this gate DPL3."},
+        {"prompt": "Who owns the 16 KiB process kernel-stack bytes?", "options": ["The TSS descriptor", "The user ELF", "The PIC", "The process for kernel lifetime; TSS only stores its top"], "answer": 3, "explanation": "The allocation is process state with no teardown path; the TSS contains a pointer, not ownership."}
+      ]
+    },
+    {
+      "day": 2,
+      "title": "User Address Spaces and Permissions",
+      "questions": [
+        {"prompt": "Why must PTE_USER be present through every walk level?", "options": ["x86 combines permissions across paging levels.", "Only the leaf address is physical.", "It enables interrupts.", "CR3 requires writable code."], "answer": 0, "explanation": "A supervisor-only parent prevents user access even if the leaf has U/S set."},
+        {"prompt": "What does address_space_create share with the process?", "options": ["Only the user stack", "Existing supervisor kernel mappings and underlying structures", "Pipe descriptors only", "Nothing at all"], "answer": 1, "explanation": "The new root copies kernel entries and a low PDPT, then creates private user branches while kernel leaves remain supervisor-only."},
+        {"prompt": "Which pair must remain synchronized in current ToyOS?", "options": ["PID and pipe length", "RIP and COM1", "Hardware CR3 and software active_root", "GDT and ELF phnum"], "answer": 2, "explanation": "Safe-copy walks active_root while hardware executes with CR3; disagreement validates the wrong address space."},
+        {"prompt": "What does a private PML4 prove by itself?", "options": ["Complete hostile isolation", "W^X", "Demand paging", "Only that the root frame is distinct, not that all reachable mappings are private"], "answer": 3, "explanation": "Copied entries can reference shared tables and frames; leaf and parent permissions determine access."}
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Embedded ELF Loader",
+      "questions": [
+        {"prompt": "Why does range_inside subtract after checking offset <= total?", "options": ["To avoid overflow in offset plus length validation", "To align the stack", "To set PTE_USER", "To compute PID"], "answer": 0, "explanation": "length <= total - offset is safe once offset is known to be within total."},
+        {"prompt": "What happens when p_memsz exceeds p_filesz?", "options": ["The loader rejects every such ELF.", "New zeroed frames supply the uncopied bytes.", "The stack stores the difference.", "The pipe fills it."], "answer": 1, "explanation": "frame_alloc zeroes frames and the loader copies only file_size bytes, yielding zero-initialized remainder."},
+        {"prompt": "Which protection is not enforced by the current loader?", "options": ["User accessibility", "Segment address bounds", "W^X/NX from ELF flags", "File-range bounds"], "answer": 2, "explanation": "All PT_LOAD pages are mapped writable user pages; p_flags are not translated into final protections."},
+        {"prompt": "What is missing from load failure handling?", "options": ["An ELF magic", "A machine check", "A program-header loop", "Rollback and reclamation of frames already allocated"], "answer": 3, "explanation": "A later failure returns false but does not unwind prior page tables or segment frames."}
+      ]
+    },
+    {
+      "day": 4,
+      "title": "int 0x80 Syscall ABI",
+      "questions": [
+        {"prompt": "Where does ToyOS place the syscall number?", "options": ["RAX", "CR3", "CS", "RSP0"], "answer": 0, "explanation": "The user/kernel ABI assigns RAX to the number and to the returned result."},
+        {"prompt": "Why is struct interrupt_frame an ABI?", "options": ["It names pipe descriptors.", "Assembly save order must match C field offsets.", "It validates ELF magic.", "It allocates page tables."], "answer": 1, "explanation": "The C handler interprets bytes pushed by assembly; layout disagreement corrupts the boundary."},
+        {"prompt": "What does the unknown-syscall profile actually test?", "options": ["SYSRET canonical checks", "A ring-3 page fault", "Direct dispatcher policy returning -38", "Pipe blocking"], "answer": 2, "explanation": "It constructs a synthetic frame and calls syscall_dispatch before user entry."},
+        {"prompt": "Why is ToyOS not using SYSCALL/SYSRET?", "options": ["Long mode forbids them.", "int 0x80 is always faster.", "ELF requires interrupt gates.", "ToyOS relies on the gate/TSS stack switch and lacks safe per-CPU fast-entry machinery."], "answer": 3, "explanation": "SYSCALL does not switch stacks itself and safe SYSRET use needs additional state and validation."}
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Safe User Copying",
+      "questions": [
+        {"prompt": "Why does user_copy translate each page separately?", "options": ["Permissions or presence can change at the next page boundary.", "Every byte has a PML4.", "The pipe is page-sized.", "RAX resets on each page."], "answer": 0, "explanation": "A range may begin valid and cross into an absent or wrongly permitted page."},
+        {"prompt": "What extra permission does copy_to_user require?", "options": ["Executable", "Writable", "Global", "Huge"], "answer": 1, "explanation": "Kernel-to-user copying modifies user memory, so every traversed entry must permit the selected write policy."},
+        {"prompt": "What happens in the bad-pointer profile?", "options": ["CPL3 faults and receives a signal.", "The kernel dereferences 0x1234.", "The software walker rejects 0x1234 before user entry.", "QEMU ignores the pointer."], "answer": 2, "explanation": "copy_from_user returns false without requiring an architectural page fault."},
+        {"prompt": "Which bound protects the dispatcher's local byte array?", "options": ["64-byte pipe capacity", "Four stack pages", "4096-byte helper ceiling only", "MAX_IO of 256 before the copy"], "answer": 3, "explanation": "The dispatcher enforces its smaller local-buffer bound independently of the generic helper bound."}
+      ]
+    },
+    {
+      "day": 6,
+      "title": "Process, Descriptors, and IPC",
+      "questions": [
+        {"prompt": "What are Week 8 descriptors 3 and 4?", "options": ["Fixed read/write conventions for one global pipe", "Per-process reference-counted files", "Shared-memory object IDs", "Signal numbers"], "answer": 0, "explanation": "There is no descriptor table or open-file object in this milestone."},
+        {"prompt": "Why is the pipe not a circular buffer?", "options": ["It uses user pages.", "Read space is never reused; writes append at pipe_length.", "It has no bytes.", "It blocks on wrap."], "answer": 1, "explanation": "pipe_read_position advances independently while pipe_length only grows until reset."},
+        {"prompt": "What IPC feature is absent?", "options": ["A bounded copied message", "A read endpoint", "Shared user mappings of the same physical frames", "A write endpoint"], "answer": 2, "explanation": "ToyOS implements copied pipe IPC, not shared-memory IPC."},
+        {"prompt": "What does ToyOS implement for signals?", "options": ["POSIX dispositions", "Masked pending sets", "User signal frames", "No signal delivery; the lesson marks the conceptual boundary"], "answer": 3, "explanation": "Interrupt frames are an ingredient, but asynchronous signal state and user-return policy are absent."}
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Integrated Trace and Comparison",
+      "questions": [
+        {"prompt": "What should an integrated syscall event record?", "options": ["CPL, CR3, stack/frame/buffer owners, interrupt state, and evidence", "Only wall-clock time", "Only the syscall name", "Only source line numbers"], "answer": 0, "explanation": "These fields expose architecture transitions and ownership instead of hiding them behind one label."},
+        {"prompt": "Which host statuses match normal, bad-pointer, and unknown-syscall profiles?", "options": ["0, 1, 2", "33, 43, 45", "16, 21, 22", "35, 39, 41"], "answer": 1, "explanation": "The harness observes QEMU isa-debug-exit encoded statuses 33, 43, and 45."},
+        {"prompt": "Which evidence identifies a user architectural page fault?", "options": ["Only a PASS marker", "Only the syscall number", "CR2, error bits, saved user state, CR3, and exact ELF", "Pipe capacity"], "answer": 2, "explanation": "Address, access classification, continuation, translation context, and symbols answer complementary questions."},
+        {"prompt": "What major capability does xv6 add over ToyOS Week 8?", "options": ["The same one static process", "Only COM1 output", "A DPL3 x86 gate", "Multiple process lifecycle, scheduling, descriptor objects, and synchronized pipes"], "answer": 3, "explanation": "xv6 is still educational but has substantially richer lifecycle and IPC ownership."}
+      ]
+    }
+  ]
+}

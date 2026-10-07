@@ -171,7 +171,7 @@ Use exercises to expose gaps rather than merely generate a score.
 - Specialization pivots, proof-of-fit sprints, active upstream issue
   selection, and ToyOS expansion are planned but deferred until their
   foundation gates.
-- Weeks 6–7 and the continuous `projects/toyos/` kernel are prepared but
+- Weeks 6–9 and the continuous `projects/toyos/` kernel are prepared but
   inactive; preparation does not advance the Week 1 resume point or any gate.
 
 ## Decision and Update Log
@@ -689,3 +689,27 @@ describe them as isolated user processes. Ring 3, syscall entry, safe user
 copies, per-process address spaces, user ELF loading, and IPC remain Week 8.
 These prepared artifacts do not change the current Week 1 resume point,
 complete a confidence gate, or establish learner mastery.
+
+### 2026-10-06 — Continuous ToyOS Weeks 8–9 prepared
+
+Weeks 8 and 9 are prepared as learner-facing source packages and as stable
+profiles of the same `projects/toyos/` kernel:
+
+- `08-user-mode-syscalls-and-ipc/` adds one ring-3 process, a process-owned
+  address space, embedded ELF loading, bounded user copies, a small
+  syscall/descriptor model, and a 64-byte pipe.
+- Week 8 deliberately uses a DPL3 `int 0x80` interrupt gate as its educational
+  syscall ABI. Do not describe it as a `SYSCALL`/`SYSRET` path. Fork/exec,
+  blocking or shared-memory IPC, and implemented signal delivery remain
+  absent.
+- `09-filesystems-and-virtual-devices/` adds a tiny ramfs/VFS and a QEMU EDU
+  path covering PCI bus-0 discovery, BAR0 mapping, and checked MMIO access.
+- Week 9 does not implement an actual block layer, page cache, journaling,
+  device IRQ operation, or DMA. Its storage-stack and IRQ/DMA material marks
+  conceptual or future boundaries rather than implemented behavior.
+- `CONFIG_MILESTONE=8` and `CONFIG_MILESTONE=9` preserve the new profiles
+  alongside Weeks 6–7; do not fork the kernel per week.
+
+These are prepared artifacts, not learner progress. Keep the authoritative
+resume point at Week 1 and do not infer mastery, confidence, time, or a
+completed foundation gate.

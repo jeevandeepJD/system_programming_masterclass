@@ -55,6 +55,14 @@ irq0_stub:
     pushq $32
     jmp isr_common
 
+#if CONFIG_MILESTONE >= 8
+.global syscall_int_stub
+syscall_int_stub:
+    pushq $0
+    pushq $128
+    jmp isr_common
+#endif
+
 isr_common:
     cld
     pushq %rax

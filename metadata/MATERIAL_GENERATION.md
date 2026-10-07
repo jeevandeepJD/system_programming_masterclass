@@ -125,8 +125,14 @@ record.
   `grub-mkrescue`, and the Multiboot2 boot contract used by ToyOS
 - Installed GDB documentation for QEMU remote debugging
 - The repository's [`projects/toyos/grub.cfg`](../projects/toyos/grub.cfg),
-  linker script, Makefile, serial logs, and ELF/map artifacts as reproducible
-  evidence for the prepared Week 6–7 boot path
+  linker scripts, Makefile, serial logs, ELF/map artifacts, profile-specific
+  GDB scripts, and checked QEMU harness as reproducible evidence for the
+  prepared Week 6–9 path
+- The [Week 8 overview](../08-user-mode-syscalls-and-ipc/overview.md) and
+  [Week 9 overview](../09-filesystems-and-virtual-devices/overview.md) as the
+  scope boundaries for their source packages: Week 8 uses educational
+  `int 0x80`, not `SYSCALL`/`SYSRET`; Week 9 implements ramfs/VFS and QEMU EDU
+  PCI/MMIO, not a block/page-cache/journaling or IRQ/DMA stack
 - Limine protocol/documentation only if a later milestone deliberately
   evaluates it as an alternative boot path; do not describe the current
   GRUB2/Multiboot2 implementation as Limine-based
@@ -155,4 +161,8 @@ record.
 - Simulation is not silicon measurement.
 - Passing a quiz demonstrates recall, not implementation mastery.
 - A working toy kernel does not demonstrate production-kernel competence.
+- ToyOS Week 8's one-process syscall/pipe model is not a complete process,
+  IPC, or signal implementation.
+- ToyOS Week 9's ramfs and polled EDU MMIO path are not evidence of a real
+  storage stack, durable filesystem, interrupt-driven driver, or DMA support.
 - Upstream review and real debugging evidence remain required outcomes.

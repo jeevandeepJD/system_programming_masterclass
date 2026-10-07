@@ -1734,3 +1734,27 @@ per-process address spaces, and IPC remain Week 8.
 This is a material-generation checkpoint only. The authoritative learner
 resume remains Week 1, no confidence gate has advanced, and no mastery,
 completion, time, or confidence is inferred.
+
+### 44. PREPARED TOYOS WEEK 8–9 CHECKPOINT — 2026-10-06
+
+The next two source packages and profiles of the continuous ToyOS kernel are
+prepared:
+
+- `08-user-mode-syscalls-and-ipc/` follows one embedded ELF process into ring
+  3 with a process-owned PML4 and user stack, bounded user copying, a small
+  descriptor convention, and a 64-byte pipe.
+- Week 8 uses an educational DPL3 `int 0x80` interrupt gate and returns with
+  `iretq`; it does not implement `SYSCALL`/`SYSRET`. Process and IPC behavior
+  is deliberately bounded, and signal delivery is not implemented.
+- `09-filesystems-and-virtual-devices/` adds a tiny two-inode ramfs/VFS with
+  open-file offsets and ring-3 `open`/`read`/`write`, then discovers QEMU EDU
+  on PCI bus 0, maps BAR0, and exercises checked MMIO.
+- Week 9 has no real block layer, page cache, journaling, device IRQ path, or
+  DMA. Those remain comparison or future-work boundaries.
+- `projects/toyos/` remains one kernel with stable
+  `CONFIG_MILESTONE=8`/`CONFIG_MILESTONE=9` profiles alongside Weeks 6–7.
+
+The package entry points are the Week 8 and Week 9 `overview.md` files; no
+consolidated Week 8/9 PDF is recorded at this checkpoint. This preparation
+does not alter the authoritative Week 1 resume point, advance any confidence
+gate, or establish mastery.

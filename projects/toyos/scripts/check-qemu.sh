@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 set -u
 
-if [[ $# -ne 3 ]]; then
-    echo "usage: $0 ISO EXPECTED-QEMU-STATUS EXPECTED-LOG" >&2
+if [[ $# -lt 3 ]]; then
+    echo "usage: $0 ISO EXPECTED-QEMU-STATUS EXPECTED-LOG [QEMU-ARG ...]" >&2
     exit 2
 fi
 
 iso=$1
 expected_status=$2
 expected_log=$3
+shift 3
 log=$(mktemp)
 trap 'rm -f "$log"' EXIT
 
@@ -21,6 +22,7 @@ timeout 12s qemu-system-x86_64 \
     -monitor none \
     -no-reboot \
     -device isa-debug-exit \
+    "$@" \
     -cdrom "$iso" >"$log" 2>&1
 status=$?
 set -e

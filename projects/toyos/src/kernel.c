@@ -39,8 +39,17 @@ void kernel_main(uint32_t magic, uint32_t multiboot_info)
 
 #if CONFIG_MILESTONE >= 7
     memory_init(multiboot_info);
+#if CONFIG_MILESTONE >= 9
+    vfs_init();
+    edu_init();
+#endif
+#if CONFIG_MILESTONE >= 8
+    process_init();
+    process_start();
+#else
     tasks_init();
     tasks_start();
+#endif
 #else
     serial_write("WEEK6: PASS\n");
     qemu_exit(0x10);

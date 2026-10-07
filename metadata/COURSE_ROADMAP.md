@@ -87,13 +87,23 @@ Create the next topic packages only after evidence from Phases 1–2:
 - [Week 7](../07-memory-processes-and-scheduling/week-07-material.pdf):
   memory map, page-frame allocator, paging, kernel heap, ring-0 kernel task
   state, context switching, timer, and cooperative then preemptive scheduling.
-- `08-user-mode-syscalls-and-ipc/`: ring 3, syscall entry, user copies, address spaces, ELF user loader, signals, pipes/shared memory, descriptor table.
-- `09-filesystems-and-virtual-devices/`: ramfs/VFS concepts, block I/O path, PCI/MMIO/interrupts/DMA, optional virtio.
+- [Week 8](../08-user-mode-syscalls-and-ipc/overview.md): one ring-3 process,
+  a process-owned address space, embedded ELF loading, bounded user copies,
+  descriptors, and a small pipe. Its educational syscall ABI uses a DPL3
+  `int 0x80` interrupt gate, not `SYSCALL`/`SYSRET`; fork/exec, blocking or
+  shared-memory IPC, and implemented signal delivery remain outside the
+  prepared profile.
+- [Week 9](../09-filesystems-and-virtual-devices/overview.md): a tiny
+  ramfs/VFS with ring-3 descriptor I/O, plus PCI bus-0 discovery, QEMU EDU
+  BAR0 mapping, and checked MMIO. The storage-stack lesson is comparative:
+  the profile has no actual block layer, page cache, journaling, device IRQ
+  operation, or DMA.
 
-Weeks 6–7 use the single continuous
+Weeks 6–9 use the single continuous
 [`projects/toyos`](../projects/toyos/) implementation with milestone build
-profiles. Week 7 does not claim isolated user processes; user mode and
-syscalls remain Week 8.
+profiles. Week 7 does not claim isolated user processes; Week 8 adds one
+deliberately bounded user process, and Week 9 does not claim a production
+filesystem, storage stack, or driver.
 
 Every milestone follows:
 - Question → design → predict → implement → observe → break/debug → compare with xv6 → compare with Linux.
