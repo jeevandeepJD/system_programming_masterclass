@@ -383,6 +383,12 @@ def main() -> None:
         ).replace(
             "](challenges/",
             "](repo-relative:challenges/",
+        ).replace(
+            "](quizzes.json",
+            "](repo-relative:quizzes.json",
+        ).replace(
+            "](week-",
+            "](repo-relative:week-",
         )
         if portable_overview != overview_text:
             rendered_overview = temp_dir / overview.name

@@ -1,0 +1,355 @@
+{
+  "week": 10,
+  "days": [
+    {
+      "day": 1,
+      "title": "Process Mental Model",
+      "questions": [
+        {
+          "prompt": "What best distinguishes a process from a program?",
+          "options": [
+            "A process is a live kernel-managed execution context; a program is passive executable input",
+            "A process is only an ELF file in RAM",
+            "A program always has a PID",
+            "They are exact synonyms"
+          ],
+          "answer": 0,
+          "explanation": "Exec can replace an image while preserving PID, and one executable can back many processes."
+        },
+        {
+          "prompt": "Where does a current regular-file offset normally live?",
+          "options": [
+            "In the descriptor integer",
+            "In the open-file description",
+            "In the ELF header",
+            "In the PID namespace"
+          ],
+          "answer": 1,
+          "explanation": "Descriptor entries reference an open-file description, which owns offset and file status flags."
+        },
+        {
+          "prompt": "Why is a bare PID weak long-term identity?",
+          "options": [
+            "It is encrypted",
+            "It can be reused and is namespace-relative",
+            "It changes on every syscall",
+            "It names only files"
+          ],
+          "answer": 1,
+          "explanation": "PID numbers are scoped by PID namespaces and can be reused after release."
+        },
+        {
+          "prompt": "Which is architecture-specific in today\u2019s model?",
+          "options": [
+            "Credential policy",
+            "Descriptor lifetime",
+            "Syscall entry instruction/register ABI",
+            "Parent-child meaning"
+          ],
+          "answer": 2,
+          "explanation": "Entry differs across ISAs; generic process policy should not be attributed to that instruction."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Fork, COW, and Lineage",
+      "questions": [
+        {
+          "prompt": "What does successful fork return in the child?",
+          "options": [
+            "The parent PID",
+            "Zero",
+            "Minus one",
+            "The child PID"
+          ],
+          "answer": 1,
+          "explanation": "The parent receives the child PID while the child receives zero."
+        },
+        {
+          "prompt": "What is shared after ordinary fork?",
+          "options": [
+            "The descriptor table object itself in all cases",
+            "The C stack as one mutable object",
+            "Referenced open-file descriptions",
+            "The PID"
+          ],
+          "answer": 2,
+          "explanation": "Tables are copied, but corresponding entries reference the same open-file descriptions."
+        },
+        {
+          "prompt": "What does COW guarantee at the API level?",
+          "options": [
+            "Fixed physical frame numbers",
+            "Same initial memory contents with private-write semantics",
+            "No page faults",
+            "Shared ordinary globals forever"
+          ],
+          "answer": 1,
+          "explanation": "Physical implementation can vary; process-visible private writes are the key semantics."
+        },
+        {
+          "prompt": "Why does the parent close its pipe write end?",
+          "options": [
+            "To change PID",
+            "So EOF can occur after child writers close",
+            "To force COW",
+            "To install a signal"
+          ],
+          "answer": 1,
+          "explanation": "Any remaining write reference can prevent a reader from observing EOF."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Exec, ELF, and Inheritance",
+      "questions": [
+        {
+          "prompt": "What happens to PID after successful execve?",
+          "options": [
+            "It is preserved",
+            "It becomes zero",
+            "It becomes the parent PID",
+            "It is always incremented"
+          ],
+          "answer": 0,
+          "explanation": "Exec replaces the image of the existing process rather than creating another process."
+        },
+        {
+          "prompt": "What does successful execve return?",
+          "options": [
+            "Zero",
+            "The ELF entry",
+            "It does not return",
+            "The new PID"
+          ],
+          "answer": 2,
+          "explanation": "Execution begins in the new image; only failure returns to the old image."
+        },
+        {
+          "prompt": "Which flag closes a descriptor on successful exec?",
+          "options": [
+            "SA_RESTART",
+            "FD_CLOEXEC",
+            "WNOHANG",
+            "SIG_BLOCK"
+          ],
+          "answer": 1,
+          "explanation": "FD_CLOEXEC belongs to the descriptor entry and is applied during exec."
+        },
+        {
+          "prompt": "Is main normally the ELF entry point?",
+          "options": [
+            "Always",
+            "No; startup/runtime code normally reaches main",
+            "Only for scripts",
+            "Only after fork failure"
+          ],
+          "answer": 1,
+          "explanation": "The ELF entry starts runtime setup; main is a language-level convention."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Wait, Zombies, and Reparenting",
+      "questions": [
+        {
+          "prompt": "When may WEXITSTATUS be used?",
+          "options": [
+            "Only after WIFEXITED is true",
+            "For every raw status",
+            "Only for signaled children",
+            "Before waitpid"
+          ],
+          "answer": 0,
+          "explanation": "Status extractors must be guarded by the matching predicate."
+        },
+        {
+          "prompt": "What is a zombie?",
+          "options": [
+            "A running child using CPU",
+            "Retained exit/status state awaiting consumption",
+            "An orphan only",
+            "A stopped process"
+          ],
+          "answer": 1,
+          "explanation": "Execution ended; the kernel retains enough state for wait."
+        },
+        {
+          "prompt": "Why use a subreaper in the lab?",
+          "options": [
+            "To require root",
+            "To make adoption deterministic without assuming host PID 1",
+            "To prevent fork",
+            "To change ELF"
+          ],
+          "answer": 1,
+          "explanation": "Containers and PID namespaces make a blanket PPID=1 expectation unreliable."
+        },
+        {
+          "prompt": "What proves the second wait failure path?",
+          "options": [
+            "EINVAL",
+            "ENOENT",
+            "ECHILD",
+            "ESRCH"
+          ],
+          "answer": 2,
+          "explanation": "After status is consumed and no waitable child remains, waitpid reports ECHILD."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Signals and Safe Handlers",
+      "questions": [
+        {
+          "prompt": "What happens when SIGUSR1 is generated while blocked?",
+          "options": [
+            "It must vanish",
+            "It can remain pending until unblocked",
+            "It runs printf safely",
+            "It becomes SIGKILL"
+          ],
+          "answer": 1,
+          "explanation": "Blocking delays delivery; pending state records the event under signal semantics."
+        },
+        {
+          "prompt": "Which handler action is used by the self-pipe mode?",
+          "options": [
+            "malloc",
+            "printf",
+            "One write of a byte",
+            "pthread_mutex_lock"
+          ],
+          "answer": 2,
+          "explanation": "write is async-signal-safe; normal flow performs complex work."
+        },
+        {
+          "prompt": "What is process-wide rather than per-thread?",
+          "options": [
+            "Blocked mask",
+            "Signal disposition",
+            "CPU registers",
+            "Thread stack"
+          ],
+          "answer": 1,
+          "explanation": "Masks are per-thread while dispositions are process-wide."
+        },
+        {
+          "prompt": "Where is architecture detail justified?",
+          "options": [
+            "Signal frame setup and return ABI",
+            "Meaning of ECHILD",
+            "Process-group policy",
+            "C object lifetime"
+          ],
+          "answer": 0,
+          "explanation": "Signal frame layout and return machinery depend on the ISA ABI."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "Shell and Job Control",
+      "questions": [
+        {
+          "prompt": "What does a PGID identify?",
+          "options": [
+            "A virtual address",
+            "A process group used to represent a job",
+            "An ELF segment",
+            "A file offset"
+          ],
+          "answer": 1,
+          "explanation": "A process group lets shells and terminals address a multi-process job."
+        },
+        {
+          "prompt": "What does the terminal track for foreground access?",
+          "options": [
+            "One foreground process group",
+            "One ELF hash",
+            "Every child PID",
+            "One open-file offset"
+          ],
+          "answer": 0,
+          "explanation": "The controlling terminal records a foreground PGID."
+        },
+        {
+          "prompt": "Why must a shell close unused pipe ends?",
+          "options": [
+            "To alter SID",
+            "To allow EOF and avoid descriptor leaks",
+            "To reset credentials",
+            "To enable COW"
+          ],
+          "answer": 1,
+          "explanation": "A retained writer can keep readers blocked, and leaked descriptors extend lifetimes."
+        },
+        {
+          "prompt": "What does Day 6 deliberately avoid?",
+          "options": [
+            "Waiting for its child",
+            "Reading self IDs",
+            "Manipulating the active terminal with tcsetpgrp",
+            "A bounded child group"
+          ],
+          "answer": 2,
+          "explanation": "The lab teaches job-control concepts without disrupting the IDE terminal."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Debugging and Comparison",
+      "questions": [
+        {
+          "prompt": "What must precede symbolic interpretation?",
+          "options": [
+            "Artifact and process identity",
+            "A broad signal broadcast",
+            "Root access",
+            "A kernel rebuild"
+          ],
+          "answer": 0,
+          "explanation": "Hashes, versions, invocation, and process identity ground later claims."
+        },
+        {
+          "prompt": "What does strace primarily provide here?",
+          "options": [
+            "Kernel source proof",
+            "Decoded syscall-boundary evidence",
+            "Physical-page ownership",
+            "A full signal frame"
+          ],
+          "answer": 1,
+          "explanation": "Tracing shows syscall events and returns, with tool and timing limits."
+        },
+        {
+          "prompt": "What should happen when an optional tool is absent?",
+          "options": [
+            "Invent expected output",
+            "Fail every lesson",
+            "Record an explicit skip",
+            "Trace another process"
+          ],
+          "answer": 2,
+          "explanation": "A clear skip preserves evidence integrity."
+        },
+        {
+          "prompt": "Why pin ToyOS/xv6/Linux revisions?",
+          "options": [
+            "Source paths and implementations change",
+            "PIDs require Git",
+            "ELF forbids tags",
+            "waitpid changes C syntax"
+          ],
+          "answer": 0,
+          "explanation": "Exact source landmarks and line-level claims are meaningful only against identified revisions."
+        }
+      ]
+    }
+  ]
+}

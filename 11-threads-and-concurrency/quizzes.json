@@ -1,0 +1,75 @@
+{
+  "week": 11,
+  "days": [
+    {
+      "day": 1,
+      "title": "Threads, Processes, Stacks, and TLS",
+      "questions": [
+        {"prompt": "Which resource is normally per-thread?", "options": ["Address space", "Current working directory", "Execution stack", "Signal dispositions"], "answer": 2, "explanation": "Threads have distinct stacks while sharing the process address space and many process resources."},
+        {"prompt": "Why is passing the caller's local token safe in the basic lab?", "options": ["All stack objects are process-lifetime", "The caller remains in scope until after join", "pthread_create copies pointed-to bytes", "TLS owns the token"], "answer": 1, "explanation": "The object remains alive until join; creation does not copy arbitrary pointed-to storage."},
+        {"prompt": "What is the safest role for clone-family details here?", "options": ["Portable API contract", "Linux implementation intuition tied to versions", "Replacement for pthread_create", "Proof of scheduling order"], "answer": 1, "explanation": "Linux often implements pthread creation with clone-family sharing, but applications rely on pthread contracts."},
+        {"prompt": "What does TLS provide?", "options": ["One process-wide instance", "One instance per thread", "Automatic mutual exclusion", "Permanent storage after thread exit"], "answer": 1, "explanation": "TLS separates instances; it does not automatically synchronize published pointers or extend lifetime."}
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Data Races and the C Abstract Machine",
+      "questions": [
+        {"prompt": "When do conflicting C accesses form a data race?", "options": ["Whenever values differ", "When unordered by happens-before and at least one is non-atomic", "Only on multicore CPUs", "Only when output is wrong"], "answer": 1, "explanation": "The C definition depends on conflicting actions, atomicity, and happens-before—not observed wall-clock overlap."},
+        {"prompt": "Why can counter++ lose updates?", "options": ["It is always a mutex operation", "Its ordinary read-modify-write is not atomic", "Integer addition is forbidden", "pthread_join resets it"], "answer": 1, "explanation": "Workers can conflict on the read and write; in C that race makes the execution undefined."},
+        {"prompt": "Does volatile repair the counter race?", "options": ["Yes, on x86 only", "Yes, if aligned", "No; it does not provide atomicity or inter-thread happens-before", "Only under TSan"], "answer": 2, "explanation": "Volatile access semantics are not thread synchronization."},
+        {"prompt": "What does a clean TSan run prove?", "options": ["All executions are race-free", "Only that no report arose on covered paths in that run", "The CPU is sequentially consistent", "Object lifetimes are all valid"], "answer": 1, "explanation": "TSan is dynamic and can miss unexecuted paths, schedules, or unsupported synchronization."}
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Mutexes, Ownership, and Futexes",
+      "questions": [
+        {"prompt": "What should define a mutex's scope?", "options": ["A named shared invariant", "A fixed line count", "Every function call", "A futex syscall"], "answer": 0, "explanation": "All accesses participating in the invariant must follow the same locking protocol."},
+        {"prompt": "Who frees the ownership-mode heap object?", "options": ["Worker before returning it", "Parent after join validates it", "pthread_create", "The kernel at mutex unlock"], "answer": 1, "explanation": "Ownership returns through join and the parent performs the one free."},
+        {"prompt": "How does global lock ordering prevent classic deadlock?", "options": ["It removes all mutexes", "It prevents circular wait", "It guarantees FIFO fairness", "It preempts owners"], "answer": 1, "explanation": "Consistent increasing acquisition order makes a lock-cycle impossible."},
+        {"prompt": "Why might strace show no futex calls for a mutex run?", "options": ["The mutex was not used", "Uncontended paths can remain in userspace", "Futexes are compile-time only", "POSIX forbids futexes"], "answer": 1, "explanation": "Linux libc mutexes commonly use atomic fast paths and enter the kernel on contention."}
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Condition Variables and Bounded Queues",
+      "questions": [
+        {"prompt": "What protects the queue predicate?", "options": ["The condition variable alone", "The queue mutex", "The sentinel value", "pthread_join"], "answer": 1, "explanation": "The mutex protects count/head/tail and the predicates derived from them."},
+        {"prompt": "Why wait in a while loop?", "options": ["To force FIFO scheduling", "Wakeups can be spurious or another thread can consume the state", "Signals are stored forever", "To avoid locking"], "answer": 1, "explanation": "Every return from wait must re-check the protected predicate after reacquiring the mutex."},
+        {"prompt": "Is a condition-variable signal a stored permit?", "options": ["Always", "Only on Linux", "No; shared state persists, not the notification", "Only with broadcast"], "answer": 2, "explanation": "A signal with no waiter is not banked like a semaphore count."},
+        {"prompt": "Why enqueue one sentinel per consumer?", "options": ["Each consumer needs one termination item", "To resize the queue", "To make spurious wakeups impossible", "To initialize TLS"], "answer": 0, "explanation": "Each consumer removes one sentinel and exits after all producers have joined."}
+      ]
+    },
+    {
+      "day": 5,
+      "title": "C11 Atomics and Memory Ordering",
+      "questions": [
+        {"prompt": "What does a relaxed atomic fetch-add guarantee here?", "options": ["Publication of all objects", "Indivisible updates in the counter's modification order", "Sequential consistency for the program", "Fair scheduling"], "answer": 1, "explanation": "Relaxed preserves atomicity and per-object modification order without ordering unrelated data."},
+        {"prompt": "What creates payload publication in the standard pattern?", "options": ["Release store observed by an acquire load", "Two unrelated relaxed stores", "A volatile pointer", "A timing delay"], "answer": 0, "explanation": "The release/acquire synchronizes-with edge orders prior payload initialization before consumption."},
+        {"prompt": "What may the relaxed store-buffering litmus report?", "options": ["Only both-one", "Both-zero is permitted by the stated C protocol", "Undefined behavior", "A portability proof for x86"], "answer": 1, "explanation": "All shared litmus variables are atomic, but relaxed ordering does not force either load to see the peer's store."},
+        {"prompt": "What establishes portable behavior?", "options": ["One x86-64 run", "The C abstract-machine rules", "One assembly listing", "Cache-line size"], "answer": 1, "explanation": "Compiler output and ISA behavior explain implementations; the C model defines portable semantics."}
+      ]
+    },
+    {
+      "day": 6,
+      "title": "Liveness, False Sharing, and Scalability",
+      "questions": [
+        {"prompt": "Which deadlock condition does global ordering break?", "options": ["Mutual exclusion", "Circular wait", "Resource existence", "Thread creation"], "answer": 1, "explanation": "A strict acquisition order prevents a cycle in the wait-for graph."},
+        {"prompt": "What does a timed-lock timeout generally prove?", "options": ["A deadlock always", "The lock was not acquired by the deadline", "The owner crashed", "The invariant was rolled back"], "answer": 1, "explanation": "Context is needed to distinguish deadlock from delay, overload, or priority effects."},
+        {"prompt": "What is false sharing?", "options": ["A C data race", "Independent hot writes interfering at cache-line granularity", "Two pointers to one allocation", "A spurious wakeup"], "answer": 1, "explanation": "Distinct atomic objects can contend through coherence when they occupy one line."},
+        {"prompt": "What can one adjacent-versus-padded timing establish?", "options": ["Universal speedup", "A hypothesis-generating observation only", "Cache-line causality", "Starvation freedom"], "answer": 1, "explanation": "Order, placement, load, topology, and too few samples confound the result."}
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Debugging, Tools, and System Comparison",
+      "questions": [
+        {"prompt": "What must ground a concurrency debug report?", "options": ["Artifact identity and exact reproduction", "A guessed schedule", "Root access", "One timing"], "answer": 0, "explanation": "Hashes, versions, flags, invocation, and logs tie evidence to the tested artifact."},
+        {"prompt": "If a TSan binary builds but its runtime aborts, what is the result?", "options": ["Race-free pass", "Explicit runtime-unavailable skip/diagnostic", "Confirmed race", "Compiler proof"], "answer": 1, "explanation": "Successful compilation does not establish that instrumentation executed meaningfully."},
+        {"prompt": "What should a deadlock debugger capture?", "options": ["Only the final counter", "All thread stacks and a wait-for graph", "Only assembly syntax", "A random PID"], "answer": 1, "explanation": "Current waits, owners, and dependencies allow the snapshot to be connected to the source protocol."},
+        {"prompt": "Why pin ToyOS, xv6, and Linux revisions?", "options": ["Implementations and teaching milestones differ", "Threads require Git", "Pthreads select revisions", "GDB changes source"], "answer": 0, "explanation": "Capabilities and source landmarks vary; comparison must identify the actual code examined."}
+      ]
+    }
+  ]
+}

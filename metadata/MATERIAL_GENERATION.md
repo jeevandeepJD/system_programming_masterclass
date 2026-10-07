@@ -136,6 +136,15 @@ record.
 - Limine protocol/documentation only if a later milestone deliberately
   evaluates it as an alternative boot path; do not describe the current
   GRUB2/Multiboot2 implementation as Limine-based
+- The [Week 10 overview](../10-linux-processes-and-signals/overview.md),
+  [Week 11 overview](../11-threads-and-concurrency/overview.md), and shared
+  [Linux system-programming lab](../projects/linux-system-programming/) for
+  bounded process, signal, pthread, synchronization, and memory-ordering
+  evidence
+- Installed Linux man-pages and local libc/pthread documentation are the
+  first references for these offline-first labs. `strace`, GDB, Valgrind,
+  ASan/UBSan, and ThreadSanitizer are optional observation tools, not package
+  prerequisites; ThreadSanitizer is unavailable on the prepared host/runtime.
 
 ### Linux kernel
 
@@ -165,4 +174,10 @@ record.
   IPC, or signal implementation.
 - ToyOS Week 9's ramfs and polled EDU MMIO path are not evidence of a real
   storage stack, durable filesystem, interrupt-driven driver, or DMA support.
+- Linux system-programming timing, scheduling, PID, trace, and relaxed-memory
+  observations vary by run and architecture. Deterministic tests check
+  invariants, not every interleaving.
+- An unavailable or skipped ThreadSanitizer run is not evidence that the
+  intentional Week 11 race is safe; the C data race remains undefined
+  behavior.
 - Upstream review and real debugging evidence remain required outcomes.

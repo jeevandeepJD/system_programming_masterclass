@@ -50,6 +50,11 @@ After the three review modules:
    [Week 8](08-user-mode-syscalls-and-ipc/overview.md) and
    [Week 9](09-filesystems-and-virtual-devices/overview.md) packages and the
    same kernel's Week 8/9 build profiles.
+6. Use the prepared
+   [Week 10](10-linux-processes-and-signals/overview.md) and
+   [Week 11](11-threads-and-concurrency/overview.md) source packages with the
+   shared [`projects/linux-system-programming`](projects/linux-system-programming/)
+   lab for Linux processes/signals and pthread concurrency.
 
 These later packages are prepared navigation targets, not evidence that the
 current Week 1 resume point or any confidence gate has advanced. Week 7 builds
@@ -59,6 +64,11 @@ and small pipe IPC. Its educational syscall path is a DPL3 `int 0x80` gate,
 not `SYSCALL`/`SYSRET`; process, IPC, and signal behavior remains deliberately
 simplified. Week 9 adds a tiny ramfs/VFS and QEMU EDU PCI discovery/BAR/MMIO
 access, but not a real block layer, page cache, journaling, device IRQ, or DMA.
+Weeks 10–11 return to Linux userspace for bounded process, signal, pthread,
+synchronization, liveness, and memory-ordering experiments. Optional analysis
+tools may be absent; in particular, ThreadSanitizer is unavailable on the
+prepared host/runtime and is not a prerequisite for using the deterministic
+labs.
 
 The chip-design and ToyOS tracks meet at the ISA boundary:
 
@@ -118,8 +128,20 @@ C / assembly → kernel → ToyOS
 │   ├── sections/
 │   ├── challenges/
 │   └── quizzes.json
+├── 10-linux-processes-and-signals/
+│   ├── overview.md
+│   ├── sections/
+│   ├── challenges/
+│   └── quizzes.json
+├── 11-threads-and-concurrency/
+│   ├── overview.md
+│   ├── sections/
+│   ├── challenges/
+│   └── quizzes.json
 ├── projects/
-│   └── toyos/                 continuous Week 6–9 x86-64 kernel project
+│   ├── toyos/                 continuous Week 6–9 x86-64 kernel project
+│   └── linux-system-programming/
+│                              shared Week 10–11 C17/POSIX lab
 ├── references/
 │   ├── README.md             catalog of selected references
 │   ├── ARCHITECTURE_COMPARISON.md
@@ -225,6 +247,17 @@ make -C projects/toyos test-all
 See [`projects/toyos/README.md`](projects/toyos/README.md) for run, expected
 fault, and GDB targets. The offline boot path uses installed GRUB2 tooling and
 the Multiboot2 contract under QEMU.
+
+Weeks 10–11 use a separate Linux userspace lab:
+
+```bash
+make -C projects/linux-system-programming test-week10
+make -C projects/linux-system-programming test-week11
+```
+
+See
+[`projects/linux-system-programming/README.md`](projects/linux-system-programming/README.md)
+for the repository map, bounded failure modes, and optional debugging tools.
 
 ## Completion standard
 

@@ -174,6 +174,42 @@ ring-0 **kernel tasks**, while Week 8 introduces only one deliberately bounded
 user process. Week 9 demonstrates ramfs/VFS and PCI/MMIO boundaries without
 claiming a production storage or device stack.
 
+## Prepared Week 10 package
+
+- Package entry:
+  [`10-linux-processes-and-signals/overview.md`](../10-linux-processes-and-signals/overview.md)
+- Sources and challenges:
+  [`10-linux-processes-and-signals/`](../10-linux-processes-and-signals/)
+- Shared runnable lab:
+  [`projects/linux-system-programming/`](../projects/linux-system-programming/)
+- Scope: Linux process identity and lifetime, `fork`/copy-on-write, `exec`,
+  `wait`, zombies, reparenting, process groups/sessions, signals, safe signal
+  handlers, `/proc`, `strace`, and GDB observation
+- Boundary: demonstrations are bounded to the current process and descendants;
+  this is Linux userspace evidence, not a production shell or kernel process
+  implementation
+
+## Prepared Week 11 package
+
+- Package entry:
+  [`11-threads-and-concurrency/overview.md`](../11-threads-and-concurrency/overview.md)
+- Sources and challenges:
+  [`11-threads-and-concurrency/`](../11-threads-and-concurrency/)
+- Shared runnable lab:
+  [`projects/linux-system-programming/`](../projects/linux-system-programming/)
+- Scope: pthread creation/join, ownership, data races, mutexes, condition
+  variables, bounded queues, C11 atomics and memory ordering, deadlock,
+  false sharing, and debugging
+- Boundary: deterministic tests establish invariants but do not prove all
+  schedules or language-permitted outcomes. ThreadSanitizer is optional and
+  unavailable on the prepared host/runtime; its race check may be skipped
+  without treating the package as broken.
+
+Weeks 10–11 are prepared ahead. They do not change the current Week 1 resume
+point, complete a confidence gate, or imply learner mastery. Optional tools
+(`strace`, GDB, Valgrind, sanitizers) supplement the offline, hands-on path;
+the core build and deterministic tests remain usable without every tool.
+
 ## Approved follow-on track
 
 After Weeks 4–5, begin a guided x86-64 ToyOS under QEMU using C and minimal

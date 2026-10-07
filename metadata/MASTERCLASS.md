@@ -1758,3 +1758,27 @@ The package entry points are the Week 8 and Week 9 `overview.md` files; no
 consolidated Week 8/9 PDF is recorded at this checkpoint. This preparation
 does not alter the authoritative Week 1 resume point, advance any confidence
 gate, or establish mastery.
+
+### 45. PREPARED LINUX SYSTEM-PROGRAMMING WEEK 10–11 CHECKPOINT — 2026-10-07
+
+Two Linux userspace source packages and one shared runnable project are
+prepared:
+
+- `10-linux-processes-and-signals/` traces process identity/lifetime,
+  `fork`/copy-on-write, `exec`, waiting, zombies/reparenting, job-control
+  structure, signals, `/proc`, `strace`, and GDB.
+- `11-threads-and-concurrency/` covers pthread creation/join and ownership,
+  races, mutexes, condition variables and bounded queues, C11 atomics and
+  memory ordering, deadlock, false sharing, and concurrency debugging.
+- `projects/linux-system-programming/` provides bounded C17/POSIX programs and
+  deterministic Week 10/11 test suites. It is offline-first and uses no root
+  privileges, services, network access, or unrelated target processes.
+
+Optional tool checks provide additional observations but are not core
+prerequisites. ThreadSanitizer is unavailable on the prepared host/runtime and
+must be reported as optional/`SKIP`, not as passing evidence; `strace`, GDB,
+Valgrind, ASan, and UBSan are similarly environment-dependent supplements.
+
+This is a material-generation checkpoint only. The authoritative learner
+resume remains Week 1. Weeks 10–11 are prepared, not mastered, and no
+confidence gate, completion status, time, or confidence is inferred.

@@ -171,8 +171,9 @@ Use exercises to expose gaps rather than merely generate a score.
 - Specialization pivots, proof-of-fit sprints, active upstream issue
   selection, and ToyOS expansion are planned but deferred until their
   foundation gates.
-- Weeks 6–9 and the continuous `projects/toyos/` kernel are prepared but
-  inactive; preparation does not advance the Week 1 resume point or any gate.
+- Weeks 6–11, the continuous `projects/toyos/` kernel, and the shared
+  `projects/linux-system-programming/` lab are prepared but inactive;
+  preparation does not advance the Week 1 resume point or any gate.
 
 ## Decision and Update Log
 
@@ -713,3 +714,27 @@ profiles of the same `projects/toyos/` kernel:
 These are prepared artifacts, not learner progress. Keep the authoritative
 resume point at Week 1 and do not infer mastery, confidence, time, or a
 completed foundation gate.
+
+### 2026-10-07 — Linux system-programming Weeks 10–11 prepared
+
+Weeks 10 and 11 are prepared as learner-facing source packages:
+
+- `10-linux-processes-and-signals/` covers Linux processes, `fork`/`exec`,
+  waiting and process lifetime, process groups/sessions, signals and safe
+  handlers, `/proc`, `strace`, and GDB evidence.
+- `11-threads-and-concurrency/` covers pthread lifecycle and ownership, data
+  races, mutexes, condition-variable queues, C11 atomics/memory ordering,
+  deadlock, false sharing, and concurrency debugging.
+- `projects/linux-system-programming/` is their shared C17/POSIX lab. Keep its
+  tests bounded, offline-first, reproducible, and focused on
+  predict → run/observe → explain.
+
+Optional analysis tooling must not become a hidden prerequisite. The prepared
+host/runtime cannot run ThreadSanitizer, so report that check as unavailable or
+`SKIP`; do not claim a clean TSan run or treat its absence as failed core
+evidence. `strace`, GDB, Valgrind, and other sanitizers are also supplementary
+to the deterministic suites.
+
+These packages are prepared, not mastered. The authoritative current module
+remains Week 1, and no confidence gate, learner status, time, or completion is
+advanced by their existence.
