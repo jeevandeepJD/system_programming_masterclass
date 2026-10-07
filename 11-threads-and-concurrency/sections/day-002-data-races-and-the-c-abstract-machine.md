@@ -2,159 +2,535 @@
 
 **Target time:** approximately 3 hours
 
-> A bad final count is evidence of a bug. A correct final count is not evidence
-> that racy C was valid.
+> Four threads execute `unsafe_counter++`. The machine is coherent, the
+> compiler is conforming, and the printed total can still be anything —
+> including the total you hoped for. Where did the program lose its meaning?
 
-## 1. Observe the contrast safely
+Day 1 left two tasks in one `mm_struct`. The same virtual address is the
+same object, and Week 2's caches will move that line between cores until
+they agree on the bytes. Today's question is older than the cache protocol.
+It is the question [Week 2's abstract machine](../../02-assembly-memory-and-c/sections/day-007-c-execution-model-and-data-types.md)
+already posed for a single thread: C constrains observable behavior, and
+where the program has undefined behavior the implementation has no
+obligation to preserve the story the source seems to tell.
 
-Run `challenges/day-002-data-races.sh`. It executes the checked mutex counter,
-then attempts a separately compiled ThreadSanitizer build of the intentional
-`race` mode. Predict that the mutex result is exactly 800000. Do not predict a
-particular racy total or promise that ThreadSanitizer runs.
+The lab object is `unsafe_counter` in
+[`thread_lab.c`](../../projects/linux-system-programming/src/thread_lab.c).
+Four threads run this loop, `ITERATIONS` equal to 200000:
 
-The wrapper distinguishes three TSan outcomes: the compiler cannot build the
-instrumented program; the instrumented runtime cannot execute correctly in
-this environment; or a completed instrumented run reports the intentional
-race. Toolchain combinations can fail because of address-space layout,
-unsupported libc/runtime integration, container restrictions, or sanitizer
-runtime defects. An explicit skip is accurate evidence. It is not a pass for
-the program.
-
-The ordinary race run is allowed to print any count, including the expected
-one. Because the program has undefined behavior, that number cannot validate
-the source. The bounded invocation is pedagogical evidence only.
-
-## 2. Define a C data race
-
-In the C abstract machine, a data race exists when different threads perform
-conflicting actions on the same memory location, at least one action is not
-atomic, and the actions are not ordered by happens-before. Two actions
-conflict when one modifies an object and the other reads or modifies the same
-object (with details for overlapping storage).
-
-The key words are not “simultaneous in wall-clock time.” Happens-before is a
-language-level ordering assembled from sequenced-before relations within a
-thread and synchronizes-with relations supplied by operations such as mutex
-unlock/lock pairs, thread creation/joining, and suitable atomic release/acquire
-communication. If there is no required ordering, a lucky scheduler does not
-repair the source.
-
-A data race gives undefined behavior. This is stronger than “one increment may
-be lost.” The implementation is no longer constrained to preserve the
-intuitive interleaving model for that execution. Debugging must therefore
-identify the missing ordering, not merely reproduce a numeric discrepancy.
-
-## 3. Expand `counter++`
-
-At source level, `counter++` is a read-modify-write expression, but an ordinary
-integer object does not make that operation atomic. A conceptual expansion is:
-
-```text
-temporary = counter
-temporary = temporary + 1
-counter = temporary
+```c
+for (int i = 0; i < ITERATIONS; ++i) unsafe_counter++;
 ```
 
-Two workers can read the same old value and both store the same incremented
-value, apparently losing one update. Machine code may use a load, arithmetic
-instruction, and store, but the exact sequence depends on optimization and
-architecture. Even one machine instruction would not by itself establish C
-atomic semantics: alignment, compiler assumptions, ISA guarantees, and the C
-memory model all matter.
+Kernel wording quoted below is from tree `c9b2385d6793`. The assembly is
+from this host's GCC 16.2.1 20260819 (Red Hat 16.2.1-2), which is also the
+compiler that produced `projects/linux-system-programming/build/thread_lab`
+under the project's `CFLAGS ?= -O2`.
 
-The canonical `unsafe_counter` is written by four threads without mutex or
-atomic operations. Those accesses conflict and lack happens-before ordering.
-The compiler may assume that a conforming program has no data race and
-transform code accordingly. Explaining only cache coherence or instruction
-interleaving misses this source-level fact.
+---
 
-## 4. Separate compiler ordering from CPU ordering
+## 1. Why a lost update and a perfect total are one fact
 
-The compiler translates according to the C abstract machine. It may keep a
-value in a register, combine operations, eliminate loads, reorder independent
-work, or exploit impossible-under-defined-C assumptions. The CPU then executes
-instructions subject to its architecture's ordering and cache-coherence rules.
-Both layers affect observations, but they answer different questions.
+`counter++` on a plain `uint64_t` is a read, a modify, and a write of a
+non-atomic object. In the abstract machine those are separate accesses.
+Two threads performing them on the same object, with at least one write,
+and with no happens-before edge between the accesses, execute a **data
+race**. A data race is undefined behavior. The standard then imposes no
+requirements on that execution. The final number, the number of memory
+operations left in the loop, and the text a later `printf` shows are all
+outside what the standard still specifies.
 
-`volatile` does not bridge the gap. It requests observable accesses useful for
-objects such as memory-mapped device registers or signal-related patterns
-within their proper rules; it does not make an increment indivisible and does
-not create inter-thread happens-before. Replacing the counter with `volatile`
-still leaves conflicting non-atomic accesses.
+Hardware can still finish every instruction. Coherence can still make every
+core's later load see some agreed value. A particular schedule can still
+print `800000`, which is `4 * 200000`. That printout is a property of one
+run of one binary. It is the abstract machine declining to give the run a
+portable meaning. The challenge script therefore treats the racy total as
+unconstrained and labels the mode `data_race=undefined_behavior`.
 
-Compiler barriers, CPU fences, atomic operations, and mutexes are not
-interchangeable. A compiler barrier may restrict code motion without emitting
-a hardware instruction. An ISA fence orders specified machine-memory effects
-but does not retroactively make a non-atomic C race defined. C atomics provide
-language semantics that the implementation realizes with instructions,
-barriers, or library calls.
+The mutex mode of the same program is a different program. Every increment
+happens while `counter_lock` is held, unlock synchronizes with a later
+lock, and the checked result is exactly 800000. Day 3 builds that edge.
+Today the point is to see the edge's absence in both the language and the
+machine.
 
-## 5. Read sanitizer evidence correctly
+---
 
-ThreadSanitizer instruments memory accesses and synchronization, maintaining a
-runtime model of happens-before. A useful report identifies two conflicting
-accesses, their thread creation sites, and associated stacks. That is much
-stronger diagnostic evidence than a bad counter total because it points to the
-protocol defect.
+## 2. Conflicting accesses and happens-before
 
-TSan is dynamic. It examines paths and schedules reached during that
-instrumented run. It can miss unexecuted races, unsupported synchronization,
-uninstrumented code, or races hidden by changed timing. Instrumentation also
-changes layout and scheduling. A clean report is not a proof of race freedom.
+Two accesses **conflict** when they target the same memory location and at
+least one of them modifies the object. A load conflicts with a store. Two
+stores conflict. Two pure loads of the same object are concurrent reads.
 
-AddressSanitizer detects classes of invalid memory use; UndefinedBehavior
-Sanitizer checks selected operations; Valgrind tools use other instrumentation
-models. None should be described as a universal “C correctness checker.”
-Sanitizers may be mutually incompatible in one binary, and a sanitizer's own
-runtime availability must be tested, not inferred from successful compilation.
+**Happens-before** is how the language orders accesses across threads. It
+is assembled from:
 
-## 6. Repair according to the invariant
+- **sequenced-before** inside one thread (the ordinary left-to-right story
+  of one thread's statements, with the evaluation-order exceptions Week 2
+  already listed);
+- **synchronizes-with**, the edges supplied by thread creation, thread
+  join, mutex unlock/lock pairs, and atomic release/acquire operations.
 
-The mutex mode wraps every increment in lock/unlock. The protected invariant is
-that `mutex_counter` equals the number of completed critical-section updates.
-Unlock by one thread and subsequent lock by another establish synchronization,
-while mutual exclusion prevents overlapping updates.
+If A happens-before B, the abstract machine requires B's view of the object
+to reflect A's side effects. If two conflicting accesses have no
+happens-before edge either way, the execution has a data race.
 
-The atomic mode uses `atomic_fetch_add_explicit(..., memory_order_relaxed)`.
-Relaxed is sufficient for the narrow invariant that no increments are lost:
-each operation is an indivisible read-modify-write in one modification order.
-It does not publish unrelated payload data. The final load occurs after all
-workers are joined, so thread completion supplies the needed phase boundary.
+```text
+parent: unsafe_counter = 0
+   │
+   │  pthread_create          (synchronizes-with thread start)
+   ▼
+worker 0                         worker 1
+load / modify / store  ·······  load / modify / store
+        no happens-before edge between these accesses
+   │
+   │  pthread_join            (synchronizes-with thread termination)
+   ▼
+parent: printf the counter
+```
 
-Choosing between a mutex and an atomic is not “slow versus fast.” A mutex can
-protect a multi-object invariant and compose a critical section. An atomic
-counter protects only its atomic operation unless a larger protocol explicitly
-connects other state through memory ordering.
+The vertical edges are real. The parent's store of 0 happens-before every
+worker's first access, and each worker's termination happens-before the
+parent's `printf`. The horizontal edge is the one the program never
+builds. Join orders the printf after the workers finish. The workers'
+accesses to `unsafe_counter` stay unordered with respect to each other,
+and those are the conflicting accesses.
 
-## 7. Diagnose a race from source
+Wall-clock overlap is a different question. A scheduler that runs one
+worker to completion before the other has ordered that run. The abstract
+machine's promise is the set of edges the program built, and a lucky
+schedule is not one of those edges.
 
-For each shared object, list all accesses, mark writes, and identify the
-ordering edge between every potentially concurrent conflicting pair. A verbal
-claim such as “the producer goes first” is insufficient unless enforced by
-creation ordering, a mutex/condition protocol, atomic communication, or
-another documented primitive.
+---
 
-Check object lifetime too. A use-after-free can look like a race, and a race
-can permit a free to occur while another access is active. Ownership and
-happens-before are two separate obligations: the object must exist, and the
-access must be legal.
+## 3. The increment in registers
 
-Do not fix symptoms with sleeps. Delays alter probability but establish no C
-synchronization. Do not fix a counter by narrowing the test until it usually
-passes. State the invariant, select a primitive that provides the required
-ordering and atomicity, and verify both normal and failure paths.
+[Week 2](../../02-assembly-memory-and-c/sections/day-001-x86-64-assembly-foundations.md)
+spells a memory increment as a load into a register, an `add`, and a
+store. At `-O0`, GCC 16.2.1 emits that shape for a file-scope `uint64_t`.
+The rip-relative operand is the relocation for the counter; this object
+file was not linked, so the displacement prints as zero:
 
-## Practical challenge
+```text
+mov    0x0(%rip),%rax
+add    $0x1,%rax
+mov    %rax,0x0(%rip)
+```
 
-**Purpose:** explain the intentional counter race using the C abstract machine,
-then contrast a real synchronization repair with dynamic diagnostic evidence.
+In the Week 2 spelling those are `movq`, `addq $1, %rax`, and `movq`.
+The surrounding `-O0` loop keeps the counter in memory on every iteration
+and the induction variable in a stack slot:
 
-**Prediction:** the mutex mode is exact; the race output is unconstrained; TSan
-either reports a race or is classified accurately as unavailable/inconclusive.
+```text
+movl   $0x0, -0x4(%rbp)          # i = 0
+mov    counter(%rip), %rax       # load
+add    $0x1, %rax                # add in the register
+mov    %rax, counter(%rip)       # store
+addl   $0x1, -0x4(%rbp)          # i++
+cmpl   $0x30d3f, -0x4(%rbp)      # i <= 199999
+jle    ...                       # back to the load
+```
 
-**Evidence:** source access inventory, happens-before graph, checked mutex
-result, compiler command, sanitizer diagnostic and exit status.
+`0x30d3f` is 199999, the last value of `i` for which the body runs.
+`%rax` is private to the core that executes the three memory-touching
+instructions. The load copies the line's bytes into that register. The
+add updates the register. The store writes the register back. Between the
+load and the store the counter in memory is stale relative to `%rax`, and
+another core is free to own the line.
 
-**Limits:** no exhaustive schedule exploration, portability proof from emitted
-instructions, claim that `volatile` synchronizes, or claim that a clean or
-unavailable TSan run proves race freedom.
+Take a starting value of 41 and two cores:
+
+```text
+Core 0                              Core 1
+mov  counter(%rip), %rax   # 41     mov  counter(%rip), %rax   # 41
+add  $1, %rax              # 42     add  $1, %rax              # 42
+mov  %rax, counter(%rip)   # 42     mov  %rax, counter(%rip)   # 42
+```
+
+The source asked for 43. Memory holds 42. Each `add` was a correct
+register operation on a private copy of 41. The same shape with a general
+starting value `N` stores `N+1` twice: two source-level increments become
+one surviving store. Nothing in the three-instruction sequence is a single
+memory operation. The `add` never touches the line.
+
+x86-64 will perform an aligned 8-byte load or store as one architectural
+access. The read-modify-write is three accesses unless the instruction
+stream uses a locked read-modify-write. The `-O0` sequence has no `lock`
+prefix. Day 5's `atomic_fetch_add` is what asks the compiler to emit one.
+
+The prefix is an x86-64 fact. AArch64 compilers emit an atomic add as
+`LDADD` or as an exclusive `LDXR`/`STXR` pair, depending on the core and
+the code generator. RISC-V uses an atomic memory operation such as
+`amoadd.d`. Those are the instructions a C11 atomic asks for. Plain
+`counter++` asks for none of them: each ISA implements it with an ordinary
+load, an add in a register, and an ordinary store, which is the sequence
+above. This lesson quotes the encoding this host emitted.
+
+---
+
+## 4. Why the cache can look finished while the language is not
+
+[Week 2's cache lesson](../../02-assembly-memory-and-c/sections/day-005-cache-organization.md)
+already has the hardware half. A core that wants to write a line takes
+exclusive ownership; other copies are invalidated or downgraded. After both
+stores in the diagram above, some core holds the line and every later
+coherent load sees `N+1`. The protocol did its job. It delivered a single
+agreed value for a pair of stores that both carried the same bits.
+
+```text
+counter lives on one 64-byte line
+
+Core 0 load     obtains a readable copy, fills %rax with N
+Core 1 load     obtains a readable copy, fills %rax with N
+Core 0 store    takes exclusive ownership, line becomes N+1
+Core 1 store    takes exclusive ownership, line becomes N+1 again
+```
+
+The line never held `N+2`, because `N+2` existed only as a sum of two
+private registers that were never combined. Coherence orders ownership of
+the line. The load, the register add, and the store stay three operations.
+
+This is how a non-atomic increment can appear to work. Run the workers
+with no overlap and each load sees the previous store: the total matches
+the arithmetic. Run them overlapped and some stores replace other stores
+of the same computed value: the total comes out low. Both runs used a
+coherent memory system. The C rule does not consult that outcome. The
+accesses conflicted, and no happens-before edge ordered them, so the
+execution has no required meaning either way. A later compiler, a
+different schedule, or ThreadSanitizer is entitled to treat the same
+source differently.
+
+False sharing, from the same Week 2 page, is the complementary layout
+fact: two different objects on one line bounce the line even though they
+do not conflict in C. Today's bug is true sharing of one object. The line
+size explains the traffic. The data-race rule explains the meaning.
+
+---
+
+## 5. The compiler may assume the race does not exist
+
+The as-if rule lets the compiler transform a program when the required
+observable behavior is preserved. For a program with a data race, there
+is no required behavior on that execution, so the compiler may transform
+the code under the assumption that the race does not occur. In practice
+that assumption is "this thread is the only one performing conflicting
+accesses on this object for the duration of the loop."
+
+The project's Makefile sets `CFLAGS ?= -O2`. The built `thread_lab` on
+this host contains, at `increment_unsafe`:
+
+```text
+400a00:  addq   $0x30d40, 0x2685(%rip)    # unsafe_counter
+400a0b:  xor    %eax, %eax
+400a0d:  ret
+```
+
+`0x30d40` is 200000, the constant `ITERATIONS`. The 200000 separate
+read-modify-writes of the source have become one add of 200000 to memory.
+That is a correct compilation of a single-threaded loop: the counter ends
+200000 higher, and no conforming program can observe the intermediate
+values from another thread. It is a correct compilation of the racy
+program only because the racy program has no requirements. If another
+thread's increments had to be respected one by one, adding 200000 in one
+step would drop them on the floor whenever they landed in the middle of
+the loop.
+
+The same compiler, same version, asked for three nearby shapes:
+
+```text
+global uint64_t, -O2
+    addq   $0x30d40, counter(%rip)          one unlocked add of 200000
+
+volatile uint64_t, -O2
+    loop: addq $1, counter(%rip)            a memory RMW per iteration
+          no lock prefix
+
+atomic_fetch_add_explicit(..., memory_order_relaxed), -O2
+    loop: lock addq $1, counter(%rip)       an atomic RMW per iteration
+```
+
+`volatile` keeps the accesses in the instruction stream. Each `addq $1` to
+memory is still a non-atomic read-modify-write: the prefix that would make
+it atomic on x86-64 is `lock`, and it is absent. Two cores can still
+interleave inside that instruction. The abstract machine still sees
+conflicting non-atomic accesses. `volatile` is the qualifier for objects
+whose accesses are observable as accesses — device registers, and the
+narrow signal patterns the standard actually defines. It is a different
+contract from inter-thread happens-before.
+
+The atomic loop keeps one atomic read-modify-write per source increment
+(`lock addq` on this ISA; GCC unrolled it by two). `memory_order_relaxed`
+is enough for the narrow claim that increments are preserved in one
+modification order. Each operation is one step of that order. Other payload
+data needs a release/acquire protocol, which day 5 separates from this
+counter. The final load in the lab happens after every worker has been
+joined, so thread termination supplies the phase edge around the relaxed
+adds.
+
+The `-O2` collapse is one compiler's choice. Another version can keep the
+three-instruction loop. Both are licensed by the same rule. Reading the
+binary tells you which choice this build made. That choice stays a fact
+about this build. The C source's meaning is the rule that licensed it.
+
+Even the collapsed `addq $0x30d40, mem` has no `lock` prefix. Four threads
+each adding 200000 with an unlocked memory read-modify-write can still
+lose an entire chunk of 200000 when two of those instructions interleave.
+A racy total below 800000 on this binary is that machine-level loss, or a
+further consequence of undefined behavior. A racy total of exactly 800000
+is a schedule in which those unlocked adds happened not to collide. The
+source line is the same line in both cases.
+
+---
+
+## 6. The interleaving picture is already the smaller claim
+
+Section 3 is what the `-O0` instructions do when two cores overlap: each
+core adds 1 to a private register, and one of the stores survives. It is
+tempting to stop there, call the bug a lost update, and treat a total of
+800000 as proof the schedule was kind. That picture is real, and it is
+smaller than the permission the compiler used.
+
+The `-O2` function never performs 200000 loads and 200000 stores. The
+steps an interleaving story wants to shuffle have already been deleted,
+before any second thread is scheduled. A model that only shuffles
+source-level `++` operations cannot derive `addq $0x30d40`. Deriving it
+requires the premise "no other thread conflicts," which is the premise a
+data race withholds.
+
+The layers sit on top of each other, and each one has an artifact:
+
+```text
+language    conflicting non-atomic accesses, no happens-before
+            → this execution has no requirements
+
+compiler    may delete, combine, or reorder under that permission
+            → this binary's worker is one unlocked add of 200000
+
+machine     that addq is still a non-atomic read-modify-write
+            → two cores can each read M and each write M+200000
+            → the line ends on one of those stores
+
+coherence   the line has one value afterward
+            → later loads agree
+            → agreement is a hardware fact, and the C execution
+              still has no requirements
+```
+
+The totals this binary usually prints come from the machine layer: overlapping
+unlocked adds of 200000 can drop a chunk of that size. Undefined behavior is
+wider than that menu. The collapse of the loop sits outside the source-level
+interleaving model. A sanitizer report, a surprising total, or a later
+compiler that deletes still more of the function are inside the same
+permission.
+
+The repair restores a requirement, and it is specific. `increment_mutex`
+performs each update of `mutex_counter` while `counter_lock` is held, so
+the critical sections are ordered by unlock-then-lock. The relaxed atomic
+makes each increment one step of a single modification order, and the joins
+order the final load after those steps. Day 3 and day 5 are those repairs.
+A kind schedule leaves the missing edge missing. A coherent line leaves it
+missing too.
+
+---
+
+## 7. The kernel's own name for an intentional race
+
+The Linux tree you are reading is itself C, and it has the same rule.
+`include/linux/compiler.h` spells a narrow escape hatch for diagnostics.
+The comment is the kernel's, and it matches the split above: the macro is
+a hint to tooling, and it leaves ordinary code generation alone.
+
+```c
+/* include/linux/compiler.h :: data_race :: tree c9b2385d6793
+ * lines 196–214
+ */
+/**
+ * data_race - mark an expression as containing intentional data races
+ *
+ * This data_race() macro is useful for situations in which data races
+ * should be forgiven.  One example is diagnostic code that accesses
+ * shared variables but is not a part of the core synchronization design.
+ *
+ * This macro *does not* affect normal code generation, but is a hint
+ * to tooling that data races here are to be ignored.
+ */
+#define data_race(expr)							\
+({									\
+	__unqual_scalar_typeof(({ expr; })) __v = ({			\
+		__kcsan_disable_current();				\
+		expr;							\
+	});								\
+	__kcsan_enable_current();					\
+	__v;								\
+})
+```
+
+`__kcsan_disable_current` tells the kernel's concurrency sanitizer to
+ignore the expression. The generated instructions for `expr` stay whatever
+the compiler would have emitted. `copy_process` in the same tree uses the
+macro on a limit check, `data_race(nr_threads >= max_threads)` at
+`kernel/fork.c` line 2074: a racy read of a counter, marked on purpose,
+and not a read-modify-write of user data.
+
+`unsafe_counter++` carries no such mark, and it modifies the object. The
+abstract-machine rule for an unmarked conflicting pair is the one in
+section 2. The kernel macro is evidence that the people who compile this
+tree treat "data race" as a language and tooling category, separate from
+"the CPU completed a load and a store."
+
+---
+
+## 8. Execution trace: four workers, one object
+
+`mode_counter("race")` zeroes `unsafe_counter`, starts four threads in
+`increment_unsafe`, joins them, and prints the value. The binary under
+discussion is the `-O2` build, so each worker's loop is the single
+`addq $0x30d40`.
+
+```text
+parent
+  unsafe_counter = 0                          sequenced-before create
+  pthread_create × 4                          synchronizes-with each start
+
+worker 0                worker 1              worker 2              worker 3
+addq $200000, mem       addq $200000, mem     addq $200000, mem     addq $200000, mem
+  │                       │                     │                     │
+  └── each addq is an unlocked read-modify-write of the same line
+      private ALU work sits between the load half and the store half
+      coherence will agree on some final bytes
+      no happens-before edge connects any pair of these four accesses
+
+parent
+  pthread_join × 4                            synchronizes-with each exit
+  printf(race_counter=… expected=800000 data_race=undefined_behavior)
+```
+
+One concrete interleaving of two of those `addq` instructions, counter
+currently 0:
+
+```text
+Core 0 reads 0, computes 200000
+Core 1 reads 0, computes 200000
+Core 0 writes 200000
+Core 1 writes 200000
+line holds 200000; 200000 of source-level increments are gone
+```
+
+A different interleaving writes 200000, then 400000, then 600000, then
+800000, and the printf shows the expected number. The source, the
+conflict, and the missing edge are unchanged.
+
+ThreadSanitizer, when the challenge can run it, instruments the accesses
+and looks for a conflicting pair with no happens-before edge. A report
+names that pair for the schedule the instrumented binary actually ran.
+The challenge classifies three other outcomes on purpose: the
+instrumented program failed to build, the runtime could not execute, or
+the run finished without a recognized report. Those are facts about the
+tool on this host. The race is a fact about the source.
+
+---
+
+## 9. Mastery: Explain · Draw · Observe · Build
+
+Run [`../challenges/day-002-data-races.sh`](../challenges/day-002-data-races.sh).
+Predict `mutex_counter=800000`. Leave the racy total unpredicted. Predict
+that ThreadSanitizer will either report the race or be classified as
+unavailable or inconclusive. Record which of those the script actually
+printed.
+
+### Explain
+
+- A data race is two conflicting accesses to one non-atomic object, at
+  least one of them a write, with no happens-before edge between them.
+- `unsafe_counter++` is a load, an add in a register, and a store.
+  `%rax` on one core is invisible to the other core's `%rax`.
+- Coherence makes the cores agree on the line. Agreement on `N+1` after
+  two increments is a coherent machine doing what it was asked. The
+  language assigns that execution no requirements.
+- This host's `-O2` build of `increment_unsafe` is `addq $0x30d40` with
+  no `lock` prefix, because the compiler may assume the race does not
+  exist. `volatile` keeps per-iteration accesses and still has no `lock`.
+  `lock addq` is what the relaxed atomic became.
+- `pthread_join` orders the printf with thread termination. The missing
+  edge is between the workers.
+
+### Draw
+
+1. The happens-before sketch from section 2, with the four workers on the
+   horizontal line and create/join as the only vertical edges.
+2. Two cores executing `mov` / `add` / `mov` against one line, and the
+   same two cores executing unlocked `addq $0x30d40`. Mark where the value
+   lives in a register and where it lives in the line.
+3. The three instruction shapes: plain `-O2`, `volatile`, and
+   `lock addq`.
+
+### Observe
+
+From the challenge, keep:
+
+- the mutex line, which is allowed to be exact;
+- the race line, including whatever total this run produced, next to the
+  sentence "this execution has undefined behavior";
+- the ThreadSanitizer classification and, if a report was produced, the
+  two stacks it names;
+- `cc --version` and the project's `CFLAGS`.
+
+Then disassemble the function the challenge just ran:
+
+```bash
+objdump -d --disassemble=increment_unsafe \
+  ../../projects/linux-system-programming/build/thread_lab
+```
+
+Record whether you still see one `addq` of `0x30d40` or a load/add/store
+loop. Rebuild a throwaway copy at `-O0` if you want the three-instruction
+shape beside it. The addresses and the compiler version belong in the
+note. A different machine may choose a different shape; the data-race
+rule is what both shapes are allowed to rely on.
+
+### Build
+
+Write a five-line ledger for `unsafe_counter` in the race mode:
+
+```text
+access              thread        conflicts with          happens-before?
+store of 0          parent        later worker accesses   yes: create
+load/add/store      worker i      worker j, i != j        no
+printf's load       parent        worker stores           yes: join
+```
+
+Then answer, in one sentence each: why a printed total of 800000 leaves
+the ledger's middle row in place, and which instruction in the `-O2`
+binary is still an unlocked read-modify-write.
+
+### Why? notebook
+
+1. Why is "the threads ran at the same wall-clock time" the wrong test
+   for a data race?
+2. Why can both cores execute a correct `add` and still lose an increment?
+3. Why does a coherent cache line at `N+1` after two increments satisfy
+   the hardware and leave the C program without a meaning?
+4. Why is `addq $0x30d40, mem` a legal compilation of a 200000-iteration
+   `++` on a non-atomic object?
+5. Why does that same `addq` still have a machine-level race with a
+   second core's `addq`?
+6. Why does `volatile` keep the loop and still leave a data race?
+7. Why is `pthread_join` enough to order the printf and not enough to
+   order the workers with each other?
+8. Why is a ThreadSanitizer skip a fact about the tool, and the race a
+   fact about the source?
+
+---
+
+## References used selectively
+
+- C abstract machine and undefined behavior, as used in
+  [Week 2, day 7](../../02-assembly-memory-and-c/sections/day-007-c-execution-model-and-data-types.md).
+- Linux tree `c9b2385d6793`, `include/linux/compiler.h` `data_race`, and
+  the call at `kernel/fork.c` line 2074.
+- Host observation: GCC 16.2.1, `increment_unsafe` in the `-O2`
+  `thread_lab` binary, and the `-O0` / `volatile` / relaxed-atomic shapes
+  compiled beside it.
+
+**Next:** the mutex mode puts a happens-before edge between those workers.
+Day 3 names the invariant that edge protects, and the futex that lets the
+uncontended lock stay in user mode.

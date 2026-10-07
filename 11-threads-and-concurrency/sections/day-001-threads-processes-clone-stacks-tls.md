@@ -2,163 +2,749 @@
 
 **Target time:** approximately 3 hours
 
-> A thread is not “a small process.” Start from which resources are shared,
-> which execution state is private, and which lifetime event makes access safe.
+> `pthread_create` returns, and a second stream of instructions is running in
+> the same process. Which objects did the kernel share, which did it allocate,
+> and which register now names this thread's private data?
 
-## 1. Run before naming the machinery
+Kernel excerpts below are from tree `c9b2385d6793` (`Makefile` `VERSION` 5,
+`PATCHLEVEL` 10, `SUBLEVEL` 134). Each excerpt names its path and function.
 
-Run `challenges/day-001-thread-model.sh`. Before running it, predict the one
-stable line from `thread_lab basic`: creation succeeds, the worker returns the
-same pointer it received, and `pthread_join` gives that pointer back to the
-creator. Predict nothing about numeric thread IDs or scheduling order.
+Week 10 built one task: an address space, a descriptor table, signal
+dispositions, and a single set of registers. Today a second task joins that
+same address space. The mechanism is the `clone` syscall you already met as
+the implementation behind `fork`, with a different flag set and a new stack
+pointer.
 
-The mode passes the address of `token`, an automatic object in `mode_basic`, to
-the worker. This is safe only because the creating thread remains inside that
-function until after the join. The join is both a lifetime decision and a
-synchronization event. If the function returned, or if the object belonged to
-a detached thread's expired caller frame, dereferencing the pointer would be
-invalid even if the bytes appeared unchanged.
+---
 
-Record the binary hash, compiler version, architecture, and kernel release.
-These identify the artifact and environment. They do not turn a single run
-into a universal scheduling claim.
+## 1. Why a second instruction stream can share an address space
 
-## 2. Relate a pthread to a process precisely
+A function call has one instruction pointer. The callee borrows `%rsp` and
+returns. A second thread needs its own instruction pointer at the same
+moment, so it needs its own saved registers: one core holds one architectural
+register file. It needs its own user stack, because the System V AMD64 stack
+grows down from `%rsp` and two streams would overwrite each other's frames.
+It needs its own kernel stack, because a syscall or timer interrupt lands on
+the current task's kernel stack, the same privilege transition Week 8 already
+traced.
 
-POSIX describes threads within a process. Threads share the process address
-space and many process resources: mapped code and data, heap objects, open
-file descriptions reached through descriptors, signal dispositions, current
-working directory, and credentials. Each thread has its own execution context:
-registers, stack, scheduling state, blocked signal mask, `errno`, and
-thread-specific data.
+The program text, the heap, and the open files already live in the address
+space and the kernel objects from Week 10. Two tasks that hold the same
+`mm_struct` resolve the same virtual address to the same object. That is why
+the worker in
+[`thread_lab.c`](../../projects/linux-system-programming/src/thread_lab.c)
+can receive `&token`, an automatic `int` in `mode_basic`, and return that
+pointer. The creator's stack page is mapped in the shared address space for
+as long as that frame is alive, which is why `mode_basic` joins before it
+returns.
 
-“The heap is shared” is shorthand, not a safety property. Sharing means each
-thread can address the same allocated object. It does not establish ownership,
-object lifetime, synchronization, or permission to perform conflicting
-accesses. A pointer being reachable by two threads is exactly where a design
-must state who may read, mutate, and free it.
+```text
+one mm_struct
+┌──────────────────────────────────────────────────────────┐
+│  text, rodata, data, heap, libc, vDSO                    │
+│                                                          │
+│  user stack of task A          user stack of task B      │
+│  (creator %rsp)                (newsp from clone)        │
+│  TLS block A                   TLS block B               │
+└──────────────────────────────────────────────────────────┘
+         │                                  │
+         ▼                                  ▼
+   task_struct A                      task_struct B
+   kernel stack A                     kernel stack B
+   pt_regs / user registers           pt_regs / user registers
+   blocked signal mask                blocked signal mask
+   FS base → TLS block A              FS base → TLS block B
+```
 
-A process can have one thread or many. Creating a pthread does not create an
-independent POSIX process with a new address space. Conversely, Linux exposes
-tasks as a flexible implementation concept; resource-sharing choices make
-tasks behave as threads or process-like children. Keep the POSIX contract
-separate from Linux's internal representation.
+Per task: general-purpose registers, kernel stack, user stack, TLS base,
+blocked-signal mask. Process-wide for a normal pthread: the `mm`, the file
+descriptor table, and the signal dispositions. The thread-group id, the
+number `getpid` returns, is shared as well.
 
-## 3. Build `clone` intuition without replacing the API
+---
 
-On Linux, libc commonly creates pthreads using a `clone`-family system call
-with flags that request sharing of the virtual memory, file-descriptor table,
-signal-handler table, and thread-group identity, plus thread-lifecycle
-coordination. Exact flags, syscall spelling (`clone` or `clone3`), setup calls,
-and TLS details vary by libc, kernel, architecture, and version.
+## 2. Tasks you have already built
 
-This is useful intuition: Linux task creation is parameterized resource
-sharing, not two unrelated primitives implemented from nothing. It is not an
-application contract. Correct C should use `pthread_create`, `pthread_join`,
-and documented synchronization rather than calling raw `clone` based on one
-trace. A trace also shows a decoded syscall boundary, not every libc action or
-kernel-internal branch.
+[Week 7's kernel tasks](../../07-memory-processes-and-scheduling/sections/day-004-kernel-tasks-stacks-contexts.md)
+are two ring-0 streams in one address space. Each has a private kernel stack
+and a saved context. The page tables stay shared. The separation is the stack
+and the registers.
 
-Compare with `fork`: after `fork` in a multithreaded process, only the calling
-thread exists in the child, and until `exec` the child is severely constrained
-in what it may safely call. A pthread creation instead adds concurrent
-execution inside the shared process. Copy-on-write after `fork` and shared
-address space between pthreads are different semantics.
+[Week 8](../../08-user-mode-syscalls-and-ipc/sections/day-001-ring3-gdt-tss-iret.md)
+gives ToyOS one user address space: its own page-table root, a user stack,
+and a kernel stack for the privilege transition. That shape is a separate
+address space plus a kernel stack.
 
-## 4. Understand the per-thread stack
+[Week 10's `fork`](../../10-linux-processes-and-signals/sections/day-002-fork-cow-and-lineage.md)
+is the Linux form of a new address space. `SYSCALL_DEFINE0(fork)` calls
+`kernel_clone` with `exit_signal = SIGCHLD` and the rest of
+`kernel_clone_args` zeroed. The child gets its own `mm` (copy-on-write) and
+a copy of the parent's user `%rsp`: the same virtual address in a different
+address space.
 
-Every thread needs stack storage for call frames, automatic objects, saved
-registers, and implementation bookkeeping. Stacks occupy distinct virtual
-address ranges in the same address space. “Private stack” means the runtime
-assigns it to one thread's execution; it does not mean hardware makes its
-addresses inaccessible to peers. If one thread publishes a pointer into its
-stack, another can often dereference it while the object remains alive.
+`pthread_create` is a libc wrapper around `clone` (or `clone3`, which reaches
+the same `kernel_clone`). The flags share the `mm`, the file table, the
+signal handlers, and the thread-group id, and the wrapper passes a new user
+stack and a TLS pointer.
 
-That capability is dangerous. The pointed-to automatic object's lifetime ends
-when its block exits. The entire thread stack ceases to support its old frames
-when the thread terminates. `pthread_join` waits for termination, but joining
-does not revive expired automatic objects. A worker must not return a pointer
-to its own local variable. Safe patterns include caller-owned storage whose
-lifetime spans the join, heap allocation with an explicit transfer protocol,
-or copying a result into synchronized shared storage.
+---
 
-Stack size is finite and configurable. Deep recursion or large automatic
-arrays can exhaust a worker stack. Measuring the main thread's stack limit
-does not necessarily identify every pthread's configured size. Guard pages and
-allocation policy are implementation details worth observing but not assuming.
+## 3. How `clone` reaches `kernel_clone`
 
-## 5. Distinguish TLS from ordinary globals
+On x86-64 this tree selects the parameter order in the `#else` branch of
+`kernel/fork.c`. `arch/x86/Kconfig` selects `CLONE_BACKWARDS` only for
+`X86_32`, so a 64-bit kernel compiles the signature below. The body that
+fills `struct kernel_clone_args` is shared with the other orders.
 
-Thread-local storage gives each thread a distinct instance of an object
-declared with C's `_Thread_local` or provided through pthread-specific keys.
-The declaration can look global while the storage is per-thread. Addresses,
-initialization, dynamic-loader support, and access sequences depend on the ABI
-and model selected by the toolchain.
+```c
+/* kernel/fork.c :: SYSCALL_DEFINE5(clone) :: tree c9b2385d6793
+ * lines 2697–2714, the order x86-64 compiles
+ */
+SYSCALL_DEFINE5(clone, unsigned long, clone_flags, unsigned long, newsp,
+		 int __user *, parent_tidptr,
+		 int __user *, child_tidptr,
+		 unsigned long, tls)
+#endif
+{
+	struct kernel_clone_args args = {
+		.flags		= (lower_32_bits(clone_flags) & ~CSIGNAL),
+		.pidfd		= parent_tidptr,
+		.child_tid	= child_tidptr,
+		.parent_tid	= parent_tidptr,
+		.exit_signal	= (lower_32_bits(clone_flags) & CSIGNAL),
+		.stack		= newsp,
+		.tls		= tls,
+	};
 
-TLS solves “one instance per thread”; it does not solve arbitrary cross-thread
-communication. Publishing a pointer to one thread's TLS reintroduces lifetime
-and synchronization questions. Destructors for pthread keys run under defined
-termination rules, but code must tolerate iteration limits and destructor
-ordering constraints. `errno` is the familiar conceptual example: one
-thread's failed operation must not overwrite another's diagnostic state.
+	return kernel_clone(&args);
+}
+```
 
-Contrast four locations:
+The x86-64 `syscall` instruction delivers arguments in `%rdi`, `%rsi`,
+`%rdx`, `%r10`, and `%r8`: flags, new user stack, parent tid pointer, child
+tid pointer, and TLS. The low 8 bits (`CSIGNAL`) become `exit_signal` and
+are removed from `flags`. `fork` sets that byte to `SIGCHLD`. A
+thread-creating caller leaves it clear and puts the sharing flags in the
+rest of the word.
 
-- a global counter is one shared object and needs synchronization for writes;
-- a heap allocation is shared if its pointer is shared, with ownership chosen
-  by the program;
-- a stack local is tied to block/thread lifetime even if its address escapes;
-- a TLS object has a distinct instance and thread-related lifetime.
+`kernel_clone` is the common path for `fork`, `vfork`, `clone`, and
+`clone3`. The part that builds the task and lets it run is:
 
-Storage location alone never supplies a complete ownership policy.
+```c
+/* kernel/fork.c :: kernel_clone :: tree c9b2385d6793
+ * lines 2589–2605
+ */
+	p = copy_process(NULL, trace, NUMA_NO_NODE, args);
+	add_latent_entropy();
 
-## 6. Treat creation and join as synchronization
+	if (IS_ERR(p))
+		return PTR_ERR(p);
 
-Actions sequenced before a successful `pthread_create` are visible to the new
-thread under the pthread synchronization contract. Termination and successful
-join establish the corresponding completion relationship: the joiner can
-consume results produced by the finished thread. This is why the basic mode
-does not need a mutex around `token`: the creator initializes it before
-creation, the worker changes no shared state, and the creator checks only
-after join.
+	/*
+	 * Do this prior waking up the new thread - the thread pointer
+	 * might get invalid after that point, if the thread exits quickly.
+	 */
+	trace_sched_process_fork(current, p);
 
-If both threads modified `token` concurrently, creation and join would not
-order the middle of their executions. “I eventually join” does not legalize a
-race that occurred before the join. Synchronization must order every
-conflicting non-atomic access.
+	pid = get_task_pid(p, PIDTYPE_PID);
+	nr = pid_vnr(pid);
 
-Join also reclaims thread resources and documents one owner of the returned
-value. A joinable thread should be joined exactly once. A detached thread
-cannot later be joined, so any data it uses must outlive its asynchronous work
-through another protocol. `pthread_t` is an opaque handle; do not print or
-compare it as though it were a portable integer, and do not confuse it with a
-Linux TID.
+	if (clone_flags & CLONE_PARENT_SETTID)
+		put_user(nr, args->parent_tid);
+```
 
-## 7. Debug lifetime before timing
+`copy_process` returns a task that is fully built and still off the run
+queue. After the vfork and LRU bookkeeping that follows this excerpt,
+line 2620 calls `wake_up_new_task`, which makes the child schedulable. The
+parent syscall returns `nr` in `%rax`. The child's saved `%rax` is 0, so
+both tasks resume the libc wrapper and branch on `%rax`: the parent
+continues `pthread_create`, and the child enters the thread start routine.
 
-When a threaded program intermittently fails, first draw an object-lifetime
-table: allocation, publication, permitted users, synchronization, final use,
-and destruction. Then draw the happens-before graph. Only after both are
-coherent should scheduling or performance become the primary hypothesis.
+---
 
-Typical failures include passing the address of a loop variable to several
-workers, freeing a task immediately after enqueueing it, returning a stack
-address, destroying a mutex while a waiter may still reference it, or letting
-`main` return while detached workers retain pointers into process state.
-These are C lifetime errors or protocol errors, not mysterious pthread
-behavior.
+## 4. `copy_process` copies or shares one resource at a time
 
-## Practical challenge
+Before any of those helpers run, `dup_task_struct` (`kernel/fork.c` line
+907) allocates a new `task_struct` and a new kernel stack
+(`alloc_thread_stack_node` at line 920). `arch_dup_task_struct` copies the
+parent with `*dst = *src`, so the child starts life with the parent's
+pointers. The copy helpers then either bump a reference count and keep the
+pointer, or allocate a replacement. The kernel stack pointer is rewritten
+after the copy (`tsk->stack = stack` at line 936), which is why the child
+has a private kernel stack even though the struct was memcpy'd.
 
-**Purpose:** connect pthread creation and joining to Linux task intuition,
-shared process resources, per-thread stacks/TLS, and explicit object lifetime.
+`include/linux/sched.h` places the process-wide pointers and the per-task
+mask side by side (lines 1129–1132): `signal`, `sighand`, and
+`sigset_t blocked`. The blocked mask is a member of the task, so the
+struct copy gives the child its own mask, initialized to the parent's, and
+a later `pthread_sigmask` changes one task.
 
-**Prediction:** the canonical basic and ownership modes report checked values;
-artifact metadata varies, but no output ordering is required.
+The resource walk itself:
 
-**Evidence:** exact source ranges, binary identity, program assertions, and an
-ownership timeline from initialization through join and free.
+```c
+/* kernel/fork.c :: copy_process :: tree c9b2385d6793
+ * lines 2176–2197
+ */
+	retval = copy_files(clone_flags, p);
+	if (retval)
+		goto bad_fork_cleanup_semundo;
+	retval = copy_fs(clone_flags, p);
+	if (retval)
+		goto bad_fork_cleanup_files;
+	retval = copy_sighand(clone_flags, p);
+	if (retval)
+		goto bad_fork_cleanup_fs;
+	retval = copy_signal(clone_flags, p);
+	if (retval)
+		goto bad_fork_cleanup_sighand;
+	retval = copy_mm(clone_flags, p);
+	if (retval)
+		goto bad_fork_cleanup_signal;
+	retval = copy_namespaces(clone_flags, p);
+	if (retval)
+		goto bad_fork_cleanup_mm;
+	retval = copy_io(clone_flags, p);
+	if (retval)
+		goto bad_fork_cleanup_namespaces;
+	retval = copy_thread(clone_flags, args->stack, args->stack_size, p, args->tls);
+```
 
-**Limits:** no raw-clone programming, stack exhaustion, detached-thread race,
-TLS ABI disassembly, scheduling guarantee, or proof that one run covers every
-lifetime error.
+`args->stack` is the user `newsp` from the syscall. `args->tls` is the TLS
+argument. Both reach the architecture code only here. `copy_fs` is the same
+pattern for the current directory and umask (`CLONE_FS`); pthread libc
+often shares it too. The four helpers the rest of this lesson reads are
+`copy_mm`, `copy_files`, `copy_sighand`, and `copy_signal`.
+
+The kernel refuses a thread group that fails to share the address space.
+The check is earlier in `copy_process`:
+
+```c
+/* kernel/fork.c :: copy_process :: tree c9b2385d6793
+ * lines 1950–1963
+ */
+	/*
+	 * Thread groups must share signals as well, and detached threads
+	 * can only be started up within the thread group.
+	 */
+	if ((clone_flags & CLONE_THREAD) && !(clone_flags & CLONE_SIGHAND))
+		return ERR_PTR(-EINVAL);
+
+	/*
+	 * Shared signal handlers imply shared VM. By way of the above,
+	 * thread groups also imply shared VM. Blocking this case allows
+	 * for various simplifications in other code.
+	 */
+	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
+		return ERR_PTR(-EINVAL);
+```
+
+`CLONE_THREAD` requires `CLONE_SIGHAND`, and `CLONE_SIGHAND` requires
+`CLONE_VM`. A thread group shares both the dispositions and the address
+space. The kernel enforces that before the new task runs.
+
+---
+
+## 5. `copy_mm`: `CLONE_VM` shares the address space
+
+`copy_mm` starts at line 1456 by clearing fault counters and setting
+`tsk->mm` and `tsk->active_mm` to `NULL`. The decision is then:
+
+```c
+/* kernel/fork.c :: copy_mm :: tree c9b2385d6793
+ * lines 1471–1497
+ */
+	/*
+	 * Are we cloning a kernel thread?
+	 *
+	 * We need to steal a active VM for that..
+	 */
+	oldmm = current->mm;
+	if (!oldmm)
+		return 0;
+
+	/* initialize the new vmacache entries */
+	vmacache_flush(tsk);
+
+	if (clone_flags & CLONE_VM) {
+		mmget(oldmm);
+		mm = oldmm;
+		goto good_mm;
+	}
+
+	retval = -ENOMEM;
+	mm = dup_mm(tsk, current->mm);
+	if (!mm)
+		goto fail_nomem;
+
+good_mm:
+	tsk->mm = mm;
+	tsk->active_mm = mm;
+	return 0;
+```
+
+A kernel thread has `current->mm == NULL`, and `copy_mm` returns with the
+child's `mm` still `NULL`. That is the Linux shape closest to a Week 7 ToyOS
+task: execution state with a shared (or absent) user address space, and the
+private state living in the stack.
+
+`fork` leaves `CLONE_VM` clear, so `dup_mm` builds a new `mm_struct`. Virtual
+addresses survive and the physical pages stay copy-on-write until a write.
+A pthread sets `CLONE_VM`. `mmget` takes another reference on the same
+`mm_struct`, and both tasks store that pointer. A store through a pointer in
+the child is a store to the parent's object. Both cores can cache the line;
+[Week 2's coherence protocol](../../02-assembly-memory-and-c/sections/day-005-cache-organization.md)
+moves exclusive ownership when one of them writes. Day 2 asks what C says
+about that pair of accesses.
+
+The main thread's stack mapping was created at `execve`, as
+[Week 3](../../03-c-toolchain-and-startup/sections/day-007-elf-loading-and-main.md)
+described. Further thread stacks are anonymous mappings libc creates in this
+shared `mm` before `clone`. `copy_mm` only publishes the `mm` pointer.
+
+---
+
+## 6. `copy_files`: `CLONE_FILES` shares the descriptor table
+
+```c
+/* kernel/fork.c :: copy_files :: tree c9b2385d6793
+ * lines 1523–1548
+ */
+static int copy_files(unsigned long clone_flags, struct task_struct *tsk)
+{
+	struct files_struct *oldf, *newf;
+	int error = 0;
+
+	/*
+	 * A background process may not have any files ...
+	 */
+	oldf = current->files;
+	if (!oldf)
+		goto out;
+
+	if (clone_flags & CLONE_FILES) {
+		atomic_inc(&oldf->count);
+		goto out;
+	}
+
+	newf = dup_fd(oldf, NR_OPEN_MAX, &error);
+	if (!newf)
+		goto out;
+
+	tsk->files = newf;
+	error = 0;
+out:
+	return error;
+}
+```
+
+With `CLONE_FILES`, the function increments the reference count and
+returns, leaving the pointer `dup_task_struct` already copied. Both tasks
+index the same `files_struct`. `open`, `close`, and `dup` in one thread
+change the table the other thread sees. Descriptor 3 in either thread is
+the same slot.
+
+`fork` leaves the flag clear, so `dup_fd` allocates a new table whose entries
+still point at the same open-file descriptions. Week 10 separated those two
+layers. A pthread shares the table itself. The `files_struct` is kernel
+memory reached through the task pointer; a heap `int` is shared because both
+tasks walk the same page tables.
+
+---
+
+## 7. Dispositions are shared; the thread-group id is shared
+
+Signal dispositions live in `sighand->action[]` (`include/linux/sched/signal.h`,
+`struct sighand_struct`). `copy_sighand`:
+
+```c
+/* kernel/fork.c :: copy_sighand :: tree c9b2385d6793
+ * lines 1576–1592
+ */
+static int copy_sighand(unsigned long clone_flags, struct task_struct *tsk)
+{
+	struct sighand_struct *sig;
+
+	if (clone_flags & CLONE_SIGHAND) {
+		refcount_inc(&current->sighand->count);
+		return 0;
+	}
+	sig = kmem_cache_alloc(sighand_cachep, GFP_KERNEL);
+	RCU_INIT_POINTER(tsk->sighand, sig);
+	if (!sig)
+		return -ENOMEM;
+
+	refcount_set(&sig->count, 1);
+	spin_lock_irq(&current->sighand->siglock);
+	memcpy(sig->action, current->sighand->action, sizeof(sig->action));
+	spin_unlock_irq(&current->sighand->siglock);
+```
+
+`CLONE_SIGHAND` bumps the count and keeps the pointer `dup_task_struct`
+copied. `sigaction` in one thread installs a handler every thread will
+run. The other branch allocates a new table and memcpy's the current
+actions; `fork` takes that branch, which is why a child's later
+`sigaction` leaves the parent alone. `CLONE_CLEAR_SIGHAND`, just below
+this excerpt, resets handlers to the default as a further option.
+
+The thread group itself is `struct signal_struct`, pointed to by
+`task->signal`. `copy_signal`:
+
+```c
+/* kernel/fork.c :: copy_signal :: tree c9b2385d6793
+ * lines 1625–1647
+ */
+static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
+{
+	struct signal_struct *sig;
+
+	if (clone_flags & CLONE_THREAD)
+		return 0;
+
+	sig = kmem_cache_zalloc(signal_cachep, GFP_KERNEL);
+	tsk->signal = sig;
+	if (!sig)
+		return -ENOMEM;
+
+	sig->nr_threads = 1;
+	atomic_set(&sig->live, 1);
+	refcount_set(&sig->sigcnt, 1);
+
+	/* list_add(thread_node, thread_head) without INIT_LIST_HEAD() */
+	sig->thread_head = (struct list_head)LIST_HEAD_INIT(tsk->thread_node);
+	tsk->thread_node = (struct list_head)LIST_HEAD_INIT(sig->thread_head);
+
+	init_waitqueue_head(&sig->wait_chldexit);
+	sig->curr_target = tsk;
+	init_sigpending(&sig->shared_pending);
+```
+
+`CLONE_THREAD` returns immediately. The child's `signal` pointer stays the
+one copied from the parent, `nr_threads` is not reset to 1, and the child
+joins the existing group. The other branch allocates a fresh group whose
+thread list contains only the new task. That is `fork`.
+
+The id userspace calls the pid is assigned a few hundred lines later:
+
+```c
+/* kernel/fork.c :: copy_process :: tree c9b2385d6793
+ * lines 2260–2272
+ */
+	/* ok, now we should be set up.. */
+	p->pid = pid_nr(pid);
+	if (clone_flags & CLONE_THREAD) {
+		p->group_leader = current->group_leader;
+		p->tgid = current->tgid;
+	} else {
+		p->group_leader = p;
+		p->tgid = p->pid;
+	}
+
+	p->nr_dirtied = 0;
+	p->nr_dirtied_pause = 128 >> (PAGE_SHIFT - 10);
+	p->dirty_paused_when = 0;
+```
+
+Each task has its own `pid` (the tid). `CLONE_THREAD` copies `tgid` and
+`group_leader` from the caller. `getpid` reports `tgid`. `gettid` reports
+`pid`. `/proc/self` names the group; `/proc/thread-self` names the task.
+The `nr_dirtied` fields are accounting reset on the same path; the identity
+rule is the `tgid` branch.
+
+The signal picture for a pthread is:
+
+```text
+shared signal_struct     tgid, group leader, shared pending, rlimits
+shared sighand_struct    disposition table (SIG_DFL / SIG_IGN / handler)
+per task                 blocked, real_blocked, private pending
+```
+
+`sigaction` updates the shared `action[]`. `pthread_sigmask` updates one
+task's `blocked`.
+
+---
+
+## 8. Private registers, two stacks, and a TLS base
+
+The architecture half of creation is `arch/x86/kernel/process.c`,
+`copy_thread`. The new kernel stack is framed so the first time the
+scheduler switches to this task it resumes at `ret_from_fork`:
+
+```c
+/* arch/x86/kernel/process.c :: copy_thread :: tree c9b2385d6793
+ * lines 146–163
+ */
+	childregs = task_pt_regs(p);
+	fork_frame = container_of(childregs, struct fork_frame, regs);
+	frame = &fork_frame->frame;
+
+	frame->bp = encode_frame_pointer(childregs);
+	frame->ret_addr = (unsigned long) ret_from_fork;
+	p->thread.sp = (unsigned long) fork_frame;
+	p->thread.io_bitmap = NULL;
+	clear_tsk_thread_flag(p, TIF_IO_BITMAP);
+	p->thread.iopl_warn = 0;
+	memset(p->thread.ptrace_bps, 0, sizeof(p->thread.ptrace_bps));
+
+#ifdef CONFIG_X86_64
+	current_save_fsgs();
+	p->thread.fsindex = current->thread.fsindex;
+	p->thread.fsbase = current->thread.fsbase;
+	p->thread.gsindex = current->thread.gsindex;
+	p->thread.gsbase = current->thread.gsbase;
+```
+
+`p->thread.sp` points at a frame on the new kernel stack, and
+`ret_from_fork` is the address that frame returns to. `childregs` is the
+saved user register block on that stack. The parent's `thread.sp` stays
+where it was. On x86-64 the same function snapshots the parent's FS and GS
+bases; FS is the System V AMD64 TLS base, and `CLONE_SETTLS` replaces it
+for a pthread.
+
+The user register block is then a copy of the parent's syscall frame, with
+`%rax` and `%rsp` edited:
+
+```c
+/* arch/x86/kernel/process.c :: copy_thread :: tree c9b2385d6793
+ * lines 194–223
+ */
+	frame->bx = 0;
+	*childregs = *current_pt_regs();
+	childregs->ax = 0;
+	if (sp)
+		childregs->sp = sp;
+
+#ifdef CONFIG_X86_32
+	task_user_gs(p) = get_user_gs(current_pt_regs());
+#endif
+
+	if (unlikely(p->flags & PF_IO_WORKER)) {
+		/*
+		 * An IO thread is a user space thread, but it doesn't
+		 * return to ret_after_fork().
+		 *
+		 * In order to indicate that to tools like gdb,
+		 * we reset the stack and instruction pointers.
+		 *
+		 * It does the same kernel frame setup to return to a kernel
+		 * function that a kernel thread does.
+		 */
+		childregs->sp = 0;
+		childregs->ip = 0;
+		kthread_frame_init(frame, sp, arg);
+		return 0;
+	}
+
+	/* Set a new TLS for the child thread? */
+	if (clone_flags & CLONE_SETTLS)
+		ret = set_new_tls(p, tls);
+```
+
+`childregs->ax = 0` is the child's `%rax`. Non-zero `sp` (the syscall's
+`newsp`) becomes the child's user `%rsp`, so the child resumes on the stack
+libc prepared. Zero `sp`, as in `fork`, keeps the copied user `%rsp` inside
+the child's new `mm`. `PF_IO_WORKER` is a kernel-internal user task that
+returns through `kthread_frame_init`; a pthread falls through to
+`CLONE_SETTLS`.
+
+`set_new_tls` (lines 129–136) calls `do_set_thread_area_64(p, ARCH_SET_FS, tls)`,
+which the header macro (`arch/x86/include/asm/ptrace.h` line 386) turns into
+`do_arch_prctl_64`. Libc has already written a startup frame on `newsp`.
+After `ret_from_fork` the child is in that stub, sees `%rax == 0`, and calls
+`return_id` or `consume_owned`.
+
+---
+
+## 9. Architecture lens: which register holds the thread pointer
+
+The TLS block is ordinary memory in the shared `mm`. The pointer to it has
+to be a value context-switch saves with the task, because the thread must
+be able to find its own block before it has loaded any other address. On
+x86-64 that value is the FS base:
+
+```c
+/* arch/x86/kernel/process_64.c :: do_arch_prctl_64 :: tree c9b2385d6793
+ * lines 785–813, case ARCH_SET_FS
+ */
+	case ARCH_SET_FS: {
+		/*
+		 * Not strictly needed for %fs, but do it for symmetry
+		 * with %gs
+		 */
+		if (unlikely(arg2 >= TASK_SIZE_MAX))
+			return -EPERM;
+
+		preempt_disable();
+		/*
+		 * Set the selector to 0 for the same reason
+		 * as %gs above.
+		 */
+		if (task == current) {
+			loadseg(FS, 0);
+			x86_fsbase_write_cpu(arg2);
+
+			/*
+			 * On non-FSGSBASE systems, save_base_legacy() expects
+			 * that we also fill in thread.fsbase.
+			 */
+			task->thread.fsbase = arg2;
+		} else {
+			task->thread.fsindex = 0;
+			x86_fsbase_write_task(task, arg2);
+		}
+		preempt_enable();
+		break;
+	}
+```
+
+A newborn task takes the `else` branch: FS index 0, and the base stored on
+the task for the next switch to load. User code then reads `%fs:offset`.
+The System V AMD64 ABI uses that base as the thread pointer and puts the
+stack canary at `%fs:0x28`. Libc's `errno` is one such TLS object: the
+kernel returns one code in `%rax`, and each thread's wrapper stores it in
+that thread's `errno`.
+
+AArch64's user thread pointer is the system register `TPIDR_EL0`. RISC-V's
+ABI thread pointer is the integer register `tp` (`x4`). This lesson quotes
+the x86 path that writes the FS base. The arm64 and riscv `copy_thread`
+functions install their own registers under the same `CLONE_SETTLS` flag.
+
+```text
+x86-64    FS base, accessed as %fs:offset     quoted above
+AArch64   TPIDR_EL0                           ABI register, setup not quoted
+RISC-V    tp (x4), accessed as offset(tp)     ABI register, setup not quoted
+```
+
+The compiler emits those accesses for `_Thread_local`. The block lives as
+long as the thread does. A pointer into another thread's TLS is reachable
+because the `mm` is shared, and the object stays valid while that thread
+still owns the block.
+
+---
+
+## 10. Execution trace: `thread_lab basic`
+
+One successful `pthread_create` / `pthread_join` of `return_id(&token)` in
+[`mode_basic`](../../projects/linux-system-programming/src/thread_lab.c).
+`token` is an `int` with value 42 in the creator's frame.
+
+```text
+creator, user mode                         child, still being built
+mode_basic:
+  token = 42            lives at &token on the creator user stack
+  pthread_create(return_id, &token)
+    libc allocates a user stack and a TLS block in the shared mm
+    libc writes a startup frame on that stack
+    syscall clone
+      %rdi flags  (CLONE_VM | CLONE_FILES | CLONE_SIGHAND
+                   | CLONE_THREAD | CLONE_SETTLS, plus libc extras)
+      %rsi newsp  (top of the new user stack)
+      %r8  tls    (address of the new TLS block, x86-64 ABI)
+
+kernel, creator's kernel stack
+  SYSCALL_DEFINE5(clone) → kernel_clone
+  dup_task_struct: new task_struct, new kernel stack
+  copy_files:   CLONE_FILES, same files_struct
+  copy_sighand: CLONE_SIGHAND, same dispositions
+  copy_signal:  CLONE_THREAD, same signal_struct, same tgid
+  copy_mm:      CLONE_VM, mmget, same mm
+  copy_thread:  kernel frame → ret_from_fork
+                childregs->ax = 0
+                childregs->sp = newsp
+                CLONE_SETTLS → ARCH_SET_FS on the child task
+  wake_up_new_task
+  parent returns tid in %rax
+
+creator resumes pthread_create             child resumes on newsp
+  stores pthread_t                         libc stub sees %rax == 0
+  pthread_join                             calls return_id(&token)
+                                           return_id returns &token
+                                           thread exit
+  join copies the returned pointer
+  result == &token
+  prints pthread_create_join=ok result=42
+```
+
+Writes to `token` are sequenced before `pthread_create`, and creation
+synchronizes with the new thread's start, so the child's read happens after
+that write. `pthread_join` synchronizes with the child's termination, so
+the creator's comparison happens after `return_id` returns. The ownership
+mode uses the same two edges around a heap object: the child writes
+`value *= 2` only after create, and the parent reads and `free`s only after
+join. Day 2 names the edge that is absent when two threads update one
+non-atomic object in between.
+
+---
+
+## 11. Mastery: Explain · Draw · Observe · Build
+
+Run [`../challenges/day-001-thread-model.sh`](../challenges/day-001-thread-model.sh).
+It builds `thread_lab`, runs `basic` and `ownership`, and prints the
+lifetime-relevant source. Predict `pthread_create_join=ok result=42` and
+`joined_value=42` with `freed_by=parent`. Leave thread ids and scheduling
+order unpredicted.
+
+### Explain
+
+`pthread_create` is libc around `clone` / `kernel_clone`, with flags that
+share the `mm` (`CLONE_VM`), the file table (`CLONE_FILES`), the signal
+handlers (`CLONE_SIGHAND`), and the thread-group id (`CLONE_THREAD`), plus
+a new user stack and TLS (`CLONE_SETTLS`). Per task: registers, kernel
+stack, user stack, TLS base, `blocked`. Process-wide: `mm`, descriptor
+table, dispositions, `tgid`. On x86-64, `copy_thread` writes
+`childregs->sp` and clears `childregs->ax`, and `ARCH_SET_FS` records the
+TLS base. AArch64 uses `TPIDR_EL0`. RISC-V uses `tp`.
+
+### Draw
+
+1. One `mm_struct` containing two user stacks and two TLS blocks, and two
+   `task_struct`s under it with private kernel stacks.
+2. The `copy_process` order: files, sighand, signal, mm, then
+   `copy_thread(stack, tls)`.
+3. The `basic` trace from `token = 42` through `clone` to the joined
+   pointer comparison. Mark which edge is `pthread_create` and which is
+   `pthread_join`.
+
+### Observe
+
+From the challenge output, record:
+
+- the two checked lines (`result=42`, `joined_value=42`);
+- `uname` and the compiler version the script prints;
+- the source range the script prints, and on each line say whether the
+  object is the shared `mm`, the creator stack, the heap, or a
+  `pthread_t`.
+
+### Build
+
+On the source range the script prints, label `token`, the heap `item`, and
+the `pthread_t` with where the object lives and which intervals of the
+create/join trace may touch it. Then name the `clone` flag for each shared
+column: `CLONE_VM`, `CLONE_FILES`, `CLONE_SIGHAND`, `CLONE_THREAD`.
+
+### Why? notebook
+
+1. Why does a second thread need a new user stack when it already shares
+   the address space?
+2. Why does `fork` leave `newsp` zero while `pthread_create` passes a
+   pointer?
+3. Why does `copy_files` under `CLONE_FILES` increment a counter and
+   return without assigning `tsk->files`?
+4. Why does the kernel reject `CLONE_THREAD` without `CLONE_SIGHAND`, and
+   `CLONE_SIGHAND` without `CLONE_VM`?
+5. Why can `getpid` match in two threads whose `/proc/.../task` ids differ?
+6. Why is the blocked-signal mask per task while `sigaction` is shared?
+7. Why is the child's `%rax` 0 when the parent receives a tid?
+8. Why does x86-64 store the TLS base on the task in the `else` branch of
+   `ARCH_SET_FS`?
+9. Why does Week 7's shared page tables plus private kernel stacks line up
+   with `CLONE_VM`, while Week 8's private page-table root lines up with
+   `fork`?
+
+---
+
+## References used selectively
+
+Linux tree `c9b2385d6793`, paths named on each excerpt above.
+
+**Next:** the shared `mm` makes both threads' loads and stores hit one object.
+Day 2 asks when the C abstract machine still assigns that program a meaning.

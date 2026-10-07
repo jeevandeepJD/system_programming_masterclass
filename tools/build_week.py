@@ -85,6 +85,9 @@ def lesson_with_challenge_links(
             "](../../",
             "](repo-relative:../",
         ).replace(
+            "](../challenges/",
+            "](repo-relative:challenges/",
+        ).replace(
             "](day-",
             "](repo-relative:sections/day-",
         )
@@ -201,6 +204,9 @@ def lesson_with_challenge_links(
     lesson_text = lesson_text.replace(
         "](../../",
         "](repo-relative:../",
+    ).replace(
+        "](../challenges/",
+        "](repo-relative:challenges/",
     ).replace(
         "](day-",
         "](repo-relative:sections/day-",
