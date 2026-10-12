@@ -1,0 +1,355 @@
+{
+  "week": 12,
+  "days": [
+    {
+      "day": 1,
+      "title": "Descriptors, Open Files, and Offsets",
+      "questions": [
+        {
+          "prompt": "What do two descriptors produced by dup share?",
+          "options": [
+            "Two independent file offsets",
+            "One open-file description, including its offset and status flags",
+            "A copy of the inode's data blocks",
+            "The directory entry and nothing else"
+          ],
+          "answer": 1,
+          "explanation": "dup installs another fd-table entry that refers to the same open-file description. A later read or lseek on either descriptor moves that one offset."
+        },
+        {
+          "prompt": "Why is the user-facing handle an integer rather than a kernel address?",
+          "options": [
+            "Integers are faster than pointers on every CPU",
+            "User code must not forge or dereference a kernel object",
+            "The integer itself stores the file bytes",
+            "The page cache requires the handle to be smaller than a page"
+          ],
+          "answer": 1,
+          "explanation": "The kernel maps the integer through the process fd table. Handing out a kernel pointer would expose an address the process must not be able to invent or follow."
+        },
+        {
+          "prompt": "Where does a second open of the same path start, with no O_APPEND?",
+          "options": [
+            "At the first descriptor's current offset",
+            "At a new open-file description positioned at the start for an ordinary read",
+            "At EOF, always",
+            "Inside the other process's fd table"
+          ],
+          "answer": 1,
+          "explanation": "open allocates a new open-file description. The lab's second read returns the leading bytes while the dup'd pair continues from the shared offset."
+        },
+        {
+          "prompt": "What does closing one of two dup'd descriptors do?",
+          "options": [
+            "Destroys the open-file description immediately",
+            "Drops one reference and leaves the description while another descriptor still names it",
+            "Rewinds the shared offset to zero",
+            "Creates a new inode"
+          ],
+          "answer": 1,
+          "explanation": "Each descriptor is a reference. The description, including its offset, remains until the last reference is closed."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Short Reads, Writes, and Nonblocking I/O",
+      "questions": [
+        {
+          "prompt": "A write returns a positive count smaller than the request. What is that?",
+          "options": [
+            "Failure, with no bytes transferred",
+            "A short success; the caller continues from the bytes already transferred",
+            "Proof the file offset did not move",
+            "A request the kernel will finish without further calls"
+          ],
+          "answer": 1,
+          "explanation": "A positive return is the count transferred. The lab's nonblocking pipe write of more than the pipe capacity returns a short count and the retry loop continues."
+        },
+        {
+          "prompt": "How does read returning 0 differ from EAGAIN on a pipe?",
+          "options": [
+            "They are the same outcome",
+            "0 means no write ends remain; EAGAIN means this nonblocking call found no bytes yet",
+            "EAGAIN means every writer has closed",
+            "0 means the caller's buffer was shorter than PIPE_BUF"
+          ],
+          "answer": 1,
+          "explanation": "EOF is a zero return after the writers are gone. EAGAIN is the nonblocking empty-pipe result while a writer can still produce bytes."
+        },
+        {
+          "prompt": "What does EINTR from read mean when the handler was installed without SA_RESTART?",
+          "options": [
+            "The descriptor is closed",
+            "A signal interrupted the wait; retry if the transfer is still wanted",
+            "The bytes that were requested are corrupt",
+            "The call must not be issued again"
+          ],
+          "answer": 1,
+          "explanation": "The lab blocks in read, delivers SIGUSR1, and observes EINTR. The robust loop treats that return as 'try again', not as EOF or as a short success."
+        },
+        {
+          "prompt": "What does O_NONBLOCK change about an empty pipe read?",
+          "options": [
+            "It makes short writes impossible",
+            "The call returns EAGAIN instead of sleeping the task",
+            "It disables signals",
+            "It enlarges the pipe to PIPE_BUF"
+          ],
+          "answer": 1,
+          "explanation": "Nonblocking mode is how the lab makes EAGAIN deterministic. The task stays runnable and the caller decides whether to wait another way."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "VFS, the Page Cache, and Durability",
+      "questions": [
+        {
+          "prompt": "A second open reads a write that has not been fsync'd. What did the lab observe?",
+          "options": [
+            "Crash durability",
+            "Same-machine visibility through the page cache",
+            "A device write barrier",
+            "A sparse hole"
+          ],
+          "answer": 1,
+          "explanation": "Buffered write updates cache pages. A later read on this machine can see those bytes before any durability request. That visibility is not survival across power loss."
+        },
+        {
+          "prompt": "What does a successful fsync establish in this lab?",
+          "options": [
+            "The bytes will survive every power loss",
+            "The kernel accepted a durability request, which is not a crash-proof claim",
+            "The page cache dropped the pages",
+            "stat will fail afterwards"
+          ],
+          "answer": 1,
+          "explanation": "fsync asks the kernel to push data toward stable storage. Drive caches, filesystem behavior, and power loss sit outside what this userspace result proves."
+        },
+        {
+          "prompt": "Which trio matches the sparse-file run?",
+          "options": [
+            "Logical size equal to the allocated byte count, and no zero byte",
+            "Logical size past the hole, a zero byte in the hole, and fewer allocated blocks than that size",
+            "st_size zero after the tail write",
+            "Two descriptors sharing one offset"
+          ],
+          "answer": 1,
+          "explanation": "The logical end is the tail write. A read in the gap returns zero. st_blocks, in 512-byte units, stays far below the logical size when the filesystem records a hole."
+        },
+        {
+          "prompt": "What does the VFS normalize for this week?",
+          "options": [
+            "CPU page-table permissions",
+            "One read/write/stat interface over different kernel objects",
+            "The numeric value of PIPE_BUF",
+            "C memory ordering"
+          ],
+          "answer": 1,
+          "explanation": "Regular files, pipes, and other objects are reached through a file object and its operations. The page cache is the file-page layer under that interface, not the pipe buffer and not the page tables."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Pipes, Redirection, and Backpressure",
+      "questions": [
+        {
+          "prompt": "When does a pipe read return 0?",
+          "options": [
+            "As soon as any one write-end descriptor is closed",
+            "When every write end is closed and the buffered bytes are gone",
+            "Whenever the read end is nonblocking",
+            "After exactly PIPE_BUF bytes have been written"
+          ],
+          "answer": 1,
+          "explanation": "The lab closes one dup'd writer and still sees EAGAIN. The zero return appears only after the last writer closes."
+        },
+        {
+          "prompt": "What does dup2 of a pipe write end onto STDOUT_FILENO do in the child?",
+          "options": [
+            "Copies the bytes into a second pipe",
+            "Makes standard output refer to that pipe's open-file description",
+            "Changes the parent's standard output",
+            "Sets O_APPEND on the read end"
+          ],
+          "answer": 1,
+          "explanation": "dup2 is another fd-table slot for the same description. The child writes redir-ok to fd 1 and the parent reads it from the pipe."
+        },
+        {
+          "prompt": "A nonblocking write on a full pipe returns EAGAIN. What is that?",
+          "options": [
+            "Silent data loss",
+            "Backpressure: the pipe cannot accept more bytes until a reader drains it",
+            "End of file",
+            "An atomic partial write of PIPE_BUF"
+          ],
+          "answer": 1,
+          "explanation": "The finite pipe buffer is the flow-control point. O_NONBLOCK turns the would-block sleep into EAGAIN so the producer stays bounded."
+        },
+        {
+          "prompt": "A nonblocking write of at most PIPE_BUF bytes finds too little free space. What does POSIX require?",
+          "options": [
+            "A short prefix is written",
+            "The call fails with EAGAIN and transfers nothing",
+            "The call blocks despite O_NONBLOCK",
+            "The reader observes a torn mix of that write"
+          ],
+          "answer": 1,
+          "explanation": "Writes of PIPE_BUF bytes or fewer are atomic. On a full pipe the lab's nonblocking PIPE_BUF write returns EAGAIN; on an empty pipe the same size write completes."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "select, poll, epoll, and Readiness",
+      "questions": [
+        {
+          "prompt": "What do select, poll, and epoll provide that one blocking read does not?",
+          "options": [
+            "A copy of the bytes into the page cache",
+            "A way for one task to sleep until any of several descriptors can make progress",
+            "Atomicity up to PIPE_BUF",
+            "Crash durability"
+          ],
+          "answer": 1,
+          "explanation": "Readiness is a scheduling facility. The task leaves the CPU until a descriptor can accept or produce progress, instead of blocking inside a single read or spinning."
+        },
+        {
+          "prompt": "After a level-triggered epoll report, a one-byte read leaves bytes queued. The next wait with timeout zero should:",
+          "options": [
+            "Stay silent until another write",
+            "Report readiness again because the level is still true",
+            "Convert the pipe to blocking mode",
+            "Close the writer"
+          ],
+          "answer": 1,
+          "explanation": "Level-triggered notification tracks the current condition. The lab sees epoll_lt_partial=ready after the partial read."
+        },
+        {
+          "prompt": "What must an edge-triggered reader do with bytes left after the notification?",
+          "options": [
+            "Wait for epoll to repeat the same edge",
+            "Drain until EAGAIN, because the same edge is not repeated",
+            "Assume the next read will return 0",
+            "Clear O_NONBLOCK before the next wait"
+          ],
+          "answer": 1,
+          "explanation": "The lab's ET wait after a partial read returns not-ready. The remaining bytes are still there and are consumed by reading until EAGAIN. A later write is a new edge."
+        },
+        {
+          "prompt": "select reports readable, then read returns fewer bytes than requested. Why is that coherent?",
+          "options": [
+            "select failed",
+            "Readiness means a call can make progress, not that the whole request is buffered",
+            "dup split the pipe into two buffers",
+            "EINTR always shortens a ready read"
+          ],
+          "answer": 1,
+          "explanation": "The lab asks for 100 bytes, four are queued, and read returns 4. Ready is not a full-transfer contract."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "mmap, Shared Mappings, and Data Movement",
+      "questions": [
+        {
+          "prompt": "A MAP_SHARED store is visible to pread before msync. What does that show?",
+          "options": [
+            "A completed disk write barrier",
+            "The mapping and the file read share the same cached pages",
+            "MAP_PRIVATE copy-on-write",
+            "That mmap is faster than read on every machine"
+          ],
+          "answer": 1,
+          "explanation": "MAP_SHARED updates the file's pages. pread observes those bytes through the page cache. Visibility here is still not crash durability."
+        },
+        {
+          "prompt": "How should this lab's msync(MS_SYNC) be described?",
+          "options": [
+            "Proof the bytes survive power loss",
+            "A request to write mapped modifications back, not a crash-proof result",
+            "A substitute for munmap",
+            "A prerequisite before any pread can see a MAP_SHARED store"
+          ],
+          "answer": 1,
+          "explanation": "The store was already visible before msync. msync completion means the request returned, which this module does not promote into a crash-durability claim."
+        },
+        {
+          "prompt": "What can one timed pread versus one memcpy from the mapping establish?",
+          "options": [
+            "mmap is universally faster",
+            "A single-run observation for this size, machine, and cache state",
+            "Block-layer service time",
+            "The TLB cost on every architecture"
+          ],
+          "answer": 1,
+          "explanation": "The lab prints both durations and performance_claim=none. Order can change with size, faults, cache warmth, and filesystem."
+        },
+        {
+          "prompt": "A later pwrite shows up inside the MAP_SHARED mapping. That is evidence of:",
+          "options": [
+            "An accidental MAP_PRIVATE mapping",
+            "Coherence between write and the shared mapping on this Linux behavior",
+            "msync failure",
+            "A sparse hole at offset zero"
+          ],
+          "answer": 1,
+          "explanation": "The lab checks the bytes at offset 32 in the mapping after pwrite. MAP_SHARED is the mode that makes that comparison meaningful."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "I/O Debugging and a Comparison Report",
+      "questions": [
+        {
+          "prompt": "What is /proc/self/fd/N evidence of?",
+          "options": [
+            "A second stored copy of the file bytes",
+            "The process fd table, via a symlink to the object that descriptor names",
+            "The page-cache offset",
+            "The numeric PIPE_BUF"
+          ],
+          "answer": 1,
+          "explanation": "readlink and the directory listing identify which integer is open and which path it names. They do not duplicate the file's data."
+        },
+        {
+          "prompt": "What does read return on a descriptor this process has already closed?",
+          "options": [
+            "0, meaning EOF",
+            "EBADF",
+            "EAGAIN",
+            "EPIPE"
+          ],
+          "answer": 1,
+          "explanation": "EBADF means that integer is not an open descriptor in this process. EOF would mean a still-open object has no more bytes."
+        },
+        {
+          "prompt": "With SIGPIPE ignored, a write to a pipe whose read end is closed returns:",
+          "options": [
+            "0",
+            "EPIPE",
+            "EBADF",
+            "A short positive count"
+          ],
+          "answer": 1,
+          "explanation": "No reader remains, so the write fails with EPIPE. Ignoring SIGPIPE lets the process observe that errno instead of dying."
+        },
+        {
+          "prompt": "epoll_ctl on a regular file returns EPERM here. What belongs in the report?",
+          "options": [
+            "A claim that epoll is missing from the kernel",
+            "The operation, the descriptor kind, and the errno, without a broader guess",
+            "A claim that the page cache rejected the call",
+            "A requirement to switch that file to edge trigger"
+          ],
+          "answer": 1,
+          "explanation": "EPERM is the Linux result for an fd that does not support epoll. A closed fd and a closed epoll instance are separate EBADF results. Record each one."
+        }
+      ]
+    }
+  ]
+}

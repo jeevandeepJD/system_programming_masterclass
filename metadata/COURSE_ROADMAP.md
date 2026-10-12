@@ -112,14 +112,20 @@ Prepared follow-on Linux userspace modules:
 - [Week 11](../11-threads-and-concurrency/overview.md): pthread lifecycle,
   ownership, races, mutexes, condition variables, bounded queues, C11 atomics
   and memory ordering, deadlock, false sharing, and concurrency debugging.
+- [Week 12](../12-linux-io-and-readiness/overview.md): descriptors and shared
+  open-file offsets, short reads and writes, `EINTR` and nonblocking
+  `EAGAIN`, page-cache visibility versus an `fsync` request, pipes, `dup2`,
+  and backpressure, `select`/`poll`/`epoll`, `mmap`, and bounded I/O failure
+  reports.
 
-Both use the shared
+Weeks 10 and 11 use the shared
 [`projects/linux-system-programming`](../projects/linux-system-programming/)
-C17/POSIX lab. These packages are prepared navigation targets, not evidence of
-mastery or permission to bypass Gates A–C. The deterministic suites are the
-portable core; optional analysis tools may be missing. ThreadSanitizer is
-unavailable on the prepared host/runtime and its check may be reported as
-`SKIP`, never as proof that a data race is safe.
+C17/POSIX lab. Week 12 uses
+[`projects/linux-io`](../projects/linux-io/). These packages are prepared
+navigation targets, not evidence of mastery or permission to bypass Gates A–C.
+The deterministic suites are the portable core; optional analysis tools may be
+missing. ThreadSanitizer is unavailable on the prepared host/runtime and its
+check may be reported as `SKIP`, never as proof that a data race is safe.
 
 Every milestone follows:
 - Question → design → predict → implement → observe → break/debug → compare with xv6 → compare with Linux.
