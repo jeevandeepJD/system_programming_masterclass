@@ -21,6 +21,17 @@ implementation of that contract, in one tree. Mastery stays open until
 you produce the evidence yourself. These notes leave completion,
 confidence, and hours blank.
 
+## Read the small kernel before the large one
+
+Use the shared
+[Linux 0.12 → Linux 5.10 map](../references/EARLY_LINUX_012_MAP.md)
+before the detailed day sections. Linux 0.12 places fork, exec, exit, wait,
+signals, and descriptor lifetime in short paths that can be read end to end.
+Then use this week's 5.10 excerpts to replace historical segmentation,
+`a.out`, fixed task arrays, and uniprocessor assumptions with the modern
+implementation. The 0.12 source is the explanatory map; the 5.10/current
+source remains the development reference.
+
 ## Why the seven days are one mechanism
 
 Week 1 ended at exceptions and privilege. Weeks 2 and 3 gave that

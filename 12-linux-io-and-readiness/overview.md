@@ -17,6 +17,17 @@ snapshot. The host that runs the lab may be another kernel; the wrappers
 print `uname`. Re-open the pinned tree, or the sources for the kernel you
 boot, before treating a symbol, field, or errno path as current.
 
+## Read the complete early path first
+
+The shared
+[Linux 0.12 → Linux 5.10 map](../references/EARLY_LINUX_012_MAP.md)
+extracts the small early paths for `open`, `read`, pipes, offsets, and
+`select`. Read those first to see the entire descriptor-to-object flow, then
+return here for modern VFS objects, the page cache, `poll`/`epoll`, `mmap`,
+SMP-safe lifetime rules, and current durability boundaries. Linux 0.12 is
+the map; the 5.10/current source defines the implementation you develop
+against.
+
 ## Why these seven days belong together
 
 User space asks for bytes. The kernel keeps objects, pages, and wait queues, and the descriptor is the integer boundary between them.

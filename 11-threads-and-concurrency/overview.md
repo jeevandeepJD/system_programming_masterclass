@@ -17,6 +17,16 @@ mean. Kernel excerpts in Days 4–6 were read from tree `c9b2385d6793`, whose
 `Makefile` says Linux 5.10.134. The host that runs the lab may be a
 different kernel; `uname` in the reports is that host.
 
+## Where Linux 0.12 helps—and where it stops
+
+Start with the sleep/wakeup and task-switch map in the shared
+[Linux 0.12 → Linux 5.10 reference](../references/EARLY_LINUX_012_MAP.md).
+It makes the reason for task state, sleeping, wakeup, and scheduling visible
+in one small kernel. Linux 0.12 has no modern pthread/`clone` sharing model,
+futex subsystem, SMP memory ordering, C11 atomics, RCU, or per-CPU runqueues.
+Those mechanisms therefore stay grounded in this week's 5.10 excerpts and
+the C/POSIX contracts.
+
 ## Why these seven days belong together
 
 Shared memory is one virtual address space, translated by one set of page
