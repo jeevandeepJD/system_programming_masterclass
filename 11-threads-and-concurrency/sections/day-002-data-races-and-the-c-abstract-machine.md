@@ -22,14 +22,74 @@ Four threads run this loop, `ITERATIONS` equal to 200000:
 for (int i = 0; i < ITERATIONS; ++i) unsafe_counter++;
 ```
 
-Kernel wording quoted below is from tree `c9b2385d6793`. The assembly is
+Linux 5.10 wording quoted below is from tree `c9b2385d6793`. The listing in
+section 2 is Linux 0.12 and is not that tree. The assembly is
 from this host's GCC 16.2.1 20260819 (Red Hat 16.2.1-2), which is also the
 compiler that produced `projects/linux-system-programming/build/thread_lab`
 under the project's `CFLAGS ?= -O2`.
 
 ---
 
-## 1. Why a lost update and a perfect total are one fact
+## 1. Syntax needed for this source
+
+`counter++` on a plain integer is a C expression. In the abstract machine it
+is a read of the object, an addition, and a write back. The source text does
+not make those steps one access. A store through a pointer,
+`current->state = 0`, is likewise one ordinary assignment.
+
+```c
+unsigned long counter;
+
+void bump(void)
+{
+    counter++;                 /* read, add, write */
+}
+```
+
+Nothing in that expression is an atomic operation, a memory order, or a
+lock. The 5.10 and C11 sections below name the extra syntax (`_Atomic`,
+`memory_order`, `data_race`) when the program actually needs it.
+
+## 2. Linux 0.12 first: one CPU, and the timer can interleave
+
+Linux 0.12 runs on one CPU. Another task does not execute beside this one.
+The timer still cuts in. `do_timer` (`kernel/sched.c` lines 364–367, printed
+p. 365) counts down the current slice and, when the interrupted code was
+user mode (`cpl != 0`), calls the scheduler:
+
+```c
+if ((--current->counter)>0) return;
+current->counter=0;
+if (!cpl) return;          /* still inside the kernel: do not switch */
+schedule();
+```
+
+`schedule` itself stores task state with ordinary assignments, including
+`(*p)->state = TASK_RUNNING` when a sleeping task's timer or signal says it
+may run again (lines 128–131 and 137–139). Trace the interleaving as: task
+A is in user code, the timer interrupt runs `do_timer`, `schedule` may
+`switch_to` task B, and a later tick can switch back. A's stores and B's
+stores occupy the same memory in program order only along each task's own
+instructions. Across the switch they are neighbors in time.
+
+That is why an ordering question shows up even before a second core exists.
+What carries forward is the question, not a rule for answering it.
+
+ToyOS has the same shape at the scheduler milestone: one core, a timer tick
+that can switch tasks, and no C memory model. Week 7 records that switch;
+[Day 7](day-007-debuggers-sanitizers-and-system-comparison.md) puts ToyOS
+beside the hosted C rules. Neither system is the authority for `counter++`.
+
+Linux 0.12 cannot teach C11 atomics, data-race undefined behavior, or an
+SMP memory model. It predates those contracts. The C abstract machine
+remains the authority for the lab, and the Linux 5.10 wording later in this
+day (tree `c9b2385d6793`) is evidence of how that kernel talks about an
+intentional race, not a definition of the language. The shared
+[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) states the same limit. The following sections stay with the C
+model.
+
+## 3. Why a lost update and a perfect total are one fact
 
 `counter++` on a plain `uint64_t` is a read, a modify, and a write of a
 non-atomic object. In the abstract machine those are separate accesses.
@@ -55,7 +115,7 @@ machine.
 
 ---
 
-## 2. Conflicting accesses and happens-before
+## 4. Conflicting accesses and happens-before
 
 Two accesses **conflict** when they target the same memory location and at
 least one of them modifies the object. A load conflicts with a store. Two
@@ -102,7 +162,7 @@ schedule is not one of those edges.
 
 ---
 
-## 3. The increment in registers
+## 5. The increment in registers
 
 [Week 2](../../02-assembly-memory-and-c/sections/day-001-x86-64-assembly-foundations.md)
 spells a memory increment as a load into a register, an `add`, and a
@@ -167,7 +227,7 @@ above. This lesson quotes the encoding this host emitted.
 
 ---
 
-## 4. Why the cache can look finished while the language is not
+## 6. Why the cache can look finished while the language is not
 
 [Week 2's cache lesson](../../02-assembly-memory-and-c/sections/day-005-cache-organization.md)
 already has the hardware half. A core that wants to write a line takes
@@ -206,7 +266,7 @@ size explains the traffic. The data-race rule explains the meaning.
 
 ---
 
-## 5. The compiler may assume the race does not exist
+## 7. The compiler may assume the race does not exist
 
 The as-if rule lets the compiler transform a program when the required
 observable behavior is preserved. For a program with a data race, there
@@ -281,9 +341,9 @@ source line is the same line in both cases.
 
 ---
 
-## 6. The interleaving picture is already the smaller claim
+## 8. The interleaving picture is already the smaller claim
 
-Section 3 is what the `-O0` instructions do when two cores overlap: each
+Section 5 is what the `-O0` instructions do when two cores overlap: each
 core adds 1 to a private register, and one of the stores survives. It is
 tempting to stop there, call the bug a lost update, and treat a total of
 800000 as proof the schedule was kind. That picture is real, and it is
@@ -332,7 +392,7 @@ missing too.
 
 ---
 
-## 7. The kernel's own name for an intentional race
+## 9. The kernel's own name for an intentional race
 
 The Linux tree you are reading is itself C, and it has the same rule.
 `include/linux/compiler.h` spells a narrow escape hatch for diagnostics.
@@ -373,13 +433,13 @@ and not a read-modify-write of user data.
 
 `unsafe_counter++` carries no such mark, and it modifies the object. The
 abstract-machine rule for an unmarked conflicting pair is the one in
-section 2. The kernel macro is evidence that the people who compile this
+section 4. The kernel macro is evidence that the people who compile this
 tree treat "data race" as a language and tooling category, separate from
 "the CPU completed a load and a store."
 
 ---
 
-## 8. Execution trace: four workers, one object
+## 10. Execution trace: four workers, one object
 
 `mode_counter("race")` zeroes `unsafe_counter`, starts four threads in
 `increment_unsafe`, joins them, and prints the value. The binary under
@@ -429,7 +489,7 @@ tool on this host. The race is a fact about the source.
 
 ---
 
-## 9. Mastery: Explain · Draw · Observe · Build
+## 11. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-002-data-races.sh`](../challenges/day-002-data-races.sh).
 Predict `mutex_counter=800000`. Leave the racy total unpredicted. Predict
@@ -455,7 +515,7 @@ printed.
 
 ### Draw
 
-1. The happens-before sketch from section 2, with the four workers on the
+1. The happens-before sketch from section 4, with the four workers on the
    horizontal line and create/join as the only vertical edges.
 2. Two cores executing `mov` / `add` / `mov` against one line, and the
    same two cores executing unlocked `addq $0x30d40`. Mark where the value

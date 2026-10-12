@@ -18,7 +18,61 @@ release, acquire, and full barriers on x86, AArch64, and RISC-V. They are
 evidence about the kernel. They are not a dump of what `memory_order_release`
 compiles to in the lab.
 
-## 1. Why the queue needed a mutex and the counter might not
+## 1. Syntax needed for this source
+
+A C11 atomic expression names an atomic object, an operation, and a memory
+order. The order is an argument of that expression. A plain store, and an
+inline-assembly statement, are different syntax and different promises.
+
+```c
+#include <stdatomic.h>
+
+atomic_int flag;
+
+void publish(void)
+{
+    atomic_store_explicit(&flag, 1, memory_order_release);
+}
+```
+
+`memory_order_release` is not implied by the semicolon, by `volatile`, or
+by a compiler barrier you did not write. The sections below say what this
+particular order promises, and what the 5.10 headers emit for their own
+barriers.
+
+## 2. Linux 0.12 first: cli on one uniprocessor
+
+The early kernel excludes the timer, and every other interrupt, by clearing
+the processor interrupt flag. `include/asm/system.h` line 17 (Program
+14-17) is the whole macro:
+
+```c
+#define cli() __asm__ ("cli"::)     /* disable interrupt */
+#define sti() __asm__ ("sti"::)     /* enable interrupt */
+```
+
+`kernel/sched.c` uses that pair around the floppy-motor update (line 233
+`cli()`, later `sti()`). While `cli` is in effect on this CPU, `do_timer`
+cannot enter, so `schedule` cannot switch tasks out of the interrupted
+kernel path. Trace it as a historical uniprocessor critical section: one
+core, the interrupt flag, then the ordinary stores that follow.
+
+What carries forward is only the motive for a critical section. ToyOS is
+one x86-64 core as well. Its timer interrupt is a scheduling event, the
+one Week 7 and [Day 7](day-007-debuggers-sanitizers-and-system-comparison.md)
+already describe. An interrupt flag there is not a C memory order.
+
+Linux 0.12 cannot teach portable C11 atomics or the ordering of a weakly
+ordered SMP machine. There is no second CPU whose loads could pass this
+core's stores, and there is no `<stdatomic.h>`. The C memory model remains
+the authority for the lab. The shared
+[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) records that 0.12 predates that model. The following sections
+stay with C11 orders, then with the Linux 5.10 mappings at tree
+`c9b2385d6793`: x86-64 `barrier` plus a plain store, AArch64 `stlr`/`ldar`,
+and RISC-V `fence`.
+
+## 3. Why the queue needed a mutex and the counter might not
 
 [Day 4](day-004-condition-variables-and-bounded-queues.md) protected four
 fields that move together: a slot, `head` or `tail`, `count`, and the
@@ -51,7 +105,7 @@ the `atomic_*` functions, makes the conflicting accesses atomic. The program
 stays inside the memory model. What the model then guarantees depends on the
 memory order written at each access.
 
-## 2. Modification order
+## 4. Modification order
 
 For each atomic object the model supplies one total order of all the
 modifications of that object. Every thread that looks at the object agrees
@@ -93,10 +147,10 @@ connects to Week 2. Coherence of a line is a hardware property. Modification
 order is a rule of the C abstract machine. A program can have a coherent
 machine and still have undefined behavior if it races on a non-atomic
 object. A program can have a well-defined relaxed counter and still allow
-surprising interleavings of *other* objects. The litmus in section 7 is that
+surprising interleavings of *other* objects. The litmus in section 9 is that
 second situation.
 
-## 3. What `memory_order_relaxed` promises
+## 5. What `memory_order_relaxed` promises
 
 `memory_order_relaxed` is the order that adds atomicity and participation in
 the object's modification order, and stops there. A relaxed store and a
@@ -118,7 +172,7 @@ Consequences that the lab relies on:
   the cheapest mapping that still implements an atomic access.
 
 `memory_order_relaxed` is the wrong order when a store is the publication of
-some other bytes. The flag example in section 5 is the standard shape. A
+some other bytes. The flag example in section 7 is the standard shape. A
 relaxed store to `flag` after a plain store to `data` does not make a
 relaxed load of `flag` synchronize with the writer. A reader that sees
 `flag == 1` and then reads `data` has no happens-before edge to the writer's
@@ -126,7 +180,7 @@ store of `data`. If `data` is non-atomic, that is a data race. If both are
 atomic and relaxed, the program is defined and the load of `data` may still
 return the old value.
 
-## 4. The compiler reorders, and then the CPU reorders
+## 6. The compiler reorders, and then the CPU reorders
 
 Two different machines sit between the source text and the wires.
 
@@ -172,7 +226,7 @@ instruction the compiler actually emits.
 
 A CPU fence is an instruction in the architecture header: `mfence`, a
 `lock` prefix, `dmb`, `stlr`, `ldar`, `fence`. Those names show up in
-section 8. They are how this kernel asks a particular CPU to order its own
+section 10. They are how this kernel asks a particular CPU to order its own
 accesses. They do not appear in the C source of the lab, and a C programmer
 asks for them by writing a memory order, then checks the assembly to see
 what this compiler did for this target.
@@ -183,7 +237,7 @@ first arrow, the C abstract machine, is what makes the same source mean
 something on another compiler and another ISA. A litmus test that prints the
 expected order on x86-64 does not prove the C program.
 
-## 5. Release and acquire
+## 7. Release and acquire
 
 `memory_order_release` on a store and `memory_order_acquire` on a load are
 the orders that publish a payload. The pattern is:
@@ -220,7 +274,7 @@ read-modify-write that both publishes and observes uses
 `memory_order_acq_rel` when it must do both jobs.
 
 Release/acquire is pairwise. Thread A releasing `flag1` and thread B
-acquiring `flag2` creates no edge. The litmus in section 7 is two relaxed
+acquiring `flag2` creates no edge. The litmus in section 9 is two relaxed
 operations on two different objects, so it has no release/acquire pair at
 all.
 
@@ -230,7 +284,7 @@ ordered machines. In practice major compilers have strengthened it to
 acquire for years. The lab does not use it, and new code in this course
 should write acquire when a dependency is the intent.
 
-## 6. Sequential consistency
+## 8. Sequential consistency
 
 `memory_order_seq_cst` places the operation in one total order, shared by
 every sequentially consistent operation in the program, consistent with the
@@ -274,9 +328,9 @@ Seq_cst is sufficient for a great many publication patterns and stricter
 than release/acquire. The counter does not need it. A single-flag message
 does not need it. The total order costs fences or locked instructions on
 machines where ordinary stores are cheap, which is visible in the headers
-in section 8: a full barrier is a different macro from a store-release.
+in section 10: a full barrier is a different macro from a store-release.
 
-## 7. Execution trace: the relaxed store-buffering litmus
+## 9. Execution trace: the relaxed store-buffering litmus
 
 `litmus_lab` runs 100000 rounds. `x` and `y` are `atomic_int`, set to 0 by
 the parent at the start of each round with relaxed stores. Two workers and
@@ -335,14 +389,14 @@ and then prints `caveat=x86_observation_is_not_C_language_proof`. Believe
 that line. The C abstract machine allows both-zero for `memory_order_relaxed`
 whether or not this CPU exhibited it today.
 
-A seq_cst compilation of the same shape forbids the cycle in section 6. If
+A seq_cst compilation of the same shape forbids the cycle in section 8. If
 you build that variant yourself, read the assembly before you interpret a
 zero count. A compiler that lowered seq_cst to the same plain stores as
 relaxed would not have implemented the model. The day's wrapper does not
 build that variant; it prints the relaxed counter's function so you can see
 a real lowering of a relaxed read-modify-write.
 
-## 8. Architecture lens: three headers, three mappings
+## 10. Architecture lens: three headers, three mappings
 
 The kernel macros `smp_store_release`, `smp_load_acquire`, and `smp_mb` are
 the kernel's names for release stores, acquire loads, and full barriers
@@ -435,7 +489,7 @@ write-back memory, the Intel and AMD x86-64 models keep stores in program
 order with other stores, keep loads in program order with other loads, and
 keep a store from passing an older load. They allow a load to pass an older
 store to a different address. That last allowance is the store buffer in
-section 7.
+section 9.
 
 Under those rules a store-release needs the compiler to keep the payload
 accesses before the flag store, and the CPU already keeps earlier stores
@@ -592,7 +646,7 @@ without `aq`/`rl`. This tree's kernel headers show the kernel's choices.
 The wrapper's `.s` file shows one C compiler's choice for one function on
 the host you actually run.
 
-## 9. How to read the evidence without promoting it
+## 11. How to read the evidence without promoting it
 
 The wrapper's prediction line is the right size. The atomic count is exact:
 800000. The litmus prints `both_zero` and does not require a particular
@@ -621,7 +675,7 @@ passing the waiter's publication. Those are kernel clients of the barriers
 in this section. The queue lab remains a mutex program. It does not become
 a lock-free program because the kernel uses atomics on the sleep path.
 
-## 10. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 ### Explain
 
@@ -639,7 +693,7 @@ a lock-free program because the kernel uses atomics on the sleep path.
 
 ### Draw
 
-Draw the two arrows of section 4 for the litmus: source operations, then
+Draw the two arrows of section 6 for the litmus: source operations, then
 the instructions you think this host emits, then the store buffers and the
 loads that return 0. Draw the modification orders of `x` and `y` as two
 separate chains. Draw the seq_cst cycle underneath and mark it as a
@@ -652,7 +706,7 @@ Run
 Keep the exact counter line, the litmus line including `both_zero` and the
 caveat, the compiler version, `uname -m`, and either the `increment_atomic`
 assembly or the skip line. If `both_zero` is 0, write the sentence from
-section 7 about what that count measures.
+section 9 about what that count measures.
 
 ### Build
 

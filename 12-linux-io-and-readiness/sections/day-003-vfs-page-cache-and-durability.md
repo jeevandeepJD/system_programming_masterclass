@@ -11,6 +11,49 @@
 > `write` returned 4096. The machine loses power before `fsync` returns.
 > Which of those bytes can a later `open` be expected to see?
 
+## 1. Syntax needed for this source
+
+A cache here is an array of block headers. A loop walks them, and a member flag says a block has been modified.
+
+```c
+struct buffer *bh = start;
+for (int i = 0; i < n; i++, bh++) {
+    if (bh->dirty)
+        write_block(bh);
+}
+```
+
+`bh++` steps to the next header because `bh` points at one `struct buffer`. The flag is data. The loop does not know which file the bytes belong to.
+
+## 2. Linux 0.12 first: a buffer cache of dirty blocks
+
+A `write` that returns has copied bytes somewhere the next `read` can see. Linux 0.12's somewhere is the buffer cache: fixed block buffers, each with a `buffer_head`, and `b_dirt` set when the block is modified. `sys_sync` in `fs/buffer.c` (printed page 718) walks that array and pushes dirty blocks out:
+
+```c
+int sys_sync(void)
+{
+	int i;
+	struct buffer_head * bh;
+
+	sync_inodes();
+	bh = start_buffer;
+	for (i=0 ; i<NR_BUFFERS ; i++,bh++) {
+		wait_on_buffer(bh);
+		if (bh->b_dirt)
+			ll_rw_block(WRITE,bh);
+	}
+	return 0;
+}
+```
+
+Trace. `sync_inodes` writes modified in-memory inodes into buffers, which can set more `b_dirt` bits. `bh` starts at `start_buffer` and steps once per slot. `wait_on_buffer` sleeps while `b_lock` is set. A dirty header becomes a `WRITE` request through `ll_rw_block`. The function then returns 0. `sync_dev` (same file, just below) does two such passes around `sync_inodes` for one device.
+
+What carries forward is the dirty bit and an explicit sync that asks for write-out. The fixed `NR_BUFFERS` array, the per-block `buffer_head`, and `ll_rw_block` belong to this kernel. This is a block buffer cache. Linux 0.12 has no VFS `file_operations` table and no unified page cache hanging off an inode. Linux 5.10 keeps "dirty memory, then a sync that waits" and implements it as the page cache: an `address_space` of pages shared by every open of that inode, with `fsync` waiting for writeback. A successful `write` is still a cache update.
+
+ToyOS finishes the byte update inside the call. [`vfs_write`](../../projects/toyos/src/vfs.c) stores into `inode->data` before it returns. There is no dirty buffer and no later sync.
+
+The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) marks this as where the early map stops. The sections below are the VFS and the unified page cache in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete picture of a dirty cache. Develop against the 5.10 tree.
+
 Day 1 separated the descriptor, the `struct file`, and the inode. Day 2
 separated a requested count from the bytes one attempt actually moved. A
 positive `write` on a regular file still has a third gap. The bytes can
@@ -24,7 +67,7 @@ revision's `mm/filemap.c` still speaks of `struct page`, `PageDirty`, and
 the page cache. Later mainline trees renamed much of that to folios. The
 names below are this tree's names.
 
-## 1. Why the cache is not the open file
+## 3. Why the cache is not the open file
 
 A path is input to lookup. A dentry remembers a name; `d_inode` is
 "where the name belongs" (`include/linux/dcache.h`). An inode is the
@@ -117,7 +160,7 @@ computes the byte offset inside a page as `pos & (PAGE_SIZE - 1)`.
 index`. The process's page tables are not consulted to find it. They are
 consulted to find the user buffer the bytes are copied from.
 
-## 2. The method table is where read, write, and fsync meet
+## 4. The method table is where read, write, and fsync meet
 
 ```c
 /* include/linux/fs.h :: struct file_operations :: tree c9b2385d6793
@@ -175,7 +218,7 @@ through `ondemand_readahead`, unless random access or congestion forces
 a smaller read. `f_op->fsync` is a different method: write accepts bytes,
 and `fsync` pushes them and reports failure.
 
-## 3. A buffered write copies into a page and marks it dirty
+## 5. A buffered write copies into a page and marks it dirty
 
 `grab_cache_page_write_begin` is the page-cache vocabulary of this tree:
 a `struct page`, a page-cache index, a locked page.
@@ -327,7 +370,7 @@ the device has the new bytes.
 not grow without bound. That cleaning is writeback. The `write` syscall
 can return while tagged pages remain.
 
-## 4. Writeback moves dirty pages; `fsync` waits
+## 6. Writeback moves dirty pages; `fsync` waits
 
 ```c
 /* mm/filemap.c :: __filemap_fdatawrite_range :: tree c9b2385d6793
@@ -439,7 +482,7 @@ generic table numbers them 82 and 83. The descriptor is still Day 1's
 index. `fdget` turns it into the `struct file` whose `f_mapping` names
 the cache.
 
-## 5. The failure is recorded on the mapping
+## 7. The failure is recorded on the mapping
 
 A writeback error is stored where a later `fsync` can find it.
 
@@ -500,7 +543,7 @@ dirty tag happened. `fsync` returning 0 means `f_op->fsync` returned 0.
 the method returned, reached the syscall. Between those two returns the
 dirty page is still RAM.
 
-## 6. A hole is an extent fact, not a missing cache page
+## 8. A hole is an extent fact, not a missing cache page
 
 `generic_file_llseek_size` has no hole map of its own. Its `SEEK_DATA`
 arm (`fs/read_write.c` lines 111–118) treats every offset below the end
@@ -541,7 +584,7 @@ that answers `SEEK_DATA` / `SEEK_HOLE`. A hole is a range of file offsets
 with no allocated blocks. `i_size`, that map, and `i_pages` are three
 records of the file.
 
-## 7. Execution trace: write, dirty, writeback, fsync, error
+## 9. Execution trace: write, dirty, writeback, fsync, error
 
 One regular file, buffer-head `a_ops`, descriptor 3, `f_pos` at 0. The
 user calls `write(3, buf, 4096)` and the copy succeeds. Then `fsync(3)`.
@@ -589,7 +632,7 @@ that treats the first as durability has stopped at the dirty tag.
 Code that ignores `fsync`'s return has waited and dropped
 `filemap_check_errors`.
 
-## 8. A small C picture of the two calls
+## 10. A small C picture of the two calls
 
 ```c
 #include <unistd.h>
@@ -620,7 +663,7 @@ retried leaves a prefix dirty and the tail unsent. An `fsync` error
 after a successful `write` means the prefix was accepted into the cache
 and the integrity path later failed.
 
-## 9. Registers, locks, and ToyOS
+## 11. Registers, locks, and ToyOS
 
 `fsync`'s descriptor arrives in the same argument register as `read`'s:
 `rdi` on x86-64, `x0` on AArch64, `a0` on RISC-V. The syscall number is
@@ -641,7 +684,7 @@ ToyOS writes `inode->data` before
 on the open slot. Linux returns at the dirty tag and waits when the
 program calls `fsync`.
 
-## 10. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-003-page-cache.sh`](../challenges/day-003-page-cache.sh)
 after this explanation.

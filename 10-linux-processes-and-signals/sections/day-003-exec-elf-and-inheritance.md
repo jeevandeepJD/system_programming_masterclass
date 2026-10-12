@@ -15,13 +15,85 @@ The pid remains the pid of that task, for the single-threaded case this
 week runs. The page tables, the user registers, the argument strings, and
 the dispositions of caught signals are rebuilt from the new ELF file.
 
+## 1. Syntax needed for this source
+
+An `a.out` file begins with a `struct exec`. `ex.a_entry` reads one
+member of that header. `eip` in `do_execve` is a pointer to the saved
+interrupt frame, so `eip[0]` and `eip[3]` are slots in that array: the
+saved instruction pointer and the saved stack pointer. Assigning them
+changes where the return from the syscall will resume. The function
+returns `0` after that store; the new program runs because the frame
+changed.
+
+Sketch:
+
+```c
+struct exec ex;
+ex = *((struct exec *) header);
+eip[0] = ex.a_entry;
+eip[3] = stack_top;
+return 0;
+```
+
+## 2. Linux 0.12 first: the `a.out` header and `do_execve`
+
+`exec` answers a smaller question than `fork`: same task, new image.
+Linux 0.12 supports one format, `a.out`. `do_execve` in `fs/exec.c`
+reads the header from the first block, checks it, maps the text, and
+writes the saved frame so the return enters the new program. The pid
+stays on `current`. Printed pages are from the 0.12 commentary; the
+[0.12 map](../../references/EARLY_LINUX_012_MAP.md) points at chapter
+12.15.
+
+`include/a.out.h`, as quoted with `fs/exec.c`, printed page 826:
+
+```c
+struct exec {
+   unsigned long a_magic;       /* Use macros N_MAGIC, etc for access */
+   unsigned a_text;             /* length of text, in bytes */
+   unsigned a_data;             /* length of data, in bytes */
+   unsigned a_bss;              /* length of uninitialized data area for file, in bytes */
+   unsigned a_syms;             /* length of symbol table data in file, in bytes */
+   unsigned a_entry;            /* start address */
+   unsigned a_trsize;           /* length of relocation info for text, in bytes */
+   unsigned a_drsize;           /* length of relocation info for data, in bytes */
+};
+```
+
+`do_execve` copies that header with
+`ex = *((struct exec *) bh->b_data)` (printed page 840). It rejects the
+file unless `N_MAGIC(ex) == ZMAGIC` and the relocation sizes are zero
+(printed page 842). On success, printed page 844:
+
+```c
+eip[0] = ex.a_entry;               /* eip, magic happens :-) */
+eip[3] = p;                        /* stack pointer */
+return 0;
+```
+
+Trace: load the header, keep this `task_struct`, replace the saved
+`eip` and stack pointer. The syscall return then begins at `a_entry`.
+
+What carries forward is image replacement on the calling task, with the
+pid left in place. What changes in 5.10 is the format and the safety
+around it: ELF, `linux_binprm`, `PT_INTERP`, the auxiliary vector,
+credentials, and close-on-exec in `fs/exec.c` and `fs/binfmt_elf.c`.
+Develop against those. `a.out`, `ZMAGIC`, and a direct store into the
+80386 frame are the 0.12 loader.
+
+ToyOS `process_init` maps one ELF and `process_start` enters it with
+`iretq` ([`process.c`](../../projects/toyos/src/process.c)). 0.12 runs
+that replacement against a task that already exists.
+
+Now move to the 5.10 implementation.
+
 The excerpts are from the local tree
 `5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`). It is a
 5.10-based tree. Names and line placement on current mainline differ.
 
 ---
 
-## 1. Replacement is a property of the calling task
+## 3. Replacement is a property of the calling task
 
 `fork` answers "who is the new task?" `execve` answers "what user image
 does this task run next?" Shells need both because a shell must remain the
@@ -44,7 +116,7 @@ ends the task with a fatal signal.
 
 ---
 
-## 2. The system call builds a `linux_binprm` and hands it to the format
+## 4. The system call builds a `linux_binprm` and hands it to the format
 
 In `fs/exec.c`, `SYSCALL_DEFINE3(execve)`, same tree, and the `execveat`
 sibling that shares `do_execveat`:
@@ -134,7 +206,7 @@ the old image receives a return value only on the failure path.
 
 ---
 
-## 3. `begin_new_exec` is the point of no return
+## 5. `begin_new_exec` is the point of no return
 
 The ELF handler, once it has parsed headers and built a new `mm`, calls
 `begin_new_exec`. In `fs/exec.c`, `begin_new_exec`, same tree:
@@ -177,7 +249,7 @@ int begin_new_exec(struct linux_binprm * bprm)
 
 `point_of_no_return` is why a later mapping error kills the task.
 `de_thread` makes this task the sole member of the thread group, as
-section 2 described. `unshare_files` gives the task a private
+section 4 described. `unshare_files` gives the task a private
 `files_struct` if it had been sharing one under `CLONE_FILES`, so the
 closes that follow affect this task's table. `set_mm_exe_file` installs
 the executable `struct file` on the new `mm`. That is the object
@@ -279,7 +351,7 @@ the start of the syscall.
 
 ---
 
-## 4. Caught handlers become `SIG_DFL`; `SIG_IGN` stays
+## 6. Caught handlers become `SIG_DFL`; `SIG_IGN` stays
 
 In `kernel/signal.c`, `flush_signal_handlers`, same tree:
 
@@ -320,7 +392,7 @@ image's job, after it begins running.
 
 ---
 
-## 5. `FD_CLOEXEC` closes one descriptor index
+## 7. `FD_CLOEXEC` closes one descriptor index
 
 Day 2's `dup_fd` copied the `close_on_exec` bitmap into the child's private
 `files_struct`. The bit lives beside the descriptor index. `struct file`
@@ -380,7 +452,7 @@ because `dup_fd` copied them and this loop left them in place.
 
 ---
 
-## 6. The ELF handler maps `PT_LOAD` and chooses an entry
+## 8. The ELF handler maps `PT_LOAD` and chooses an entry
 
 Week 3's program headers are what `load_elf_binary` reads. In
 `fs/binfmt_elf.c`, `load_elf_binary`, same tree, after the locals that name
@@ -482,7 +554,7 @@ which is the ToyOS path: map `PT_LOAD`, jump to the header entry.
 
 ---
 
-## 7. The initial stack carries `argc`, `argv`, `envp`, and auxv
+## 9. The initial stack carries `argc`, `argv`, `envp`, and auxv
 
 `copy_strings` has already placed the argument and environment bytes at the
 high end of the new stack, walking downward. `create_elf_tables` builds the
@@ -589,7 +661,7 @@ The task that returns is the task that entered `execve`.
 
 ---
 
-## 8. Execution trace: the status lab's child becomes `/bin/sh`
+## 10. Execution trace: the status lab's child becomes `/bin/sh`
 
 `mode_status` in
 [`projects/linux-system-programming/src/process_lab.c`](../../projects/linux-system-programming/src/process_lab.c)
@@ -644,7 +716,7 @@ replacement happened in the child that reached a successful `execve`.
 
 ---
 
-## 9. Architecture lens — x86-64, AArch64, and RISC-V
+## 11. Architecture lens — x86-64, AArch64, and RISC-V
 
 `execve`, `begin_new_exec`, `load_elf_binary`, and `create_elf_tables` are
 generic C. The ISA changes three things: which `e_machine` `elf_check_arch`
@@ -671,7 +743,7 @@ its own machine, `PT_INTERP`, and `e_entry`, into the same task.
 
 ---
 
-## 10. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 The wrapper is evidence after the trace. From the week directory, run
 [`challenges/day-003-exec-elf-inheritance.sh`](../challenges/day-003-exec-elf-inheritance.sh).
@@ -703,7 +775,7 @@ It runs `process_lab status` and prints ELF headers of that lab binary.
 
 1. Task C before and after `exec_mmap`: same `task_struct`, old `mm`
    released, new `mm->pgd` installed.
-2. The initial stack from section 7, with `AT_ENTRY` and `AT_BASE` labeled
+2. The initial stack from section 9, with `AT_ENTRY` and `AT_BASE` labeled
    for a dynamic `/bin/sh`.
 3. The child's fd table across `do_close_on_exec`: one index with the bit
    set, removed; descriptors 0, 1, and 2 still pointing at the same

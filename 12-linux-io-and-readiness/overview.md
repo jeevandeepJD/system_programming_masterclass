@@ -17,16 +17,29 @@ snapshot. The host that runs the lab may be another kernel; the wrappers
 print `uname`. Re-open the pinned tree, or the sources for the kernel you
 boot, before treating a symbol, field, or errno path as current.
 
-## Read the complete early path first
+## Required order: syntax, Linux 0.12, ToyOS, then 5.10
+
+Each day opens in this order, and the order is required:
+
+1. the few C forms that day's source actually uses;
+2. the Linux 0.12 path, read end to end while the whole mechanism still
+   fits in one function;
+3. the ToyOS reconstruction of that mechanism from Weeks 7–9;
+4. the Linux 5.10.134 tree `c9b2385d6793`, then a check against current
+   upstream before a symbol is treated as current.
+
+Linux 0.12 is the first conceptual implementation. Its fixed tables, Minix
+inodes, buffer cache, `select`, and 80386 demand paging make the control
+flow visible. They are not the authority for the modern API: VFS
+operations, the unified page cache, `poll`/`epoll`, `mmap`, SMP lifetime
+rules, or today's errno and durability contracts. Those belong to the
+5.10/current source.
 
 The shared
 [Linux 0.12 → Linux 5.10 map](../references/EARLY_LINUX_012_MAP.md)
-extracts the small early paths for `open`, `read`, pipes, offsets, and
-`select`. Read those first to see the entire descriptor-to-object flow, then
-return here for modern VFS objects, the page cache, `poll`/`epoll`, `mmap`,
-SMP-safe lifetime rules, and current durability boundaries. Linux 0.12 is
-the map; the 5.10/current source defines the implementation you develop
-against.
+extracts the early `open`, `read`, pipe, and `select` paths with printed
+book pages. Use it beside the day sections. Return here for how the seven
+days fit together.
 
 ## Why these seven days belong together
 

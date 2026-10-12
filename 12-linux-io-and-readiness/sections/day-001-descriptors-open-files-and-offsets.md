@@ -11,6 +11,55 @@
 > `open` returned `3`. What object does that integer name, and why does
 > `lseek` on a duplicate move the next `read` on the original?
 
+## 1. Syntax needed for this source
+
+This path uses an integer as an array index, then `->` to name a field of the object that index selects.
+
+```c
+struct file *slot = table[fd];
+slot->count = 1;
+slot->pos = 0;
+if (slot->node == NULL)
+    return -1;
+```
+
+`table[fd]` loads one pointer. `slot->pos` is that object's offset. A later call passes the same integer and reaches the same object. A negative return is the error; the index itself is the success value.
+
+## 2. Linux 0.12 first: descriptor, file table, inode, offset
+
+The user program has to name an open file across calls and still must not hold a kernel address. Linux 0.12 puts that chain in `sys_open`: the integer indexes `current->filp`, the slot points at one `struct file` in the global `file_table`, and that object holds the inode and `f_pos`.
+
+`fs/file_table.c` (printed page 793) is the array: `struct file file_table[NR_FILE];`. The claim and the publish are `sys_open` in `fs/open.c`, printed pages 824–825:
+
+```c
+current->close_on_exec &= ~(1<<fd);
+f=0+file_table;
+for (i=0 ; i<NR_FILE ; i++,f++)
+	if (!f->f_count) break;
+if (i>=NR_FILE)
+	return -EINVAL;
+(current->filp[fd]=f)->f_count++;
+if ((i=open_namei(filename,flag,mode,&inode))<0) {
+	current->filp[fd]=NULL;
+	f->f_count=0;
+	return i;
+}
+f->f_mode = inode->i_mode;
+f->f_flags = flag;
+f->f_count = 1;
+f->f_inode = inode;
+f->f_pos = 0;
+return (fd);
+```
+
+Trace. The `fd` loop has already found a null `filp` slot; that index is the descriptor. `f` walks `file_table` until `f_count` is 0. The parenthesized assignment stores `f` in `filp[fd]` and takes a reference before `open_namei` runs. If lookup fails, the slot is cleared and the error code `i` returns. On success the same `struct file` receives the inode and `f_pos = 0`, and the caller receives `fd`.
+
+What carries forward is the split: descriptor, open-file object, inode, and a position stored on the open file. The fixed `NR_FILE` table, the `0+file_table` spelling, the Minix `m_inode`, and `f_mode` holding the inode's mode word belong to this kernel. Linux 5.10 keeps the split and uses a growable fd table, RCU and refcounts, a dentry and a mount, and an `f_mode` that records read/write access. `f_pos` still lives on the open file, so `dup` still shares one offset.
+
+ToyOS builds the same chain with four slots. [`vfs_open`](../../projects/toyos/src/vfs.c) returns `VFS_FILE_BASE + i` and stores the inode and `offset` in `files[i]`.
+
+The week picture is the shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md). The sections below follow this chain in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete implementation of the idea. Develop against the 5.10 tree.
+
 Week 8 crossed into the kernel with a saved user register frame and a
 checked copy. Week 9's ToyOS table already returns an integer for a slot
 that holds an offset and points at an inode. Week 10 hung `files` off
@@ -25,7 +74,7 @@ The excerpts below are from the local tree
 is 5.10-based. Field layout in a later mainline release can move. The
 names quoted here are what this revision actually contains.
 
-## 1. Why an integer is the handle
+## 3. Why an integer is the handle
 
 A user program needs to name an open file across many calls. The name it
 is allowed to hold is a small integer in its own memory. On the next
@@ -46,7 +95,7 @@ returns `VFS_FILE_BASE + i` for a free slot in `files[4]`. `file_for`
 rejects a number outside that range and a slot whose `open` flag is
 clear. The user program never holds `&files[i]`.
 
-## 2. The table is an object the task points at
+## 4. The table is an object the task points at
 
 `task_struct` has a `files` pointer. Week 10's picture stopped there.
 The object on the other end of that pointer is `files_struct`, and the
@@ -125,7 +174,7 @@ task C after fork (CLONE_FILES clear)
 
 `dup_fd` is the fork copy. The next section is the object it points at.
 
-## 3. `struct file` is the open instance
+## 5. `struct file` is the open instance
 
 The pointer in `fd[i]` aims at `struct file` in `include/linux/fs.h`.
 This is the object Week 9 called an open-file slot, with a kernel
@@ -176,7 +225,7 @@ Day 3 follows it. `do_dentry_open` stores `f_inode`, copies
 `O_CREAT`, `O_EXCL`, `O_NOCTTY`, and `O_TRUNC` from `f_flags`. Those four
 bits were instructions for open.
 
-## 4. Open reserves an index, then publishes the pointer
+## 6. Open reserves an index, then publishes the pointer
 
 The user-visible `open` on this tree is a thin wrapper. `sys_open` may
 set `O_LARGEFILE`, then calls `do_sys_open(AT_FDCWD, ...)`. `do_sys_open`
@@ -301,7 +350,7 @@ says this consumes the file reference, as if the caller had called
 The comment above the function names a `dup2` that would install a
 different file between the bitmap update and this store.
 
-## 5. `dup` and `fork` share `f_pos`; a second `open` does not
+## 7. `dup` and `fork` share `f_pos`; a second `open` does not
 
 `dup` looks up the existing pointer, takes another reference, and
 installs that same pointer at a new index. `fork` does the same per
@@ -346,7 +395,7 @@ at 0.
 inode is a directory. `__fdget_pos` then takes `f_pos_lock` around the
 update of that one `loff_t`.
 
-## 6. Close clears one index and drops one reference
+## 8. Close clears one index and drops one reference
 
 `sys_close` calls `close_fd`, which calls `__close_fd`. The slot is
 cleared before the file's release work runs.
@@ -411,7 +460,7 @@ The comment says the close cannot be restarted because the table entry
 was already cleared. A signal arriving during flush must not replay an
 operation that has already unpublished the slot.
 
-## 7. `O_CLOEXEC` is a slot bit; status flags live on the file
+## 9. `O_CLOEXEC` is a slot bit; status flags live on the file
 
 `build_open_flags` (`fs/open.c` lines 1042–1057) sets
 `strip = FMODE_NONOTIFY | O_CLOEXEC` and clears those bits from the local
@@ -462,7 +511,7 @@ O_NOATIME` (`fs/fcntl.c` line 33, assignment at line 80). `dup` shares those sta
 bitmap at `exec` and closes those indexes. Another index, or another
 task's table, can still hold the `struct file`.
 
-## 8. `lseek` writes the shared `f_pos`
+## 10. `lseek` writes the shared `f_pos`
 
 `read` and `write` also move `f_pos`. Day 2 follows that path. The seek
 path is the one that writes the field on purpose.
@@ -511,7 +560,7 @@ missing file is `-EBADF`. `vfs_llseek` calls `no_llseek`, which returns
 writes the shared field, so `lseek` on one duplicate moves the position
 `read` will use on the other. `fdput_pos` drops the lookup reference.
 
-## 9. Execution trace: open, dup, read, lseek, close
+## 11. Execution trace: open, dup, read, lseek, close
 
 One task, already running, with its own `files_struct`. The path names a
 regular file. Numbers here are a walk through the calls, not a trace of
@@ -561,7 +610,7 @@ A second `open` of the same path allocates another `struct file` at
 `f_pos == 0`. Day 2 expands the `read` steps. fd 3 and fd 4 are two
 slots and one `f_pos`.
 
-## 10. A small C picture of one shared offset
+## 12. A small C picture of one shared offset
 
 This is the user-space side of the trace. `open` and `dup` are libc
 wrappers around the syscalls above. The checks make the shared position
@@ -605,7 +654,7 @@ one `struct file`: the second `read` returns `'b'`, and `lseek` on
 After `close(fd)` the variable still holds the integer, and `next_fd`
 may already have reused the slot.
 
-## 11. Registers, locks, and the ToyOS table
+## 13. Registers, locks, and the ToyOS table
 
 On x86-64, `arch/x86/entry/entry_64.S` records the `syscall` registers:
 `rax` is the call number, `rdi`/`rsi`/`rdx` are the first three
@@ -634,7 +683,7 @@ adds `f_count`, the shared `f_pos`, the per-index close-on-exec bit, and
 a table tasks can share or duplicate. Day 2 follows `f_op`. Day 3 follows
 `f_mapping`.
 
-## 12. Mastery: Explain · Draw · Observe · Build
+## 14. Mastery: Explain · Draw · Observe · Build
 
 Run
 [`../challenges/day-001-descriptors.sh`](../challenges/day-001-descriptors.sh)
@@ -673,7 +722,7 @@ the last reference. Record an `EBADF` from a stale or empty index as the
 
 ### Build
 
-Extend the C picture in section 10 only by a second `open` of the same
+Extend the C picture in section 12 only by a second `open` of the same
 path. Predict, before you run it, that the new index has its own `f_pos`
 at 0 while `alias` still sees the shared position. Then name the call in
 `do_sys_openat2` that allocates that second `struct file`.

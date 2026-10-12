@@ -19,6 +19,73 @@ exceptions, and the one ToyOS implements with an interrupt stack and
 The pending set, the blocked set, and the choice of disposition are kernel
 policy shared across x86-64, AArch64, and RISC-V.
 
+## 1. Syntax needed for this source
+
+A signal number becomes one bit. `1 << (sig - 1)` builds that bit,
+`|=` posts it, and `& ~blocked` keeps the bits the task has not masked.
+`(*p)->signal` follows a `task_struct **` from the task array. Delivery
+is a call, `do_signal`, whose arguments are the registers the syscall
+frame already saved (`eax` through `eip`, `esp`, and the segment
+registers). The handler runs because those saved slots are rewritten.
+
+Sketch:
+
+```c
+unsigned long bit = 1UL << (sig - 1);
+p->signal |= bit;
+if (p->signal & ~p->blocked)
+        deliver(p);
+```
+
+## 2. Linux 0.12 first: a signal bitmask and `do_signal`
+
+A signal has to sit somewhere until the task can take it. Linux 0.12
+uses one `long` on the task, `signal`, and a second `long`, `blocked`.
+`send_sig` posts a bit. The scheduler wakes an interruptible sleeper
+when any unblocked bit is set. `do_signal` in `kernel/signal.c` then
+builds the user return. Printed pages are in the 0.12 commentary; the
+[0.12 map](../../references/EARLY_LINUX_012_MAP.md) is the index. The
+signal chapter is 8.7, and the post is in `kernel/exit.c`.
+
+`kernel/exit.c`, `send_sig`, printed page 396:
+
+```c
+if ((sig >= SIGSTOP) && (sig <= SIGTTOU))
+        p->signal &= ~(1<<(SIGCONT-1));
+/* Actually deliver the signal */
+p->signal |= (1<<(sig-1));
+return 0;
+```
+
+`kernel/sched.c`, printed page 357. `_BLOCKABLE` still lets `SIGKILL`
+and `SIGSTOP` through:
+
+```c
+if (((*p)->signal & ~(_BLOCKABLE & (*p)->blocked)) &&
+(*p)->state==TASK_INTERRUPTIBLE)
+        (*p)->state=TASK_RUNNING;
+```
+
+Trace: the bit is set in `p->signal`. On the way back to user mode,
+`do_signal` (printed page 386) loads `current->sigaction[signr - 1]`
+and, for a caught signal, arranges the saved `eip` so the return enters
+the handler.
+
+What carries forward is a pending set, a blocked set, and a user
+function entered without the program having called it. What changes in
+5.10 is the representation and the return path: `__send_signal`,
+per-thread masks, `siginfo` queues, `get_signal`, and an architecture
+`rt_sigframe` plus `rt_sigreturn`. Develop against that path. One
+global `long` and a direct edit of the 80386 frame are the 0.12
+mechanism.
+
+ToyOS already leaves a fault by building a frame and returning with
+`iretq`
+([Week 6](../../06-toyos-bootstrap-and-exceptions/sections/day-006-tss-ist-page-fault-and-gdb.md)).
+0.12 aims that return at a user handler address.
+
+Now move to the 5.10 implementation.
+
 The excerpts are from local tree `c9b2385d6793`, a 5.10.134-based kernel.
 Record `uname -r` next to that id. Names and line numbers move. The
 application contract is `sigaction(2)` and the async-signal-safe list, and
@@ -26,7 +93,7 @@ these functions are one kernel's implementation of it.
 
 ---
 
-## 1. Why the mechanism exists
+## 3. Why the mechanism exists
 
 A process spends almost all of its time in user code or in a syscall the
 user code asked for. The scheduler, a terminal driver, a parent calling
@@ -79,7 +146,7 @@ that `sigaction` of a `SIGKILL` handler fails with `EINVAL`.
 
 ---
 
-## 2. Posting the signal: `__send_signal`
+## 4. Posting the signal: `__send_signal`
 
 `kernel/signal.c`, `__send_signal`, tree `c9b2385d6793`, lines 1072–1094:
 
@@ -161,7 +228,7 @@ is the observation.
 
 ---
 
-## 3. Choosing a thread: `complete_signal`
+## 5. Choosing a thread: `complete_signal`
 
 `kernel/signal.c`, `complete_signal`, tree `c9b2385d6793`, lines 991–1025:
 
@@ -223,7 +290,7 @@ tells the thread to dequeue it.
 
 ---
 
-## 4. Delivery: `get_signal` on the way back to user mode
+## 6. Delivery: `get_signal` on the way back to user mode
 
 Waking a thread runs the kernel. Entering the handler happens when the
 architecture's return-to-user path calls `get_signal`. In this tree those
@@ -309,7 +376,7 @@ sees the second instance after it returns.
 
 ---
 
-## 5. Sleeping until a signal is pending: `pause`
+## 7. Sleeping until a signal is pending: `pause`
 
 A thread that has nothing to do until a signal arrives has to sleep in
 the kernel, in a state the signal wake can leave. This tree still
@@ -355,11 +422,11 @@ post, observe `sigpending`, then unblock.
 
 ---
 
-## 6. The handler is ordinary user code, entered asynchronously
+## 8. The handler is ordinary user code, entered asynchronously
 
 Once the frame is in place, exception return enters the handler with
 the user stack pointer aimed at that frame. The handler is a C function
-compiled with the platform calling convention. Section 7 names the
+compiled with the platform calling convention. Section 9 names the
 register that carries the signal number. The compiler's abstract machine
 assumes one control path through a function except where the program
 names a call. A handler is a second entry the compiler did not see at
@@ -392,7 +459,7 @@ single-threaded lab raises, finishes the one delivery, then closes.
 
 ---
 
-## 7. Architecture lens: the frame and `rt_sigreturn`
+## 9. Architecture lens: the frame and `rt_sigreturn`
 
 This is the week's architectural section for signals. Process groups on
 Day 6 will not need one. Here the kernel has to materialize a user-mode
@@ -638,7 +705,7 @@ thread is eligible, stays in `kernel/signal.c`.
 
 ---
 
-## 8. Execution trace: blocked `SIGUSR1`, then the self-pipe
+## 10. Execution trace: blocked `SIGUSR1`, then the self-pipe
 
 This is the sequence inside
 [`../challenges/day-005-signals-safe-handlers.sh`](../challenges/day-005-signals-safe-handlers.sh).
@@ -700,7 +767,7 @@ pipe byte on the normal path.
 
 ---
 
-## 9. Mastery: Explain · Draw · Observe · Build
+## 11. Mastery: Explain · Draw · Observe · Build
 
 The wrapper is
 [`../challenges/day-005-signals-safe-handlers.sh`](../challenges/day-005-signals-safe-handlers.sh).
@@ -723,7 +790,7 @@ below are still yours to write. These notes leave mastery open.
 
 ### Draw
 
-Draw the pending-bit trace from section 8, and a second picture of the
+Draw the pending-bit trace from section 10, and a second picture of the
 user stack at the moment `regs->ip` (or `pc`, or `epc`) first points at
 the handler. Label the saved context, the trampoline, and the
 interrupted instruction the trampoline will resume. Mark which boxes

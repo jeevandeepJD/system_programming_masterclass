@@ -6,6 +6,61 @@
 > make progress now. It is not a count of bytes, and it is not a
 > statement that the operation has finished.
 
+## 1. Syntax needed for this source
+
+`select` stores interest in bits. A shift walks the set, and a mask tests one descriptor.
+
+```c
+unsigned long interest = 0;
+interest |= (1UL << fd);
+for (int i = 0; interest != 0; i++, interest >>= 1) {
+    if (interest & 1)
+        ready++;
+}
+```
+
+`1UL << fd` builds one bit. `interest & 1` asks whether the current descriptor is in the set. The loop is a scan, not a copy of the bytes behind the descriptor.
+
+## 2. Linux 0.12 first: `select` scans, then sleeps
+
+A task blocked in one `read` cannot notice a second source. Linux 0.12's `do_select` in `fs/select.c` scans the caller's bit sets and, when nothing is ready, sleeps. The scan starts on printed page 864 and continues on 865:
+
+```c
+repeat:
+	wait_table.nr = 0;
+	*inp = *outp = *exp = 0;
+	count = 0;
+	mask = 1;
+	for (i = 0 ; i < NR_OPEN ; i++, mask += mask) {
+		if (mask & in)
+			if (check_in(&wait_table,current->filp[i]->f_inode)) {
+				*inp |= mask;
+				count++;
+			}
+```
+
+`check_out` and `check_ex` repeat that bit test. After the scan, printed page 865:
+
+```c
+if (!(current->signal & ~current->blocked) &&
+    (wait_table.nr || current->timeout) && !count) {
+	current->state = TASK_INTERRUPTIBLE;
+	schedule();
+	free_wait(&wait_table);
+	goto repeat;
+}
+free_wait(&wait_table);
+return count;
+```
+
+Trace. `mask` starts at 1 and doubles each descriptor (`mask += mask`), so each pass tests one fd. `check_in` looks at that inode and, the first time, records a wait. A ready descriptor sets the same bit in `*inp` and increments `count`. If `count` is still 0, no unblocked signal is pending, and either some wait was queued or the timeout remains, the task becomes `TASK_INTERRUPTIBLE` and `schedule` runs. On wake, `free_wait` releases the wait entries and `goto repeat` scans again. A nonzero `count`, a signal, or a timeout falls through and returns `count`.
+
+What carries forward is "scan a set, sleep once, rescan after wake." The copied `fd_set` arguments, the `NR_OPEN` width, and the pipe/character/FIFO-only check earlier in the function belong to this kernel. Linux 0.12 has `select` and does not have `poll` or `epoll`. Linux 5.10 keeps `select` and adds `poll`'s caller-built list and `epoll`'s stored interest set, including level and edge trigger.
+
+ToyOS waits inside one pipe read. It has no descriptor set and no `select`. The Week 8 pipe is one queue; a second source needs a second blocked call.
+
+The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) names this `select` path and stops before `poll` and `epoll`. The sections below are `select`, `poll`, and `epoll` in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete scan-and-sleep. Develop against the 5.10 tree.
+
 Day 4's pipe blocks inside one `read` or one `write`. That fits a task
 with one source. It does not fit a task that must take the next byte
 from whichever of several files becomes readable first. A thread blocked
@@ -21,7 +76,7 @@ excerpts are Linux 5.10.134 at `c9b2385d6793`. `select`, `poll`, and
 `epoll` differ in where the interest set lives between calls, and in
 what the task does after it wakes.
 
-## 1. Why "readable" cannot mean "done"
+## 3. Why "readable" cannot mean "done"
 
 A blocking `read` of a pipe has three honest results, from Day 4.
 A positive count means that many bytes were copied. `0` means no
@@ -58,7 +113,7 @@ The byte count is what the following `read` returns. Treating the wait
 count as a byte count, or stopping after one `read`, is a different
 protocol from the one this kernel implements.
 
-## 2. Sleeping inside one file does not scale to a set
+## 4. Sleeping inside one file does not scale to a set
 
 The syscall path is still the one from [Week 8](../../08-user-mode-syscalls-and-ipc/sections/day-004-int80-syscall-abi.md).
 User registers enter the kernel, the kernel may set the task to
@@ -83,7 +138,7 @@ The three multiplexers below share one structure, visible in
 so step 1 is an `epoll_ctl` done once, and the sleep in `epoll_wait`
 waits on a single ready list instead of scanning every file.
 
-## 3. `select` copies bitmaps, and the bitmap has a historical width
+## 5. `select` copies bitmaps, and the bitmap has a historical width
 
 The uapi header in this tree fixes the width of the kernel's
 `fd_set`-shaped object:
@@ -188,7 +243,7 @@ call pays the copy and the scan, including the calls that find nothing
 ready, and the bitmap has no place to hang a pointer except a side
 array indexed by the same integer.
 
-## 4. `poll` walks a list the caller already built
+## 6. `poll` walks a list the caller already built
 
 `poll` takes an array of `struct pollfd`: an fd, an events mask, and a
 slot for revents. There is no `fd_set` and no `__FD_SETSIZE` in this
@@ -246,7 +301,7 @@ interest set: sparse descriptors are `pollfd`s with their own masks,
 not a bitmap with a historical width. The scan is still linear in the
 number of files.
 
-## 5. `epoll` stores the interest set and wakes from a ready list
+## 7. `epoll` stores the interest set and wakes from a ready list
 
 `epoll_ctl` is the call that edits the interest set. `do_epoll_ctl`
 rejects a bad epoll descriptor or a bad target with `-EBADF`, and a
@@ -449,7 +504,7 @@ interest (RB tree of epitem)          ready (rdllist)
   one node per (file, fd)               a node is linked only when ready
 ```
 
-## 6. Trace: pipe write, wakeup, `epoll_wait`, read
+## 8. Trace: pipe write, wakeup, `epoll_wait`, read
 
 One byte is written to a pipe whose read end is already in an epoll set
 with `EPOLLIN`. Registration already happened. `epoll_ctl(ADD)` reached `ep_insert`,
@@ -521,7 +576,7 @@ user read()
 A trace that stops at `epoll_wait` returning 1 has not observed the
 byte. A trace that stops at `read` returning 1 has.
 
-## 7. Level trigger, edge trigger, and the `EAGAIN` drain
+## 9. Level trigger, edge trigger, and the `EAGAIN` drain
 
 After an event is copied out, `ep_send_events_proc` decides whether the
 item stays interesting. Lines 1750–1762 re-poll with a null qproc, so
@@ -576,7 +631,7 @@ returns to `epoll_wait`. It ends the connection on `0`.
 edge-triggered stall: `epoll_wait` stays quiet, and the pipe still
 holds bytes.
 
-## 8. Close drops the interest when the file's last reference drops
+## 10. Close drops the interest when the file's last reference drops
 
 The epoll instance does not own the caller's descriptor number. As
 `ep_insert`'s comment says, the caller already raised the file's usage
@@ -597,9 +652,9 @@ twice returns `-EEXIST`. After close-and-reuse, the new `struct file`
 does not match the old item: `ep_cmp_ffd` compares the file pointer
 first.
 
-## 9. A loop that matches the kernel's rule
+## 11. A loop that matches the kernel's rule
 
-This is the edge-triggered pipe reader the branch in section 7
+This is the edge-triggered pipe reader the branch in section 9
 describes. Level trigger can stop after one `read`. Edge trigger
 cannot.
 
@@ -651,7 +706,7 @@ the same pipe is still the copy and the scan. A positive result still
 allows a short `read`. Timeout zero sets `timed_out` up front and does
 not sleep.
 
-## 10. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 The exercise is
 [../challenges/day-005-readiness.sh](../challenges/day-005-readiness.sh).
@@ -677,7 +732,7 @@ conditions and which later call returns a count of bytes.
 
 Draw three columns for one pipe read end: `select`'s bit in a copied
 bitmap, `poll`'s `pollfd`, and epoll's `epitem` in the red-black tree
-plus a second box for `rdllist`. Then draw the section 6 trace as five
+plus a second box for `rdllist`. Then draw the section 8 trace as five
 arrows: `pipe_write`, `rd_wait`, `ep_poll_callback`, `ep->wq`,
 `read`. Mark which arrow carries a byte count and which arrows carry
 only a wake.
@@ -692,7 +747,7 @@ the pipe again after a short read with no further write.
 
 ### Build
 
-Write the drain loop from section 9 in your own names and annotate each
+Write the drain loop from section 11 in your own names and annotate each
 return: ready-count, byte-count, end-of-file, and would-block. State
 the `EPOLLONESHOT` rule in one sentence: delivery clears the interest
 bits until `EPOLL_CTL_MOD` puts them back. Keep Day 4's pipe ring in

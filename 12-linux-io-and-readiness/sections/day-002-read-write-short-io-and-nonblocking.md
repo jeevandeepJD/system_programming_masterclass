@@ -11,6 +11,57 @@
 > You asked `read` for 4096 bytes and it returned 200. Has the call
 > failed, finished the file, or merely paused?
 
+## 1. Syntax needed for this source
+
+A read returns a count. The same signed integer carries three outcomes, and the body chooses a function by testing members of the object the descriptor selected.
+
+```c
+int n = copy_out(buf, count);
+if (n < 0)
+    return n;          /* error code, negated */
+if (n == 0)
+    return 0;          /* nothing moved */
+return n;              /* bytes actually moved, possibly short */
+```
+
+The caller asked for `count` bytes. The return says how far this attempt got. A positive number smaller than `count` is still success for those bytes.
+
+## 2. Linux 0.12 first: one `sys_read`, then a type dispatch
+
+One syscall has to serve a pipe, a character device, a block device, and a regular file. Linux 0.12 keeps that choice inside `sys_read` instead of a method table. `fs/read_write.c`, function `sys_read`, printed page 813:
+
+```c
+if (fd>=NR_OPEN || count<0 || !(file=current->filp[fd]))
+	return -EINVAL;
+if (!count)
+	return 0;
+verify_area(buf,count);
+inode = file->f_inode;
+if (inode->i_pipe)
+	return (file->f_mode&1)?read_pipe(inode,buf,count):-EIO;
+if (S_ISCHR(inode->i_mode))
+	return rw_char(READ,inode->i_zone[0],buf,count,&file->f_pos);
+if (S_ISBLK(inode->i_mode))
+	return block_read(inode->i_zone[0],&file->f_pos,buf,count);
+if (S_ISDIR(inode->i_mode) || S_ISREG(inode->i_mode)) {
+	if (count+file->f_pos > inode->i_size)
+		count = inode->i_size - file->f_pos;
+	if (count<=0)
+		return 0;
+	return file_read(inode,file,buf,count);
+}
+printk("(Read)inode->i_mode=%06o\n\r",inode->i_mode);
+return -EINVAL;
+```
+
+Trace. A bad index, a negative count, or a null `filp[fd]` returns `-EINVAL`. A zero count returns 0 before any copy. `verify_area` checks the user buffer. The inode then picks the body: a pipe calls `read_pipe` only when the low bit of `f_mode` is set; a character or block inode passes `&file->f_pos` into the device helper; a directory or regular file shrinks `count` to the bytes left before `i_size` and calls `file_read`. Anything else prints the mode and returns `-EINVAL`.
+
+What carries forward is one entry point, a per-object body, a checked user buffer, and a short or zero count as a real result. The `if` ladder on `i_mode`, `i_zone[0]` as a device number, and `verify_area` belong to this kernel. Linux 5.10 keeps the purpose and moves the dispatch to `vfs_read` and `file_operations`, with `access_ok` / `copy_to_user` at the boundary. A positive short count is still success for those bytes.
+
+ToyOS is the small short read. [`vfs_read`](../../projects/toyos/src/vfs.c) copies `min(length, available)` from the inode array, advances `offset`, and returns that count. Zero means the inode is exhausted.
+
+The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) shows this dispatch beside `open`. The sections below are the same purpose in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete implementation. Develop against the 5.10 tree.
+
 Day 1 made a descriptor an index into a `struct file`, and `f_pos` the
 position that index shares with its duplicates. This lesson is what a
 later `read` or `write` of that index is allowed to do with a user
@@ -21,7 +72,7 @@ The excerpts are from the local tree
 `5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`), the same
 5.10-based tree as Day 1.
 
-## 1. Why the call is allowed to stop early
+## 3. Why the call is allowed to stop early
 
 A disk file, a pipe, a socket, and a device do not have the same notion
 of "the next bytes." A regular file has an `i_size` and a page cache.
@@ -48,7 +99,7 @@ does not fit, returning `-28`, so the toy does not yet have a short
 write. Linux uses one signed return for all three outcomes, on every
 kind of object that supplies `file_operations`.
 
-## 2. Three results, and the libc translation
+## 4. Three results, and the libc translation
 
 Inside the kernel the return is an `ssize_t`:
 
@@ -77,7 +128,7 @@ them by the count it passed in.
 `EAGAIN`. On this tree they are one code. A test for either name matches
 the same return.
 
-## 3. `ksys_read` looks up the index and moves `f_pos` only on progress
+## 5. `ksys_read` looks up the index and moves `f_pos` only on progress
 
 ```c
 /* fs/read_write.c :: file_ppos, ksys_read :: tree c9b2385d6793
@@ -123,7 +174,7 @@ and this function publishes that local back.
 it was taken. The user's `buf` is still a `__user` pointer. Nothing in
 `ksys_read` dereferences it.
 
-## 4. `vfs_read` checks, caps, and calls the method once
+## 6. `vfs_read` checks, caps, and calls the method once
 
 ```c
 /* fs/read_write.c :: vfs_read :: tree c9b2385d6793
@@ -187,7 +238,7 @@ returns `written ? written : error` (line 2714). Bytes already copied
 win over a later fault: the positive count is what the caller must
 account for, and the offset has already moved.
 
-## 5. `rw_verify_area` rejects a nonsense range
+## 7. `rw_verify_area` rejects a nonsense range
 
 ```c
 /* fs/read_write.c :: rw_verify_area :: tree c9b2385d6793
@@ -237,7 +288,7 @@ the comment says mandatory locking applies only where a position means
 something. The last call is the LSM hook. None of this copies bytes.
 It decides whether the one attempt may start.
 
-## 6. `vfs_write` and `ksys_write` are the same contract in the other direction
+## 8. `vfs_write` and `ksys_write` are the same contract in the other direction
 
 ```c
 /* fs/read_write.c :: vfs_write :: tree c9b2385d6793
@@ -313,7 +364,7 @@ shows why a positive count is still not a durable store.
 on the `struct file`. `dup` shares them. A nonblocking duplicate and the
 original index wait, or refuse to wait, together.
 
-## 7. A pipe sleeps, returns `EAGAIN`, or returns what it has
+## 9. A pipe sleeps, returns `EAGAIN`, or returns what it has
 
 `pipe_read` in `fs/pipe.c` is one method `vfs_read` can land on. After
 it has copied whatever is already buffered, lines 340–347 decide among
@@ -422,7 +473,7 @@ never surfaces in user space. Either way the program must not treat
 That one is not `-ERESTARTSYS`. It is already the errno a write attempt
 returns if it has not copied anything yet.
 
-## 8. The bytes cross a checked boundary
+## 10. The bytes cross a checked boundary
 
 `access_ok` in `vfs_read` is the first gate. The copy itself is the
 second. Week 8's `copy_from_user` walked the user page tables one byte
@@ -506,7 +557,7 @@ ssize_t in the return register
         negative  -> errno, f_pos unchanged when ksys_* saw ret < 0
 ```
 
-## 9. A loop that means what it says
+## 11. A loop that means what it says
 
 This is the caller side of the contract. `read` here is libc: `-1` and
 `errno`, not the kernel's negative `ssize_t`. The cursor `got` is the
@@ -554,7 +605,7 @@ The `fd` in this function is Day 1's index. If another thread shares the
 advance one `f_pos` under `f_pos_lock`. The cursor `got` is private to
 this call. `f_pos` is not.
 
-## 10. Execution trace: a short read, a sleep, a signal
+## 12. Execution trace: a short read, a sleep, a signal
 
 One task, descriptor 3 a blocking pipe, descriptor 4 a regular file
 positioned at the start of a 100-byte file. The user asks for 4096.
@@ -592,7 +643,7 @@ zero. The pipe pair is a sleep, then a short count, because data was
 available and the method returned it. The signal case copies nothing, so
 retrying does not skip a byte and does not double-count one.
 
-## 11. Architecture lens
+## 13. Architecture lens
 
 Day 1 named the registers. For `read` and `write` they hold the
 descriptor, the user address, and the count. On x86-64, `arch/x86/entry/entry_64.S`
@@ -619,7 +670,7 @@ pipe lock before `wait_event_interruptible_exclusive`, which is why a
 closer in another thread can proceed. The sleeper rechecks the pipe when
 it wakes.
 
-## 12. Mastery: Explain · Draw · Observe · Build
+## 14. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-002-stream-io.sh`](../challenges/day-002-stream-io.sh)
 after this explanation.

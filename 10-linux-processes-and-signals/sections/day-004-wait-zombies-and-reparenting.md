@@ -12,6 +12,73 @@ after user execution ends. The kernel keeps a dead task until a parent
 collects the status, because the exit code is kernel state. The program that
 produced it has already been dismantled.
 
+## 1. Syntax needed for this source
+
+`do_exit` stores through `current` and does not return to the caller.
+The `for` loop walks every open index. `if (current->filp[i])` tests a
+pointer. `current->state = TASK_ZOMBIE` and `current->exit_code = code`
+write two members and leave the task allocated. `sys_waitpid` later
+reads `p->exit_code` and copies that integer out with `put_fs_long`.
+
+Sketch:
+
+```c
+for (i = 0; i < NR_OPEN; i++)
+        if (current->filp[i])
+                sys_close(i);
+current->state = TASK_ZOMBIE;
+current->exit_code = code;
+```
+
+## 2. Linux 0.12 first: `do_exit` keeps a zombie and an exit word
+
+The parent needs a number after the child's memory is gone. Linux 0.12
+makes that obvious: `do_exit` frees the page tables and the open files,
+then leaves the task in the array with `TASK_ZOMBIE` and `exit_code`.
+`sys_waitpid` copies the word and only then calls `release`. Printed
+pages are in the 0.12 commentary; the
+[0.12 map](../../references/EARLY_LINUX_012_MAP.md) places `kernel/exit.c`
+at pages 391–403.
+
+`kernel/exit.c`, `do_exit`, printed page 399:
+
+```c
+free_page_tables(get_base(current->ldt[1]),get_limit(0x0f));
+free_page_tables(get_base(current->ldt[2]),get_limit(0x17));
+for (i=0 ; i<NR_OPEN ; i++)
+        if (current->filp[i])
+                sys_close(i);
+iput(current->pwd);
+current->pwd = NULL;
+iput(current->root);
+current->root = NULL;
+iput(current->executable);
+current->executable = NULL;
+iput(current->library);
+current->library = NULL;
+current->state = TASK_ZOMBIE;
+current->exit_code = code;
+```
+
+Trace: drop code, data, files, cwd, root, and the executable inode.
+The task stays. `schedule()` runs later in the same function (printed
+page 401), and `do_exit` does not return. In `sys_waitpid`, the
+`TASK_ZOMBIE` arm (printed page 403) does
+`put_fs_long(p->exit_code, stat_addr)` and `release(p)`, then returns
+the child's pid.
+
+What carries forward is the retained exit word and the wait that
+collects it. What changes in 5.10 is the life cycle around that word:
+`exit_notify`, `EXIT_ZOMBIE`, reparenting, subreapers, and `wait4`.
+Develop against those functions. The LDT bases and `iput` of a single
+executable inode are the 0.12 way of releasing the image.
+
+ToyOS has one user image and an `iretq` back into it. It has no second
+task holding an `exit_code` for a parent. 0.12 is where that retained
+record shows up in a few assignments.
+
+Now move to the 5.10 implementation.
+
 The excerpts below come from the local tree `c9b2385d6793`, a 5.10.134-based
 kernel. Record `uname -r` beside that id before you treat a line number as
 true of the machine you are running. Function names and call order move
@@ -20,7 +87,7 @@ these functions show one implementation of that contract.
 
 ---
 
-## 1. Why the exit code has to outlive the program
+## 3. Why the exit code has to outlive the program
 
 A parent creates a child so that it can later learn what the child did. The
 interesting fact often arrives at the end: the child called `_exit(23)`, or
@@ -47,7 +114,7 @@ waiter collects it or the kernel sees that the waiter has declined it.
 
 ---
 
-## 2. Two syscalls put the word in, one family of syscalls takes it out
+## 4. Two syscalls put the word in, one family of syscalls takes it out
 
 The C library's `exit` and `_exit` are ordinary functions until they issue a
 system call. In this tree the two kernel entries sit together.
@@ -125,7 +192,7 @@ control, which Day 6 introduces; they are separate from the zombie word.
 
 ---
 
-## 3. `do_exit` releases the user program and keeps the task
+## 5. `do_exit` releases the user program and keeps the task
 
 `kernel/exit.c`, function `do_exit`, tree `c9b2385d6793`, lines 802–833:
 
@@ -198,7 +265,7 @@ task exiting. The lab stays on ordinary children.
 
 ---
 
-## 4. `exit_notify` publishes the zombie
+## 6. `exit_notify` publishes the zombie
 
 `kernel/exit.c`, function `exit_notify`, tree `c9b2385d6793`, lines 654–683:
 
@@ -269,7 +336,7 @@ as valid only between the observation and the `waitpid` that consumes it.
 
 ---
 
-## 5. `wait4` copies the word into the parent's address space
+## 7. `wait4` copies the word into the parent's address space
 
 The parent learns the word through `wait4`. In this tree libc's
 `waitpid` is expected to call it: the comment above
@@ -332,7 +399,7 @@ kernel checks it and writes one integer. A bad pointer yields `-EFAULT`.
 After a successful return, `status` is an ordinary C object whose
 representation is the ABI word from `exit_code`. The syscall return
 register carries the child's PID, or `-1` / `0` for the error and
-`WNOHANG` cases. Which register that is depends on the ISA; section 11
+`WNOHANG` cases. Which register that is depends on the ISA; section 13
 names them. The meaning of the PID and the status word is kernel policy.
 
 `waitpid` returning the PID is success. Returning `0` with `WNOHANG` means
@@ -344,7 +411,7 @@ for that retry.
 
 ---
 
-## 6. Execution trace: exit 23, the letter Z, then the reap
+## 8. Execution trace: exit 23, the letter Z, then the reap
 
 This is the zombie half of `challenges/day-004-wait-zombies-orphans.sh`.
 The wrapper builds the canonical project and runs the bounded child. PIDs
@@ -418,7 +485,7 @@ same word.
 
 ---
 
-## 7. Reparenting: the parent can disappear first
+## 9. Reparenting: the parent can disappear first
 
 A zombie is a task with an uncollected exit word. An orphan is a task
 whose `real_parent` has changed because the old parent exited while this
@@ -537,7 +604,7 @@ program controls.
 
 ---
 
-## 8. The subreaper flag is a prctl on the signal struct
+## 10. The subreaper flag is a prctl on the signal struct
 
 `kernel/sys.c`, inside the `prctl` switch, tree `c9b2385d6793`, lines
 2445–2458:
@@ -601,7 +668,7 @@ to collect a future exit word. It is a parent-pointer update under
 
 ---
 
-## 9. Zombie and orphan side by side
+## 11. Zombie and orphan side by side
 
 ```text
 question                         zombie                         orphan
@@ -631,7 +698,7 @@ path inside `exit_notify` when the parent has declined `SIGCHLD`.
 
 ---
 
-## 10. How the earlier weeks sit inside this path
+## 12. How the earlier weeks sit inside this path
 
 [Week 1](../../01-foundations-to-cpu/sections/day-007-control-flow-exceptions-and-privilege.md)
 treats an exception as the CPU leaving the current instruction stream so
@@ -668,7 +735,7 @@ belong to Linux `c9b2385d6793`.
 
 ---
 
-## 11. Architecture lens
+## 13. Architecture lens
 
 Zombies, reparenting, subreapers, and the exit-word layout are kernel
 policy shared by x86-64, AArch64, and RISC-V in this tree: `do_exit`,
@@ -680,7 +747,7 @@ user context and builds no such frame.
 
 ---
 
-## 12. What the wrapper is allowed to touch
+## 14. What the wrapper is allowed to touch
 
 Run the day from the Week 10 directory through
 [`../challenges/day-004-wait-zombies-orphans.sh`](../challenges/day-004-wait-zombies-orphans.sh).
@@ -702,7 +769,7 @@ invariants.
 
 ---
 
-## 13. Mastery: Explain · Draw · Observe · Build
+## 15. Mastery: Explain · Draw · Observe · Build
 
 The wrapper is
 [`../challenges/day-004-wait-zombies-orphans.sh`](../challenges/day-004-wait-zombies-orphans.sh).
@@ -723,7 +790,7 @@ below for you to produce. These notes do not record the day as mastered.
 
 ### Draw
 
-Draw the exit-23 trace from section 6 with your own PID numbers filled in
+Draw the exit-23 trace from section 8 with your own PID numbers filled in
 after a run. Mark the moment user virtual memory disappears, the moment
 `EXIT_ZOMBIE` is stored, and the moment `put_user` writes the parent's
 `status`. On a second diagram, draw the subreaper tree before and after

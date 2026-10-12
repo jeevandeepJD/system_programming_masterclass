@@ -7,6 +7,46 @@
 > each fact, then walks one failure from the symptom to a regression
 > check.
 
+## 1. Syntax needed for this source
+
+A kernel print fills a buffer the kernel owns, then displays that buffer. The return is how many characters were formatted.
+
+```c
+char buf[64];
+int n = format_into(buf, "fd %d", fd);
+if (n < 0)
+    return n;
+show(buf);
+```
+
+`buf` is a pointer to the first character. `format_into` writes through it. `show` walks the characters until it has displayed `n` of them. The user program still cannot load the kernel object by indexing its own memory.
+
+## 2. Linux 0.12 first: the whole source, `printk`, Bochs, and GDB
+
+The 0.12 tree is small enough to read the path you are debugging and to print from inside it. `printk` in `kernel/printk.c` formats into a static buffer and hands that buffer to the console. The listing starts on printed page 438; the function body is on printed page 439:
+
+```c
+int printk(const char *fmt, ...)
+{
+	va_list args;
+	int i;
+
+	va_start(args, fmt);
+	i=vsprintf(buf,fmt,args);
+	va_end(args);
+	console_print(buf);
+	return i;
+}
+```
+
+Trace. `va_start` walks the arguments after `fmt`. `vsprintf` writes the formatted text into the file-scope `buf[1024]` and returns the length. `console_print` displays that kernel buffer. A `printk` you add beside `sys_read` or `read_pipe` shows the fd, the count, or `f_pos` on the console because those objects are in the same address space as the call. Chapter 17.5 (printed page 1065) runs that kernel under Bochs: `bochsdbg -q -f bochsrc-0.12-hd.bxrc` stops with the CPU at the reset vector, and `vbreak` / `lbreak` / `pbreak` plant instruction breakpoints. Chapter 17.11 (printed page 1094) rebuilds Bochs with `gdbstub` and the kernel with `-g`, then attaches GDB to port 1234 so the same stop is a C stack rather than a segment:offset.
+
+What carries forward is "name the layer, then stop the machine on that layer." The static `buf`, `console_print`, the 80386 debugger commands, and a kernel you recompile for one `printk` belong to this tree. Linux 5.10 is too large, and the kernel you boot is often one you cannot rebuild for a question. The same facts come out through `/proc/self/fd` and `/proc/self/fdinfo`, and through `strace` recording the syscall and its return. GDB still stops the task; it attaches to the process, not to a Bochs stub.
+
+ToyOS is the small source you can still read outright. [`vfs.c`](../../projects/toyos/src/vfs.c) and the Week 8 serial line show a descriptor and a pipe. They do not show `/proc`, `strace`, or a page cache.
+
+The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) is the early control flow those prints would confirm. The sections below are `/proc`, `strace`, and GDB on Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete kernel you can print and stop. Develop against the 5.10 tree.
+
 Days 4–6 put a byte queue behind two descriptors, a readiness wait in
 front of those descriptors, and a page-cache page behind a virtual
 address. None of those objects is a C variable the program can print.
@@ -21,7 +61,7 @@ id you actually opened. [Week 10's report](../../10-linux-processes-and-signals/
 used the same rule for `task_struct`. It applies here to `struct file`,
 the pipe ring, and the VMA.
 
-## 1. Why the descriptor table has to be asked for
+## 3. Why the descriptor table has to be asked for
 
 The integer a program stores in `int fd` is an index. The `struct file`,
 the pipe's `head` and `tail`, and the VMA's file offset live in kernel
@@ -165,7 +205,7 @@ need a trace, or `FIONREAD` on the pipe, which `pipe_ioctl` in
 `stream_open` gave the pipe no shared file position that a seek could
 use.
 
-## 2. strace sees the syscall, not the ring
+## 4. strace sees the syscall, not the ring
 
 strace stops the task at syscall entry and exit through ptrace. The
 line it prints is the architecture's registers at that boundary: the
@@ -199,7 +239,7 @@ a kernel target. For this week's userspace labs, GDB answers "which
 instruction faulted and at which address." The source answers "why
 that address is past the file."
 
-## 3. Five results that get swapped
+## 5. Five results that get swapped
 
 These are the failures the labs actually produce. Each one has a
 generator in the tree from Days 4–6.
@@ -315,7 +355,7 @@ an address that `munmap` already removed is a different signal: there
 is no VMA, and `do_user_addr_fault` takes `bad_area_nosemaphore` before
 `filemap_fault`.
 
-## 4. One failure, all the way through
+## 6. One failure, all the way through
 
 The shape is fixed. Symptom, hypothesis, evidence, root cause, fix,
 regression. The evidence column names its layer: source, API, trace,
@@ -358,7 +398,7 @@ disposition never let user code see the errno.
 dropped before this `write`. `pipe_release` decremented `readers`. The
 producer's `write` is behaving as specified. The bug is the close order
 in the pipeline, the same missing `dup2`/`close` protocol as Day 4's
-section 4.
+section 6.
 
 **Fix.** The parent keeps the read end open only until the child has
 inherited it, then closes the parent's copy. The child maps the read
@@ -376,7 +416,7 @@ path. The second guards the error path Day 4 separated from end-of-file.
 A test that only checks "the process exited" passes for both the bug
 and the fix.
 
-## 5. The same shape for a readiness stall
+## 7. The same shape for a readiness stall
 
 **Symptom.** An edge-triggered epoll loop stops calling `read` while a
 writer has already pushed more bytes than one `read` accepted. The
@@ -420,7 +460,7 @@ a single short `read` and before the drain, must be allowed to return
 fix, that second wait is not reached until `EAGAIN`, and the byte
 count matches the write.
 
-## 6. The same shape for `SIGBUS`
+## 8. The same shape for `SIGBUS`
 
 **Symptom.** A process that mapped a file dies with `SIGBUS`. strace
 shows `mmap` and `ftruncate` and then the signal. It does not show a
@@ -457,7 +497,7 @@ the mapping intact, is the expected `SIGBUS` and is not reported as a
 passing read. A load after `munmap` is a segmentation fault instead,
 which shows the two faults stayed distinct.
 
-## 7. What each layer is allowed to prove
+## 9. What each layer is allowed to prove
 
 ```text
 layer      answers                                      does not answer
@@ -488,7 +528,7 @@ and [Week 11](../../11-threads-and-concurrency/sections/day-007-debuggers-saniti
 already treat a missing sanitizer. The refusal is not evidence that
 the pipe was empty. The source and the API checks still stand.
 
-## 8. ToyOS, this tree, and version discipline
+## 10. ToyOS, this tree, and version discipline
 
 [Week 8's pipe](../../08-user-mode-syscalls-and-ipc/sections/day-006-process-fd-ipc.md)
 is a 64-byte linear buffer, descriptors 3 and 4, and a read that
@@ -534,7 +574,7 @@ image is evidence about that image. It is not evidence about
 citation in the other direction: that image returns 0 on an empty
 buffer and has no `EPIPE`.
 
-## 9. A report you can reread in a month
+## 11. A report you can reread in a month
 
 Record, in this order, before any interpretation:
 
@@ -570,7 +610,7 @@ without tracing unrelated processes. A passing wrapper is not the
 report. The report is the six headings in your own words, tied to a
 tree id when you cite a function.
 
-## 10. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 The exercise is
 [../challenges/day-007-io-debug-report.sh](../challenges/day-007-io-debug-report.sh).

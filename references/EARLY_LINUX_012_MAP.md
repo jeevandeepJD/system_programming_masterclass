@@ -2,13 +2,16 @@
 
 Use this reference with Weeks 10–12.
 
-Linux 0.12 is the first-pass map: its small source tree makes the whole path
-visible. The local 5.10.134-based tree at `c9b2385d6793` remains the
+Linux 0.12 is the first implementation map: its small source tree makes the
+whole path visible. First learn the C or assembly syntax used by that path;
+otherwise compact old code can hide the mechanism behind unfamiliar
+notation. The local 5.10.134-based tree at `c9b2385d6793` remains the
 engineering reference for modern Linux. Read in this order:
 
 ```text
-question → Linux 0.12 whole mechanism → ToyOS reconstruction
-         → Linux 5.10 implementation → current upstream verification
+question → required C/assembly syntax → Linux 0.12 whole mechanism
+         → ToyOS reconstruction → Linux 5.10 implementation
+         → current upstream verification
 ```
 
 The early source comes from *A Heavily Commented Linux Kernel Source Code:

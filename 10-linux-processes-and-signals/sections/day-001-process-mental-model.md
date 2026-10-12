@@ -28,6 +28,79 @@ Linux is that shape with sharing, credentials, and lifetime added. A program
 is still an ELF file. A process is a live task plus the kernel objects the
 task references.
 
+## 1. Syntax needed for this source
+
+The early task code is a structure, a pointer, an array index, a bit
+clear, and a function that returns an `int`. `p->pid` means `(*p).pid`:
+follow the pointer, then read the member. `task[i]` selects one slot.
+`current->filp[fd]` is that pattern twice: the running task, then one
+file pointer in its array. `~(1 << fd)` is a mask with bit `fd` clear.
+A call such as `sys_open` passes arguments and returns the index, or a
+negative error.
+
+Sketch:
+
+```c
+struct task_struct * p = task[i];
+p->filp[fd] = f;
+p->close_on_exec &= ~(1 << fd);
+return fd;
+```
+
+## 2. Linux 0.12 first: the fixed task array and `current->filp`
+
+Read the small task table before the 5.10 graph. Linux 0.12 keeps at
+most 64 tasks. Each is a `task_struct` in `include/linux/sched.h`
+(printed pages 203–204): `state`, `pid`, `pgrp`, `session`, `signal`,
+`exit_code`, `filp[NR_OPEN]` (32 `struct file *`), `ldt[3]`, and a
+`tss`. The running task is `current`. A descriptor is an index into
+that task's `filp`, and the open-file object holds the inode and the
+offset. Printed pages below are from Zhao Jiong, *A Heavily Commented
+Linux Kernel Source Code* (2019). The
+[0.12 map](../../references/EARLY_LINUX_012_MAP.md) collects them.
+
+`kernel/sched.c`, printed page 356:
+
+```c
+struct task_struct *current = &(init_task.task);
+struct task_struct * task[NR_TASKS] = {&(init_task.task), };
+```
+
+`fs/open.c`, `sys_open`, printed page 824:
+
+```c
+for(fd=0 ; fd<NR_OPEN ; fd++)
+        if (!current->filp[fd])
+                break;
+if (fd>=NR_OPEN)
+        return -EINVAL;
+current->close_on_exec &= ~(1<<fd);
+f=0+file_table;
+for (i=0 ; i<NR_FILE ; i++,f++)
+        if (!f->f_count) break;
+if (i>=NR_FILE)
+        return -EINVAL;
+(current->filp[fd]=f)->f_count++;
+```
+
+Trace: scan `current->filp` for a free index, then scan the global
+`file_table` for `f_count == 0`. Store that `struct file *` in the
+task and bump the count. On printed page 825 the same function sets
+`f_inode` and `f_pos` and `return (fd)`.
+
+What carries forward is the task record, the pid, and a small integer
+that names an open-file object. What changes in 5.10 is the storage:
+allocated tasks, a separate fd table, and a richer `struct file`.
+Develop against that 5.10 shape. The fixed `task[64]` and embedded
+`filp[]` are the 0.12 picture of the same idea.
+
+ToyOS already has one `struct process` with a page-table root, an
+entry, a kernel stack, and a pid, entered by `iretq`
+([`process.c`](../../projects/toyos/src/process.c)). 0.12 is that
+record repeated in `task[]`.
+
+Now move to the 5.10 implementation.
+
 The source excerpts below are from the local tree
 `5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`). That tree is
 5.10-based. Field layout in a later mainline release can move. The names
@@ -35,7 +108,7 @@ quoted here are what this revision actually contains.
 
 ---
 
-## 1. The hardware already has registers and a page-table root
+## 3. The hardware already has registers and a page-table root
 
 A core can execute one instruction stream at a time. `RIP` (or the program
 counter on another ISA) selects the instruction. The page-table root selects
@@ -75,7 +148,7 @@ their user mappings long enough for a parent to observe them.
 
 ---
 
-## 2. A program is an ELF file
+## 4. A program is an ELF file
 
 An ELF file is a sequence of bytes with a header. Week 3 separated two views
 of those bytes. Section headers describe how the linker grouped `.text`,
@@ -116,7 +189,7 @@ no descriptors                           files, fs
 
 ---
 
-## 3. `task_struct` is the schedulable object
+## 5. `task_struct` is the schedulable object
 
 In `include/linux/sched.h`, `struct task_struct`, tree
 `5.10.134-15_rc1-10333-gc9b2385d6793`:
@@ -185,7 +258,7 @@ task_struct
 
 ---
 
-## 4. Memory, exit, identity, credentials, files, signals
+## 6. Memory, exit, identity, credentials, files, signals
 
 Still in `include/linux/sched.h`, `struct task_struct`, same tree. The memory
 and exit fields:
@@ -364,7 +437,7 @@ the task.
 
 ---
 
-## 5. Page tables live in `mm`, registers live on the task
+## 7. Page tables live in `mm`, registers live on the task
 
 In `include/linux/mm_types.h`, `struct mm_struct`, same tree, the root sits
 with the virtual-memory areas:
@@ -428,7 +501,7 @@ roots can still point at the same physical frame until one of them writes.
 
 ---
 
-## 6. `getpid` returns the thread-group id in a namespace
+## 8. `getpid` returns the thread-group id in a namespace
 
 In `kernel/sys.c`, `SYSCALL_DEFINE0(getpid)` and `SYSCALL_DEFINE0(gettid)`,
 same tree:
@@ -478,7 +551,7 @@ resolves the reader.
 
 ---
 
-## 7. Descriptors, credentials, and lifetime are referenced objects
+## 9. Descriptors, credentials, and lifetime are referenced objects
 
 A descriptor number is an index in the `fdtable` hung off `files_struct`.
 In `include/linux/fdtable.h` the table has a reference count, a pointer to
@@ -516,7 +589,7 @@ that many such objects can name.
 
 ---
 
-## 8. Execution trace: `proc_lab` reads its own task
+## 10. Execution trace: `proc_lab` reads its own task
 
 The program in
 [`projects/linux-system-programming/src/proc_lab.c`](../../projects/linux-system-programming/src/proc_lab.c)
@@ -588,7 +661,7 @@ path are observations of one task on one host.
 
 ---
 
-## 9. Architecture lens — x86-64, AArch64, and RISC-V
+## 11. Architecture lens — x86-64, AArch64, and RISC-V
 
 The graph in `task_struct` is C. `mm`, `files`, `fs`, `real_cred`,
 `signal`, `pid`, and `tgid` are the same members on every architecture this
@@ -620,7 +693,7 @@ task.
 
 ---
 
-## 10. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 The lab is evidence after this model. From the week directory, run
 [`challenges/day-001-process-model.sh`](../challenges/day-001-process-model.sh).
@@ -648,7 +721,7 @@ and runs `proc_lab` on itself.
 
 ### Draw
 
-1. The `task_struct` graph from section 3, with an arrow from `mm` to
+1. The `task_struct` graph from section 5, with an arrow from `mm` to
    `pgd` and an arrow from `files` to `struct file`.
 2. One core, with `RIP` and the page-table root register, and the two
    kernel objects those registers are loaded from.

@@ -6,6 +6,44 @@
 > page-table entries, filled in by faults, name pages in the page cache.
 > After that, the CPU's ordinary loads and stores are the I/O.
 
+## 1. Syntax needed for this source
+
+Once a page is mapped, a pointer plus an integer names a byte. The addition scales by the pointer's type.
+
+```c
+char *p = base;
+p[0] = 'A';
+*(p + 3) = 'B';
+```
+
+`p + 3` is three bytes past `p` because `p` is `char *`. `p[3]` is that same address. The store uses the page tables; it does not call `write`.
+
+## 2. Linux 0.12 first: a missing page of the executable
+
+A load whose page is not present has to be satisfied from somewhere. Linux 0.12 does that in `do_no_page` (`mm/memory.c`). The function begins on printed page 896. The branch that fills the page is on printed page 898:
+
+```c
+if (!inode) {
+	get_empty_page(address);
+	return;
+}
+if (share_page(inode,tmp))
+	return;
+if (!(page = get_free_page()))
+	oom();
+for (i=0 ; i<4 ; block++,i++)
+	nr[i] = bmap(inode,block);
+bread_page(page,inode->i_dev,nr);
+```
+
+Trace. `tmp` is the fault address minus `current->start_code`. Past the executable and the library image, `inode` is NULL: `get_empty_page` maps a fresh page and returns. Inside the image, `share_page` tries to reuse a page another task already loaded from the same inode. Otherwise the kernel allocates a physical page, turns the logical offset into four 1KB block numbers with `bmap`, and `bread_page` reads them. `put_page`, just below this excerpt, installs that page at `address`. `page.s` calls `do_no_page` when the present bit is clear, and `do_wp_page` when the fault is a write to a protected page.
+
+What carries forward is demand paging: a fault, not the exec itself, brings in a missing page. The `a.out` layout, `LIBRARY_OFFSET`, four-block `bread_page`, and the task's single `executable` inode belong to this kernel. This is not the modern `mmap` model. There is no VMA naming an arbitrary file, and there is no page-cache page shared with `read` and `write`. Linux 5.10 keeps the fault as the moment of data movement and implements a file mapping as a VMA whose fault handler installs a page-cache page.
+
+ToyOS already takes the fault. [Week 7's page tables](../../07-memory-processes-and-scheduling/sections/day-002-page-tables-mapper-and-faults.md) map anonymous frames. They do not publish a file into a page cache. [Week 9](../../09-filesystems-and-virtual-devices/sections/day-004-storage-stack-boundary.md) stops at that boundary.
+
+The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) says the early kernel's paging is only the first control-flow picture. The sections below are `mmap`, shared mappings, and the page cache in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete demand-paging path. Develop against the 5.10 tree.
+
 `read` and `write` move bytes by copying. Day 4's pipe does it twice:
 once from the writer's buffer into a kernel page, once from that page
 into the reader's buffer. A file `read` does the same shape through the
@@ -26,7 +64,7 @@ shrinks under you, and it gets a path where a later load does not enter
 the kernel at all. The excerpts are Linux 5.10.134 at tree
 `c9b2385d6793`.
 
-## 1. Why a load should be able to name a file byte
+## 3. Why a load should be able to name a file byte
 
 A userspace buffer and a page-cache page are both physical memory.
 [Week 7's page tables](../../07-memory-processes-and-scheduling/sections/day-002-page-tables-mapper-and-faults.md)
@@ -55,7 +93,7 @@ The kernel's job on that trap is to make the translation true and
 return to the faulting instruction, or to deliver a signal if it
 cannot.
 
-## 2. `mmap` builds a VMA and returns
+## 4. `mmap` builds a VMA and returns
 
 On x86-64 the syscall checks the file offset before it will call the
 common path. A byte offset that is not a multiple of the page size is
@@ -233,7 +271,7 @@ for a byte in the ring. Mapping a pipe is a different question from
 mapping a regular file, and this lesson's fault trace is the regular
 file.
 
-## 3. The fault is the data movement
+## 5. The fault is the data movement
 
 The instruction that touches the new range is an ordinary load or
 store. The TLB has no entry. The walker from
@@ -449,7 +487,7 @@ offset, takes `find_get_page` and does not start I/O again. A fault
 that filled the cache, then a `read`, copies out of the page the fault
 brought in. The page cache is the meeting point.
 
-## 4. Shared writes the cache page; private writes a copy
+## 6. Shared writes the cache page; private writes a copy
 
 A write fault on a `MAP_SHARED` VMA takes `do_shared_fault`. The page
 `filemap_fault` returns is the cache page. `filemap_page_mkwrite`, the
@@ -475,7 +513,7 @@ is the same copy applied to anonymous pages the parent already had.
 Here the flag is `VM_SHARED` being clear, and the copy is
 `copy_user_highpage` on the first write through this VMA.
 
-## 5. Alignment, protection, `SIGBUS`, `msync`, `munmap`
+## 7. Alignment, protection, `SIGBUS`, `msync`, `munmap`
 
 Three alignments show up, and they are not the same rule.
 
@@ -540,7 +578,7 @@ through `unmapped_error`.
 `VM_SHARED`. A private store never entered the file, so there is
 nothing for `vfs_fsync_range` to flush on its behalf. Calling `msync`
 on a private mapping and expecting the file to change is a
-misunderstanding of section 4, not a property of the sync flag.
+misunderstanding of section 6, not a property of the sync flag.
 
 `munmap` removes the VMA. A later load of that address takes the
 `!vma` arm in `do_user_addr_fault` and does not reach `filemap_fault`.
@@ -560,7 +598,7 @@ address with `PAGE_MASK` before it builds the PTE. The byte offset
 inside the page is the low bits of the virtual address, applied by the
 CPU on the retry.
 
-## 6. A shared page is not a lock
+## 8. A shared page is not a lock
 
 `MAP_SHARED` makes two processes' loads and stores hit one cache page.
 The hardware coherence protocol, the same one [Week 11's false-sharing
@@ -590,7 +628,7 @@ mapping because they share the page tables
 aimed at the same pages. The synchronization requirement does not get
 smaller because there are two page tables.
 
-## 7. The copy and the fault win different cases
+## 9. The copy and the fault win different cases
 
 A single sequential pass the program will not share is often cheaper
 as `read`. One syscall copies many pages, readahead runs either way,
@@ -614,7 +652,7 @@ count. `mmap` reports a later violation of the limit as `SIGBUS` from
 `read` trades an errno for a signal on the instruction that walked off
 the file.
 
-## 8. A mapping small enough to fault on purpose
+## 10. A mapping small enough to fault on purpose
 
 ```c
 long page = sysconf(_SC_PAGESIZE);
@@ -648,7 +686,7 @@ remains. `filemap_fault` returns `VM_FAULT_SIGBUS` because
 `offset >= max_off`. The load was not a syscall, so there is no errno.
 Day 7 is the safe description of that signal.
 
-## 9. Mastery: Explain · Draw · Observe · Build
+## 11. Mastery: Explain · Draw · Observe · Build
 
 The exercise is
 [../challenges/day-006-mmap.sh](../challenges/day-006-mmap.sh).
@@ -671,7 +709,7 @@ stays in an anonymous copy under `MAP_PRIVATE`.
 
 ### Draw
 
-Draw the section 3 trace as a vertical strip: user load, TLB, trap,
+Draw the section 5 trace as a vertical strip: user load, TLB, trap,
 VMA, `filemap_fault`, page-cache page, PTE, retry. Put the file offset
 and `i_size` on the cache page. Beside it, draw the same file byte
 moving through `read`: syscall, cache page, `copy_to_user`, user

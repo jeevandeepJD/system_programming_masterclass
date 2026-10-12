@@ -21,16 +21,24 @@ implementation of that contract, in one tree. Mastery stays open until
 you produce the evidence yourself. These notes leave completion,
 confidence, and hours blank.
 
-## Read the small kernel before the large one
+## Read in this order: syntax, 0.12, ToyOS, then 5.10
 
-Use the shared
+Each day opens with the C syntax that day's early source actually uses,
+then reads the Linux 0.12 path from end to end, then connects that path
+to ToyOS and the earlier weeks, and only then studies the 5.10
+implementation. When a 5.10 line has moved, check current upstream and
+record `uname -r`. The shared
 [Linux 0.12 → Linux 5.10 map](../references/EARLY_LINUX_012_MAP.md)
-before the detailed day sections. Linux 0.12 places fork, exec, exit, wait,
-signals, and descriptor lifetime in short paths that can be read end to end.
-Then use this week's 5.10 excerpts to replace historical segmentation,
-`a.out`, fixed task arrays, and uniprocessor assumptions with the modern
-implementation. The 0.12 source is the explanatory map; the 5.10/current
-source remains the development reference.
+lists the printed pages in *A Heavily Commented Linux Kernel Source
+Code*, kernel 0.12 (Zhao Jiong, 2019).
+
+Linux 0.12 places fork, exec, exit, wait, signals, and descriptor
+lifetime in short functions you can finish. Use it to see the whole
+mechanism once. The development reference for modern Linux is this
+week's 5.10 tree and, after that, current source. Segmentation,
+`a.out`, the fixed `task[]` array, and the uniprocessor signal word are
+the 0.12 implementation of those ideas. POSIX and the man pages are what
+a C program may rely on.
 
 ## Why the seven days are one mechanism
 

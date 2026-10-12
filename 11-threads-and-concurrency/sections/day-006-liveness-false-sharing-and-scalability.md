@@ -15,7 +15,68 @@ finish. It prints three timing samples of the adjacent and padded counters
 and requires no winner. A measurement from those samples describes one
 machine, one compiler, and one layout.
 
-## 1. Safety and liveness answer different questions
+## 1. Syntax needed for this source
+
+Two members written next to each other in a `struct` occupy adjacent
+offsets of one object. That is a layout fact about the abstract machine's
+object, not a statement about cache lines. A loop that waits until some
+other task changes a variable is ordinary control flow.
+
+```c
+struct pair {
+    int left;
+    int right;          /* next offset after left, plus padding the ABI inserts */
+};
+
+void wait_until(int *ready)
+{
+    while (*ready == 0)
+        ;               /* this loop does not by itself make *ready change */
+}
+```
+
+The adjacency becomes a coherence question only when two cores write those
+two objects and a cache treats the line as one unit. That hardware is not
+part of the C syntax.
+
+## 2. Linux 0.12 first: a task that is not runnable is not switched to
+
+`schedule` selects only a task whose `state` is `TASK_RUNNING` and whose
+remaining slice is the best so far (`kernel/sched.c` lines 152–153, printed
+p. 358):
+
+```c
+if ((*p)->state == TASK_RUNNING && (*p)->counter > c)
+        c = (*p)->counter, next = i;
+```
+
+A task left in `TASK_UNINTERRUPTIBLE` or `TASK_INTERRUPTIBLE` is skipped.
+`wake_up` is what stores `0` and makes it selectable again. Trace a cycle
+on that rule: task A is asleep until B calls `wake_up` on A's queue, and
+B is asleep until A calls `wake_up` on B's queue. Neither store to `state`
+ever runs. `schedule` keeps choosing some other runnable task, or idle
+task 0, which the file comments say must not itself sleep. The wait-cycle
+reasoning carries forward: progress needs a participant that is still
+runnable and that performs the wake. Day 3's global lock order is the
+modern way this week breaks that cycle. The early kernel has no mutex
+graph to draw.
+
+False sharing does not carry. Linux 0.12 is a uniprocessor kernel. One core
+does not bounce a line through a coherence protocol against a second core,
+and this tree has no cache-line alignment macro for SMP. ToyOS is the same
+kind of machine: Week 7's two tasks share one core, and its `schedule`
+walks a two-slot array without a lock because the interrupt behavior is
+constrained. That is not an SMP scalability result.
+[Day 7](day-007-debuggers-sanitizers-and-system-comparison.md) keeps ToyOS
+on that single-core reading.
+
+The shared
+[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) stops this kernel short of SMP. The following sections stay with
+the wait-for cycle in the lab, then with false sharing: Week 2's cache
+line, and `include/linux/cache.h` in Linux 5.10 at tree `c9b2385d6793`.
+
+## 3. Safety and liveness answer different questions
 
 Safety for the mutex counter on [Day 3](day-003-mutexes-ownership-lock-order-futex.md)
 is a statement about states: every time a thread reads or writes
@@ -43,7 +104,7 @@ lab uses the second. Mixing them up produces the wrong repair: adding a
 timeout does not separate two counters onto two lines, and padding a struct
 does not break a lock cycle.
 
-## 2. Deadlock is a wait-for cycle
+## 4. Deadlock is a wait-for cycle
 
 Draw the waits. The order of the source lines only suggests which edges can appear.
 
@@ -84,7 +145,7 @@ threads and exits. `test_hung=no` is the claim the program is willing to
 print: this run ended. It is not a claim that a non-timed version of the
 same lock order would have ended.
 
-## 3. Execution trace: the timed cycle
+## 5. Execution trace: the timed cycle
 
 `deadlock_lab detect` creates two threads with `struct attempt` values
 `{first: 0}` and `{first: 1}`. Each thread locks `locks[first]`, meets the
@@ -154,7 +215,7 @@ that had already published a field under the first mutex would return with
 that field still published. The timeout ends the wait. Repair of partial
 work is a separate protocol, and this source does not have one.
 
-## 4. One global order removes the cycle
+## 6. One global order removes the cycle
 
 `deadlock_lab ordered` starts two threads that both run the same sequence:
 lock `locks[0]`, lock `locks[1]`, unlock `locks[1]`, unlock `locks[0]`. There
@@ -193,7 +254,7 @@ update happened would break the invariant the two locks were protecting.
 The detector unlocks and exits, which matches a sensor and would be incomplete
 as a transaction.
 
-## 5. Starvation is a different graph
+## 7. Starvation is a different graph
 
 Starvation is a thread that stays runnable, or stays blocked on a lock that
 other threads keep acquiring, for as long as you care to watch, while the
@@ -220,7 +281,7 @@ Fairness, priority inheritance, and robust mutexes after a dead owner are
 real pthread features and they are outside this wrapper. The wrapper's limit
 line says so: no fairness proof, no starvation proof.
 
-## 6. False sharing starts from the cache line
+## 8. False sharing starts from the cache line
 
 Week 2's [cache organization](../../02-assembly-memory-and-c/sections/day-005-cache-organization.md)
 fixed the unit the memory hierarchy actually moves. A core that needs one
@@ -288,7 +349,7 @@ The unused bytes in the adjacent line are the expensive part. The hardware
 has no field in the line that says "thread 0 promised to touch only the
 first eight bytes." Coherence grants and revokes the line.
 
-## 7. The MESI picture Week 2 already implied
+## 9. The MESI picture Week 2 already implied
 
 Week 2's lesson did not need the four state names to make the traffic real.
 The names are the compact picture of what it did say: a writable copy is
@@ -351,7 +412,7 @@ costs. The three samples remain a comparison of two layouts under one
 harness, not a decomposition into "cycles of `lock add`" versus "cycles of
 snoop."
 
-## 8. How this kernel asks for a private line
+## 10. How this kernel asks for a private line
 
 The kernel fights the same placement problem with alignment attributes.
 Tree `c9b2385d6793`, `include/linux/cache.h`, states the intent for read-mostly
@@ -420,7 +481,7 @@ consulted from `SMP_CACHE_BYTES`. If you compare them, compare the idea —
 put independently written objects on different coherence granules — and keep
 the two source texts in their own projects.
 
-## 9. Adding cores helps independent work
+## 11. Adding cores helps independent work
 
 Scalability is the shape of the work, drawn against the number of cores that
 can run it.
@@ -477,7 +538,7 @@ line is uncontended. Week 2's hierarchy — TLB, private caches, shared last
 level, memory controller — is the path each fetch-add walks. Today's lab
 times the whole path plus thread lifetime, and it stops there.
 
-## 10. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 ### Explain
 
@@ -519,5 +580,5 @@ the graph of `ordered` when one thread holds both locks. The second is a
 statement of what the three samples are allowed to decide: one host, one
 compiler, one layout, timers that include create and join, no affinity, no
 hardware counters, no required winner. End with the scale picture from
-section 9: private lines gain from more cores; a shared written line spends
+section 11: private lines gain from more cores; a shared written line spends
 those cores on coherence.

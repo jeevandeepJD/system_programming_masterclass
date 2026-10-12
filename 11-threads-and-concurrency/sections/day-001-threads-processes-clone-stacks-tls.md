@@ -6,8 +6,10 @@
 > the same process. Which objects did the kernel share, which did it allocate,
 > and which register now names this thread's private data?
 
-Kernel excerpts below are from tree `c9b2385d6793` (`Makefile` `VERSION` 5,
-`PATCHLEVEL` 10, `SUBLEVEL` 134). Each excerpt names its path and function.
+Linux 5.10 excerpts below are from tree `c9b2385d6793` (`Makefile` `VERSION` 5,
+`PATCHLEVEL` 10, `SUBLEVEL` 134). Each of those excerpts names its path and
+function. The listing in section 2 is Linux 0.12, from the annotated book,
+and is not that tree.
 
 Week 10 built one task: an address space, a descriptor table, signal
 dispositions, and a single set of registers. Today a second task joins that
@@ -17,7 +19,82 @@ pointer.
 
 ---
 
-## 1. Why a second instruction stream can share an address space
+## 1. Syntax needed for this source
+
+A task is a `struct` reached through a pointer. The task table is an array
+of those pointers. `current->state` names one member at a fixed offset in
+the object `current` points at. A flag word is a bitmask: one byte can mean
+something different from the rest of the word. None of that syntax creates
+a second address space or a second core.
+
+```c
+struct slot {
+    long state;
+    unsigned long base;
+};
+struct slot *table[4];
+struct slot *current;
+
+void publish(unsigned long flags)
+{
+    unsigned long rest = flags & ~0xffUL; /* low byte held a different field */
+    current->state = 0;
+    table[1]->base = rest;
+}
+```
+
+The 5.10 excerpts later in this day are the same forms: `task_struct` and
+`mm_struct` through pointers, and `kernel_clone_args` filled by member name
+(`.stack = newsp`, `.tls = tls`).
+
+## 2. Linux 0.12 first: one task, one address space, one switch
+
+Linux 0.12 allows `NR_TASKS` (64) tasks. Each `struct task_struct`
+(`include/linux/sched.h`) holds `state`, an `ldt[3]` (empty, code, data and
+stack), and a `tss` with `eip`, `esp`, the general registers, `cr3`, and
+`ldt`. `TASK_SIZE` is `0x04000000`, 64MB. `copy_mem` gives the child its own
+linear slot and its own descriptors (Zhao, `kernel/fork.c` lines 52–55,
+printed p. 408):
+
+```c
+new_data_base = new_code_base = nr * TASK_SIZE;
+p->start_code = new_code_base;
+set_base(p->ldt[1],new_code_base);
+set_base(p->ldt[2],new_data_base);
+```
+
+The comment on `copy_mem` says the child shares the parent's physical pages
+and that only the new page-table entries are created. The new linear base
+still makes this a second address space. The shared map follows that page
+sharing into the early copy-on-write `fork`.
+
+`schedule` ends in `switch_to(next)` (`kernel/sched.c` line 161). The macro
+(`include/linux/sched.h` lines 222–235, printed p. 1000) drops out when `n`
+is already `current`; otherwise it exchanges `current` and far-jumps through
+the incoming TSS selector:
+
+```c
+"xchgl %%ecx,_current\n\t"
+"ljmp %0\n\t"
+```
+
+The 80386 writes the outgoing registers into the outgoing TSS and loads the
+incoming ones. Trace that path as: one task record, its register image, its
+own address-space base, then a switch that replaces the core's registers.
+
+What carries forward is that split. ToyOS already built it for two ring-0
+tasks: a saved context and a private stack in one kernel map. Section 4
+below is that reconstruction. The TSS `ljmp` and the fixed 64MB slot stay
+behind with 0.12.
+
+Linux 0.12 cannot teach a shared `mm`, `CLONE_VM`, a thread-group id, or a
+TLS base. `fork` here installs a new base. The shared
+[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) is the index for that limit. The sections that follow leave this
+switch and read Linux 5.10 at tree `c9b2385d6793`: `kernel_clone`,
+`copy_mm` under `CLONE_VM`, private stacks, and the TLS register.
+
+## 3. Why a second instruction stream can share an address space
 
 A function call has one instruction pointer. The callee borrows `%rsp` and
 returns. A second thread needs its own instruction pointer at the same
@@ -63,7 +140,7 @@ number `getpid` returns, is shared as well.
 
 ---
 
-## 2. Tasks you have already built
+## 4. Tasks you have already built
 
 [Week 7's kernel tasks](../../07-memory-processes-and-scheduling/sections/day-004-kernel-tasks-stacks-contexts.md)
 are two ring-0 streams in one address space. Each has a private kernel stack
@@ -89,7 +166,7 @@ stack and a TLS pointer.
 
 ---
 
-## 3. How `clone` reaches `kernel_clone`
+## 5. How `clone` reaches `kernel_clone`
 
 On x86-64 this tree selects the parameter order in the `#else` branch of
 `kernel/fork.c`. `arch/x86/Kconfig` selects `CLONE_BACKWARDS` only for
@@ -162,7 +239,7 @@ continues `pthread_create`, and the child enters the thread start routine.
 
 ---
 
-## 4. `copy_process` copies or shares one resource at a time
+## 6. `copy_process` copies or shares one resource at a time
 
 Before any of those helpers run, `dup_task_struct` (`kernel/fork.c` line
 907) allocates a new `task_struct` and a new kernel stack
@@ -244,7 +321,7 @@ space. The kernel enforces that before the new task runs.
 
 ---
 
-## 5. `copy_mm`: `CLONE_VM` shares the address space
+## 7. `copy_mm`: `CLONE_VM` shares the address space
 
 `copy_mm` starts at line 1456 by clearing fault counters and setting
 `tsk->mm` and `tsk->active_mm` to `NULL`. The decision is then:
@@ -303,7 +380,7 @@ shared `mm` before `clone`. `copy_mm` only publishes the `mm` pointer.
 
 ---
 
-## 6. `copy_files`: `CLONE_FILES` shares the descriptor table
+## 8. `copy_files`: `CLONE_FILES` shares the descriptor table
 
 ```c
 /* kernel/fork.c :: copy_files :: tree c9b2385d6793
@@ -351,7 +428,7 @@ tasks walk the same page tables.
 
 ---
 
-## 7. Dispositions are shared; the thread-group id is shared
+## 9. Dispositions are shared; the thread-group id is shared
 
 Signal dispositions live in `sighand->action[]` (`include/linux/sched/signal.h`,
 `struct sighand_struct`). `copy_sighand`:
@@ -463,7 +540,7 @@ task's `blocked`.
 
 ---
 
-## 8. Private registers, two stacks, and a TLS base
+## 10. Private registers, two stacks, and a TLS base
 
 The architecture half of creation is `arch/x86/kernel/process.c`,
 `copy_thread`. The new kernel stack is framed so the first time the
@@ -554,7 +631,7 @@ After `ret_from_fork` the child is in that stub, sees `%rax == 0`, and calls
 
 ---
 
-## 9. Architecture lens: which register holds the thread pointer
+## 11. Architecture lens: which register holds the thread pointer
 
 The TLS block is ordinary memory in the shared `mm`. The pointer to it has
 to be a value context-switch saves with the task, because the thread must
@@ -621,7 +698,7 @@ still owns the block.
 
 ---
 
-## 10. Execution trace: `thread_lab basic`
+## 12. Execution trace: `thread_lab basic`
 
 One successful `pthread_create` / `pthread_join` of `return_id(&token)` in
 [`mode_basic`](../../projects/linux-system-programming/src/thread_lab.c).
@@ -675,7 +752,7 @@ non-atomic object in between.
 
 ---
 
-## 11. Mastery: Explain · Draw · Observe · Build
+## 13. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-001-thread-model.sh`](../challenges/day-001-thread-model.sh).
 It builds `thread_lab`, runs `basic` and `ownership`, and prints the

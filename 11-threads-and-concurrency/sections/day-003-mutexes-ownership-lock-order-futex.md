@@ -15,14 +15,79 @@ to synchronize with the next locker. The variable is one field inside that
 invariant. Locking "the counter" is a shorthand for locking the rule the
 counter is part of.
 
-Kernel excerpts are from tree `c9b2385d6793`, `kernel/futex.c`. The
+Linux 5.10 excerpts are from tree `c9b2385d6793`, `kernel/futex.c`. The
+sleep/wakeup listing in section 2 is Linux 0.12 and is not that tree. The
 assembly and the futex counts are from one host build of `thread_lab`
 (GCC 16.2.1, the project's `-O2`) and one `strace` of its `mutex` mode.
 Counts move with the schedule. The challenge records a fresh trace.
 
 ---
 
-## 1. Why a lock is a statement about an invariant
+## 1. Syntax needed for this source
+
+`sleep_on` takes a pointer to a task pointer. Writing `*p = current` stores
+a pointer into the object `p` points at. That is how a caller publishes
+"who is waiting" without the function knowing the queue's name.
+
+```c
+struct task_rec *queue;             /* NULL, or the newest sleeper */
+
+void park(struct task_rec **p, struct task_rec *self)
+{
+    *p = self;                      /* the head now names self */
+}
+```
+
+A later `(*p)->state = 0` is an ordinary member store. It is not a futex
+word, a userspace atomic, or a lock-ownership bit.
+
+## 2. Linux 0.12 first: sleep_on and wake_up
+
+The early wait queue is that pointer. `__sleep_on` (`kernel/sched.c` lines
+179–182, printed p. 359) links the current task at the head, marks it
+asleep, and switches:
+
+```c
+tmp = *p;
+*p = current;
+current->state = state;            /* UNINTERRUPTIBLE or INTERRUPTIBLE */
+repeat: schedule();
+```
+
+`wake_up` (lines 204–212, printed p. 360) does not switch. It stores
+runnable state into the task the head names. Runnable is `0`:
+
+```c
+void wake_up(struct task_struct **p)
+{
+        if (p && *p) {
+                (**p).state=0;      /* TASK_RUNNING */
+        }
+}
+```
+
+Trace it as: the sleeper is no longer `TASK_RUNNING`, so the picker in
+`schedule` skips it; the waker stores `0`; a later `schedule` may select
+that task. On the way out, `__sleep_on` also wakes the task that had been
+at the head before this one (`*p = tmp`, then `tmp->state=0`). The
+annotated listing warns that this queue code is immature. Read it as the
+shape of "sleep is a state plus a switch; wake is a store that makes a
+task selectable."
+
+What carries forward is that pair. The caller's reason for sleeping — the
+predicate — is Day 4. ToyOS at the Week 7 milestone uses `TASK_BLOCKED` for
+a task that has finished, and it has no wait-queue head. A teaching OS that
+adds `sleep`/`wakeup` is the second system on
+[Day 7](day-007-debuggers-sanitizers-and-system-comparison.md); quote it
+only from a revision you pin.
+
+Linux 0.12 cannot teach a mutex invariant, lock ownership, a userspace
+fast path, or a futex. There is no `futex` syscall here. The shared
+[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) keeps that boundary. The following sections are the POSIX mutex
+and Linux 5.10 `kernel/futex.c` at tree `c9b2385d6793`.
+
+## 3. Why a lock is a statement about an invariant
 
 Write the invariant before choosing the mutex. For this lab it is:
 
@@ -71,7 +136,7 @@ wait that names it has finished.
 
 ---
 
-## 2. Two kinds of ownership
+## 4. Two kinds of ownership
 
 **Mutex ownership.** A normal POSIX mutex has one owner while it is
 locked: the thread whose `pthread_mutex_lock` succeeded. That thread is
@@ -117,7 +182,7 @@ protocol needs no lock.
 
 ---
 
-## 3. Where the happens-before edge comes from
+## 5. Where the happens-before edge comes from
 
 Inside one thread, the store to `mutex_counter` is sequenced before the
 unlock. A mutex unlock **synchronizes with** a later successful lock of
@@ -145,7 +210,7 @@ checked total is a requirement of the program and the racy total is not.
 
 ---
 
-## 4. A global order when one thread needs two locks
+## 6. A global order when one thread needs two locks
 
 One lock has no deadlock cycle. Two locks do, as soon as one path
 acquires A then B and another acquires B then A. Each holds the lock the
@@ -191,7 +256,7 @@ takes the lock itself, or must be called with no locks held. The lab's
 
 ---
 
-## 5. Why the fast path stays in user mode
+## 7. Why the fast path stays in user mode
 
 [Week 8](../../08-user-mode-syscalls-and-ipc/sections/day-004-int80-syscall-abi.md)
 measured what a syscall costs: a privilege transition, a register packet,
@@ -248,7 +313,7 @@ the word free never appeared in the trace.
 
 ---
 
-## 6. What the kernel promises about wait and wake
+## 8. What the kernel promises about wait and wake
 
 `kernel/futex.c` opens with the contract. The waiter samples the user
 word, then asks the kernel to sleep only if the word is still that
@@ -330,14 +395,14 @@ kernel's statement of the lost-wakeup problem you will meet again with
 condition variables on day 4: the sleep decision and the wake decision
 have to share an order, or a wakeup is consumed by nobody.
 
-`EAGAIN` from the run in section 5 is this re-read succeeding in the
+`EAGAIN` from the run in section 7 is this re-read succeeding in the
 useful direction. The waiter reached the kernel, the word had already
 moved, and `futex_wait` returned instead of sleeping. The userspace lock
 path tries the atomic update again.
 
 ---
 
-## 7. One hash bucket for many user addresses
+## 9. One hash bucket for many user addresses
 
 Wait queues live in a fixed table of buckets. `hash_futex` maps a key
 derived from the user address into that table:
@@ -456,11 +521,11 @@ with the user-word protocol libc maintains.
 
 ---
 
-## 8. Execution trace: one critical section, then a sleep
+## 10. Execution trace: one critical section, then a sleep
 
 One iteration of `increment_mutex` on thread A that finds the word free,
 overlapping a thread B that finds it held. The word values here are the
-design in section 5; the trace's expected value of 2 is this libc's
+design in section 7; the trace's expected value of 2 is this libc's
 "waiters" state, and a different libc can use a different encoding.
 
 ```text
@@ -506,7 +571,7 @@ to see the invariant.
 
 ---
 
-## 9. Mastery: Explain · Draw · Observe · Build
+## 11. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-003-mutex-ownership.sh`](../challenges/day-003-mutex-ownership.sh).
 Predict `mutex_counter=800000`, `joined_value=42` with `freed_by=parent`,

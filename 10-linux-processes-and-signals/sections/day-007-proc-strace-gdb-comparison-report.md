@@ -16,6 +16,73 @@ an ELF symbol, and which came from a checked assertion in the lab
 program. A tool transcript with no version and no scope is a story
 about a different machine.
 
+## 1. Syntax needed for this source
+
+`show_task` receives a task number and a `struct task_struct *`, then
+prints members with `printk`, an ordinary call. `p->p_cptr ? p->p_cptr->pid
+: -1` follows a child pointer only when it is non-NULL. `*(1019 +
+(unsigned long *) p)` treats the task page as an array of words and
+reads one saved slot near the high end of that page: the kernel stack
+grows down beside the task struct. `show_state` is a loop over
+`task[NR_TASKS]`.
+
+Sketch:
+
+```c
+for (i = 0; i < NR_TASKS; i++)
+        if (task[i])
+                printk("pid=%d state=%d\n", task[i]->pid, task[i]->state);
+```
+
+## 2. Linux 0.12 first: print the task array, then Bochs and GDB
+
+The early kernel has no `/proc`. To see every task you print the array
+you already walked for fork, exit, and signals. `show_state` calls
+`show_task` for each live slot. Chapter 17 then runs that same kernel
+under Bochs and attaches GDB. Printed pages are in the 0.12 commentary;
+the [0.12 map](../../references/EARLY_LINUX_012_MAP.md) is the source
+index for the paths those tools stop inside.
+
+`kernel/sched.c`, `show_task`, printed page 354:
+
+```c
+printk("%d: pid=%d, state=%d, father=%d, child=%d, ",nr,p->pid,
+        p->state, p->p_pptr->pid, p->p_cptr ? p->p_cptr->pid : -1);
+printk("    PC=%08X.", *(1019 + (unsigned long *) p));
+```
+
+`show_state`, printed pages 354–355, walks the whole table:
+
+```c
+printk("\rTask-info:\n\r");
+for (i=0;i<NR_TASKS;i++)
+        if (task[i])
+                show_task(i,task[i]);
+```
+
+Trace: one loop, one `printk` per live `task[i]`, showing pid, state,
+parent, child, and a PC taken from the task's kernel stack page.
+
+Chapter 17.5 (printed page 1065) runs this kernel in Bochs.
+Chapter 17.11 (printed page 1094) rebuilds it with `-g` and talks to
+Bochs through the GDB stub, so a breakpoint is a C source line in the
+kernel you just read.
+
+What carries forward is the habit of naming the task and reading its
+state from outside the program. What changes in 5.10 is the window:
+`proc_pid_status` generates text from `task_struct` at read time, and
+ptrace parks a live task in `TASK_TRACED` so strace and GDB can print
+syscalls and registers. Develop against that procfs and ptrace path.
+A `printk` of `task[64]` and a Bochs stub are the 0.12 observation tools.
+
+ToyOS shows the one user image with a serial marker or a GDB remote
+stop
+([Week 6](../../06-toyos-bootstrap-and-exceptions/sections/day-006-tss-ist-page-fault-and-gdb.md)).
+0.12 adds the loop over every task. The 5.10 files below are the
+generated `/proc` text and the ptrace stop.
+
+Now move to the 5.10 implementation.
+
 Line-level claims below are from tree `c9b2385d6793`, a 5.10.134-based
 kernel. Before you repeat a line number, record `uname -r` and the tree
 id you actually opened. Names move. A function that is `proc_pid_status`
@@ -25,7 +92,7 @@ contract. This file is one kernel's generator.
 
 ---
 
-## 1. Why the view has to be generated
+## 3. Why the view has to be generated
 
 A task's exit state, real parent, blocked signals, and session id live
 in kernel memory, in objects the C abstract machine of the process does
@@ -49,7 +116,7 @@ reading it runs `proc_pid_status`.
 
 ---
 
-## 2. The state letter is an index into a table
+## 4. The state letter is an index into a table
 
 `fs/proc/array.c`, tree `c9b2385d6793`, lines 124–150:
 
@@ -99,7 +166,7 @@ value into text.
 
 ---
 
-## 3. `proc_pid_status` walks the task and prints
+## 5. `proc_pid_status` walks the task and prints
 
 `fs/proc/array.c`, `proc_pid_status`, lines 408–432:
 
@@ -234,7 +301,7 @@ still.
 
 ---
 
-## 4. A ptrace stop is a task state
+## 6. A ptrace stop is a task state
 
 strace and GDB are both tracers. They attach with `ptrace`, and the
 kernel parks the tracee in `TASK_TRACED` until the tracer says to
@@ -313,7 +380,7 @@ tracer perturbed.
 
 ---
 
-## 5. strace is that stop, printed as a syscall list
+## 7. strace is that stop, printed as a syscall list
 
 strace attaches, asks to stop at syscall entry and exit, and prints a
 decoded line: name, arguments, return value. With `-f` it follows
@@ -346,7 +413,7 @@ claim inside what one trace can support.
 
 ---
 
-## 6. GDB is the same stop, plus symbols
+## 8. GDB is the same stop, plus symbols
 
 GDB attaches or launches through ptrace as well. The extra ingredient
 is the ELF symbol table and DWARF line table Week 3 produced at link
@@ -360,7 +427,7 @@ program's own checked marker.
 `main` is a C function. The first user instruction after `exec` is the
 ELF entry or the dynamic linker, as Week 3's loading lesson followed.
 A breakpoint at `main` fires after that startup. Registers at the stop
-are the `pt_regs` from section 4, shown with names GDB took from the
+are the `pt_regs` from section 6, shown with names GDB took from the
 ABI and from the debug info. Locals appear when DWARF describes them.
 A stripped binary can still have a function symbol and lack the local
 names. Say which of those you actually had.
@@ -381,7 +448,7 @@ debugging step than collecting every register.
 
 ---
 
-## 7. Version discipline
+## 9. Version discipline
 
 Write these down before a line-number claim:
 
@@ -410,7 +477,7 @@ a child whose PGID equals its PID, and the injected errno values.
 
 ---
 
-## 8. ToyOS, xv6, and this Linux tree
+## 10. ToyOS, xv6, and this Linux tree
 
 The comparison is about who holds the exit word, who can stop a task,
 and what a debugger can see. It is three concrete designs.
@@ -475,7 +542,7 @@ GDB remote protocol on ToyOS and a `TASK_TRACED` task on Linux.
 
 ---
 
-## 9. Execution trace: one report
+## 11. Execution trace: one report
 
 This is the shape of
 [`../challenges/day-007-debug-report.sh`](../challenges/day-007-debug-report.sh).
@@ -534,7 +601,7 @@ results are assertions. They are not a search of every errno.
 
 ---
 
-## 10. What the wrapper is allowed to touch
+## 12. What the wrapper is allowed to touch
 
 Run the wrapper from the Week 10 directory. It uses the project
 Makefile, creates only descendants, reaps them, and sends signals only
@@ -546,12 +613,12 @@ printed.
 Predict `WEEK10 PASS`, three hashes, the procfs fields for the lab
 process itself, the decoded statuses, and either a real strace/GDB
 transcript or an explicit skip. Then write one sentence of comparison
-for the exit word, in the form section 8 used, tied to the sources you
+for the exit word, in the form section 10 used, tied to the sources you
 opened.
 
 ---
 
-## 11. Mastery: Explain · Draw · Observe · Build
+## 13. Mastery: Explain · Draw · Observe · Build
 
 The wrapper is
 [`../challenges/day-007-debug-report.sh`](../challenges/day-007-debug-report.sh).
@@ -590,7 +657,7 @@ a tree you identified.
 ### Build
 
 Write the comparison in your report with one invariant per row, using
-section 8's questions. Name the ToyOS marker you would actually look at
+section 10's questions. Name the ToyOS marker you would actually look at
 (serial line or GDB), the xv6 idea in your own words, and the Linux
 function from this tree that implements the same idea. Leave the
 wrapper's temporary report path in the write-up so the evidence can be

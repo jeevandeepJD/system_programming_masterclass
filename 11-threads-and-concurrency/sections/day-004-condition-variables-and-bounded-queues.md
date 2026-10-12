@@ -9,10 +9,67 @@
 Run the day's experiment before the kernel excerpts, and keep the two layers
 apart. The lab speaks POSIX through glibc. The excerpts later in this lesson
 are Linux 5.10.134 at tree `c9b2385d6793`, and they show how the kernel waits.
+Section 2 quotes the Linux 0.12 pipe sleep, which is not that tree.
 glibc's `pthread_cond_t` is a userspace object. This lesson quotes kernel
 code only.
 
-## 1. Why exclusion is the wrong tool for waiting
+## 1. Syntax needed for this source
+
+The early pipe tests a condition in a loop, then calls a sleep function.
+The loop is ordinary C control flow. The sleep call is not a language
+construct that rechecks anything by itself.
+
+```c
+while (count == 0)
+    park(&waiters);          /* caller must look again after park returns */
+```
+
+A pointer to the wait head, as on Day 3, is how `park` finds the queue.
+The `while` is what ties the sleep to a predicate.
+
+## 2. Linux 0.12 first: sleep only while the pipe is empty
+
+`read_pipe` (`fs/pipe.c` lines 21–27, printed pp. 803–804) sleeps when the pipe
+holds no bytes. The inner `while` is the predicate. `PIPE_SIZE(*inode)` is
+the byte count:
+
+```c
+while (!(size=PIPE_SIZE(*inode))) {
+        wake_up(&PIPE_WRITE_WAIT(*inode));
+        if (inode->i_count != 2)    /* are there any writers? */
+                return read;
+        if (current->signal & ~current->blocked)
+                return read?read:-ERESTARTSYS;
+        interruptible_sleep_on(&PIPE_READ_WAIT(*inode));
+}
+```
+
+Trace one empty read: the count is 0, so the reader wakes anyone sleeping
+on the write side, returns if the writer is gone, returns if a signal is
+pending, and otherwise sleeps interruptibly on the read wait. When
+`schedule` runs this task again, control is still inside the inner `while`,
+so `PIPE_SIZE` is evaluated again. A wake stored runnable state. It did not
+store "the pipe is now non-empty."
+
+What carries forward is that split: the sleep decision is the predicate,
+the wakeup makes a task runnable, and the waiter looks at the predicate
+again. The same file's writer uses the opposite wait (no free space, sleep
+on `PIPE_WRITE_WAIT`, wake readers). ToyOS at Week 7 has no wait channel
+and no pipe predicate. The teaching-OS `sleep`/`wakeup` on
+[Day 7](day-007-debuggers-sanitizers-and-system-comparison.md) is the place
+to reconstruct this shape, after you pin a revision.
+
+Linux 0.12 cannot teach `pthread_cond_wait`, the POSIX rule that the wait
+releases the mutex and joins the wait set as one step, or the condvar's
+spurious-wakeup contract. `__sleep_on` is the kernel queue from Day 3, and
+the annotated listing already calls that queue immature. The shared
+[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11, and the pipe note under Week 12) stops at this control-flow
+picture. The following sections are the POSIX condition variable in the
+lab, then `wait_event`, `set_current_state`, and `futex_wait` from Linux
+5.10 at tree `c9b2385d6793`.
+
+## 3. Why exclusion is the wrong tool for waiting
 
 [Day 3](day-003-mutexes-ownership-lock-order-futex.md) gave a mutex a job:
 name an invariant, and hold the mutex across every read and write that must
@@ -65,7 +122,7 @@ The three answers stay separate. A signal is a hint that the predicate might
 now hold. The bytes of `count` are the predicate. The mutex is what makes a
 read of those bytes agree with the writer that last updated them.
 
-## 2. Where the queue lives, in the machine
+## 4. Where the queue lives, in the machine
 
 The lab queue is one object in the process address space. Both producers and
 both consumers use the same virtual addresses for `items`, `head`, `tail`,
@@ -100,7 +157,7 @@ task with a futex operation. Either way, the POSIX rule the lab relies on is
 the same: `pthread_cond_wait` returns with the mutex owned by the caller, and
 the predicate is examined again under that ownership.
 
-## 3. The wait protocol
+## 5. The wait protocol
 
 Write the protocol as four steps that share one mutex. The names below match
 `put` and `get` in the lab.
@@ -149,7 +206,7 @@ waiter increments a count that a later `wait` consumes. Treating a condvar
 as a semaphore is how notifications get lost. The queue does not need a
 stored permit. `count` itself is the memory of how many items are present.
 
-## 4. Execution trace: signal before anybody waits
+## 6. Execution trace: signal before anybody waits
 
 This is the lost-wakeup trace. The mutex is free, `count` is 0, and the
 condition variable's waiter list is empty. Thread S signals without holding
@@ -219,7 +276,7 @@ program still updates the predicate under the mutex and every waiter rechecks
 in a loop. The trace above is the case that loses: the signal is early, the
 predicate is not true at the eventual check, and nobody signals again.
 
-## 5. Spurious wakeups and stolen wakeups
+## 7. Spurious wakeups and stolen wakeups
 
 A wait can also return when a signal did happen, and the waiter must still
 recheck.
@@ -265,7 +322,7 @@ the right. Broadcast would also be correct here. It would schedule more
 threads back onto the mutex, most of which would observe a false predicate
 and sleep again.
 
-## 6. Empty and full are the two predicates
+## 8. Empty and full are the two predicates
 
 The lab ring has `CAPACITY` 8. Two producers each insert 1000 positive
 values. Two consumers remove values until they see a sentinel. The fields
@@ -332,7 +389,7 @@ that decrements `count` from 8 to 7 makes `can_put` true, so it signals
 still false; the loop would send it back to sleep, and the thread that could
 make progress would stay on the other wait list until some later signal.
 
-## 7. Shutdown and who owns the result
+## 9. Shutdown and who owns the result
 
 After both producers have been joined, the parent calls `put(-1)` twice, once
 per consumer. The joins matter. They are a happens-before edge from each
@@ -356,7 +413,7 @@ finished: a sentinel occupying a slot cannot be overtaken by a later positive
 `put` from a producer that is still running, because those producers have
 already been joined.
 
-## 8. What this kernel tree does when a task waits
+## 10. What this kernel tree does when a task waits
 
 glibc implements `pthread_cond_wait`, `pthread_cond_signal`, and the mutex
 operations. On Linux the blocking path is a `futex` system call. The call
@@ -550,7 +607,7 @@ has shown that those calls blocked or woke. [Day 3](day-003-mutexes-ownership-lo
 already treats syscall traces as evidence of the slow path, with a scope
 limited to the calls that happened.
 
-## 9. Mastery: Explain · Draw · Observe · Build
+## 11. Mastery: Explain · Draw · Observe · Build
 
 The exercise is
 [challenges/day-004-condition-queue.sh](../challenges/day-004-condition-queue.sh).
@@ -566,7 +623,7 @@ unspecified.
   the store that would make the predicate true.
 - What `pthread_cond_wait` does with the mutex on entry and on return, and
   why the publication of the waiter has to be in the same step as the unlock.
-- Why the lost-wakeup trace in section 4 stays asleep, and which fact would
+- Why the lost-wakeup trace in section 6 stays asleep, and which fact would
   have to change (a later signal, or a predicate that is already true at the
   check) for the consumer to proceed.
 - Why a stolen wakeup still has a correct signal in its past, and why the

@@ -29,6 +29,82 @@ fork adds a second task and a second `mm`, then uses the page-table
 permission bits Week 5 already taught so the second address space can
 still name the same frames.
 
+## 1. Syntax needed for this source
+
+`copy_mem` is a function call that returns `0` or `-ENOMEM`. Its second
+argument is a pointer, so `p->start_code` writes a member of the child
+task. `current->ldt[1]` indexes an array inside the parent. The
+parameters of `copy_process` (`ebp`, `edi`, `esi`, and `eip` further up
+the saved frame) are registers the `int 0x80` entry pushed. The child
+is built by copying that frame and changing one saved return value.
+
+Sketch:
+
+```c
+struct task_struct * child = task[nr];
+child->start_code = nr * TASK_SIZE;
+saved_frame->eip = child_return;
+if (copy_page_tables(src, dst, limit))
+        return -ENOMEM;
+return 0;
+```
+
+## 2. Linux 0.12 first: `copy_mem` shares the pages
+
+Fork has to give the child its own registers and its own view of
+memory, and copying every physical page would throw the work away when
+the child `exec`s. Linux 0.12 puts that choice in one function.
+`copy_process` in `kernel/fork.c` (printed page 410) calls `copy_mem`.
+The book states the rule on printed page 407: set a new page table, and
+leave the physical pages shared. A later write copies one page. See the
+[0.12 map](../../references/EARLY_LINUX_012_MAP.md).
+
+`kernel/fork.c`, `copy_mem`, printed pages 407–408:
+
+```c
+int copy_mem(int nr,struct task_struct * p)
+{
+        unsigned long old_data_base,new_data_base,data_limit;
+        unsigned long old_code_base,new_code_base,code_limit;
+
+        code_limit=get_limit(0x0f);
+        data_limit=get_limit(0x17);
+        old_code_base = get_base(current->ldt[1]);
+        old_data_base = get_base(current->ldt[2]);
+        if (old_data_base != old_code_base)
+                panic("We don't support separate I&D");
+        if (data_limit < code_limit)
+                panic("Bad data_limit");
+        new_data_base = new_code_base = nr * TASK_SIZE;
+        p->start_code = new_code_base;
+        set_base(p->ldt[1],new_code_base);
+        set_base(p->ldt[2],new_data_base);
+        if (copy_page_tables(old_data_base,new_data_base,data_limit)) {
+                free_page_tables(new_data_base,data_limit);
+                return -ENOMEM;
+        }
+        return 0;
+}
+```
+
+Trace: read the parent's segment base, place the child at
+`nr * TASK_SIZE`, and copy page-table entries onto that range. Both
+page tables name the same frames until a write.
+
+What carries forward is a second task whose page tables start shared,
+with a private copy on the first store. What changes in 5.10 is the
+machinery around that idea: `kernel_clone`, `copy_process`, `copy_mm`,
+and a write-protect fault, with no LDT slot and no fixed `TASK_SIZE`
+window. Those 5.10 functions are the ones to develop against. The
+segment selectors `0x0f` and `0x17` belong to this 80386 kernel.
+
+ToyOS Week 7 switches tasks by copying saved registers and sharing one
+set of page tables. Week 8's `struct process` is still one user image
+([`process.c`](../../projects/toyos/src/process.c)). `copy_mem` is the
+early Linux step that adds the second view.
+
+Now move to the 5.10 implementation.
+
 The excerpts are from the local tree
 `5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`), a 5.10-based
 tree. Later mainline code moves these functions. The lines below are this
@@ -36,7 +112,7 @@ revision.
 
 ---
 
-## 1. `fork` is a thin entry into `kernel_clone`
+## 3. `fork` is a thin entry into `kernel_clone`
 
 In `kernel/fork.c`, `SYSCALL_DEFINE0(fork)`, same tree. x86-64 and arm64 in
 this tree define `__ARCH_WANT_SYS_FORK`, so the syscall exists there:
@@ -161,7 +237,7 @@ syscall leaves it clear.
 
 ---
 
-## 2. `copy_mm` shares the address space only under `CLONE_VM`
+## 4. `copy_mm` shares the address space only under `CLONE_VM`
 
 In `kernel/fork.c`, `copy_mm`, same tree. The function first clears the
 child's fault and switch counters, then decides:
@@ -218,7 +294,7 @@ starts at the child's `pgd` once the scheduler installs it.
 
 ---
 
-## 3. Duplicating a page table write-protects a COW mapping
+## 5. Duplicating a page table write-protects a COW mapping
 
 A shared mapping (`VM_SHARED`) is supposed to make one task's store visible
 to the other. A private mapping keeps the store inside the storing address
@@ -312,7 +388,7 @@ one mapcount                        mapcount includes both tasks
 
 ---
 
-## 4. The first store faults and copies; the last reference may reuse
+## 6. The first store faults and copies; the last reference may reuse
 
 A store to a present PTE whose writable bit is clear enters the fault
 handler with the address, the VMA, and the original PTE. In `mm/memory.c`,
@@ -414,7 +490,7 @@ the fault. The other task's registers and its PTE stay as they were.
 
 ---
 
-## 5. Execution trace: one virtual address, two stores
+## 7. Execution trace: one virtual address, two stores
 
 Illustrated values, one anonymous private page, for a single-threaded
 parent. The lab prints pids and the pipe payload. This trace is the path the
@@ -481,7 +557,7 @@ region stays one frame.
 
 ---
 
-## 6. The file table is private; the open-file description is shared
+## 8. The file table is private; the open-file description is shared
 
 Memory and descriptors answer different sharing questions. In
 `kernel/fork.c`, `copy_files`, same tree:
@@ -560,7 +636,7 @@ in the child updates the child's `fs`, and the parent's cwd stays.
 
 ---
 
-## 7. The child is a new task in the parent's lineage
+## 9. The child is a new task in the parent's lineage
 
 `exit_signal = SIGCHLD` from the `fork` syscall is stored on the child.
 When the child exits, the parent is the `SIGCHLD` recipient Day 1 named as
@@ -584,7 +660,7 @@ edge between them.
 
 ---
 
-## 8. Architecture lens — x86-64, AArch64, and RISC-V
+## 10. Architecture lens — x86-64, AArch64, and RISC-V
 
 Copy-on-write is a page-table permission fact plus a fault handler in
 generic `mm/`. `copy_mm`, `is_cow_mapping`, `do_wp_page`, and
@@ -622,7 +698,7 @@ allocates a frame only for that `mm`.
 
 ---
 
-## 9. Mastery: Explain · Draw · Observe · Build
+## 11. Mastery: Explain · Draw · Observe · Build
 
 The mechanism above is the lesson. The wrapper is the evidence you can
 check on this host. From the week directory, run
@@ -664,7 +740,7 @@ root, and an unspecified order. If `strace` exists, the wrapper keeps
 `clone`, `fork`, `wait`, and `exit` lines. A `clone` line is the libc
 entry into `kernel_clone`. The wrapper's LIMIT line records the boundary
 of the run: lineage and the pipe. Page-fault counts and `/proc/pid/pagemap`
-stay in the source trace of section 5. The pipe lines are the runtime
+stay in the source trace of section 7. The pipe lines are the runtime
 evidence for lineage and for a shared open-file description.
 
 ### Build
