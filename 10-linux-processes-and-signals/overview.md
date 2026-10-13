@@ -12,33 +12,33 @@ wrapper in [`projects/linux-system-programming`](../projects/linux-system-progra
 > a job. The last day asks `/proc`, strace, and GDB to show the same
 > objects, and compares them with ToyOS and xv6.
 
-The excerpts in Days 4–7 come from the local kernel tree `c9b2385d6793`,
-a 5.10.134-based source. Function names, call order, and line numbers
-move between releases. Record `uname -r` beside that id before treating
-a line as true of the machine you are running. The POSIX and man-page
-contracts are what a C program may rely on. A function body is one
-implementation of that contract, in one tree. Mastery stays open until
-you produce the evidence yourself. These notes leave completion,
-confidence, and hours blank.
+The modern excerpts come from Linux 6.12, tag `v6.12`, commit
+`adc218676eef` (`adc218676eef25575469234709c2d87185ca223a`). Function
+names, call order, and line numbers move between releases. Record
+`uname -r` beside that id before treating a line as true of the machine
+you are running. The POSIX and man-page contracts are what a C program
+may rely on. A function body is one implementation of that contract, in
+one tree. Mastery stays open until you produce the evidence yourself.
+These notes leave completion, confidence, and hours blank.
 
-## Read in this order: syntax, 0.12, ToyOS, then 5.10
+## Read in this order: syntax → 0.12 → evolution → ToyOS → 6.12/current
 
 Each day opens with the C syntax that day's early source actually uses,
-then reads the Linux 0.12 path from end to end, then connects that path
-to ToyOS and the earlier weeks, and only then studies the 5.10
-implementation. When a 5.10 line has moved, check current upstream and
+then reads the Linux 0.12 path from end to end, then a short evolution
+section on why that design changed, then connects the surviving idea to
+ToyOS and the earlier weeks, and only then studies the 6.12/current
+implementation. When a 6.12 line has moved, check current upstream and
 record `uname -r`. The shared
-[Linux 0.12 → Linux 5.10 map](../references/EARLY_LINUX_012_MAP.md)
+[Linux 0.12 map](../references/EARLY_LINUX_012_MAP.md)
 lists the printed pages in *A Heavily Commented Linux Kernel Source
 Code*, kernel 0.12 (Zhao Jiong, 2019).
 
 Linux 0.12 places fork, exec, exit, wait, signals, and descriptor
 lifetime in short functions you can finish. Use it to see the whole
-mechanism once. The development reference for modern Linux is this
-week's 5.10 tree and, after that, current source. Segmentation,
-`a.out`, the fixed `task[]` array, and the uniprocessor signal word are
-the 0.12 implementation of those ideas. POSIX and the man pages are what
-a C program may rely on.
+mechanism once. The development reference for modern Linux is 6.12/current.
+Segmentation, `a.out`, the fixed `task[]` array, and the uniprocessor
+signal word are the 0.12 implementation of those ideas. POSIX and the
+man pages are what a C program may rely on.
 
 ## Why the seven days are one mechanism
 
@@ -122,7 +122,7 @@ so the new parent is the lab process.
 
 [sections/day-005-signals-masks-and-safe-handlers.md](sections/day-005-signals-masks-and-safe-handlers.md)
 
-`__send_signal` posts a pending bit. A blocked signal stays pending.
+`__send_signal_locked` posts a pending bit. A blocked signal stays pending.
 `get_signal`, on the way back to user mode, dequeues an unblocked signal
 and either runs a handler, ignores it, or takes the default action. The
 handler is ordinary user code, so it may call only functions that cannot

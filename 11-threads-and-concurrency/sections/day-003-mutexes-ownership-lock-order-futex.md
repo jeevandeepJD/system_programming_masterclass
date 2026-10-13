@@ -15,8 +15,9 @@ to synchronize with the next locker. The variable is one field inside that
 invariant. Locking "the counter" is a shorthand for locking the rule the
 counter is part of.
 
-Linux 5.10 excerpts are from tree `c9b2385d6793`, `kernel/futex.c`. The
-sleep/wakeup listing in section 2 is Linux 0.12 and is not that tree. The
+Linux 6.12 excerpts are from commit `adc218676eef25575469234709c2d87185ca223a`, `kernel/futex/waitwake.c`,
+`kernel/futex/core.c`, and `kernel/futex/futex.h`. The sleep/wakeup listing
+in section 2 is Linux 0.12 and is not that commit. The
 assembly and the futex counts are from one host build of `thread_lab`
 (GCC 16.2.1, the project's `-O2`) and one `strace` of its `mutex` mode.
 Counts move with the schedule. The challenge records a fresh trace.
@@ -75,19 +76,40 @@ shape of "sleep is a state plus a switch; wake is a store that makes a
 task selectable."
 
 What carries forward is that pair. The caller's reason for sleeping — the
-predicate — is Day 4. ToyOS at the Week 7 milestone uses `TASK_BLOCKED` for
-a task that has finished, and it has no wait-queue head. A teaching OS that
-adds `sleep`/`wakeup` is the second system on
-[Day 7](day-007-debuggers-sanitizers-and-system-comparison.md); quote it
-only from a revision you pin.
+predicate — is Day 4.
 
 Linux 0.12 cannot teach a mutex invariant, lock ownership, a userspace
 fast path, or a futex. There is no `futex` syscall here. The shared
-[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
-(Week 11) keeps that boundary. The following sections are the POSIX mutex
-and Linux 5.10 `kernel/futex.c` at tree `c9b2385d6793`.
+[Linux 0.12 reading map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) keeps that boundary.
 
-## 3. Why a lock is a statement about an invariant
+## 3. Evolution: why the early design changed
+
+`__sleep_on` links the task and then sleeps. A `wake_up` that looks at the
+list before that link is published finds nobody, and the sleeper waits with
+no waker left. The annotated 0.12 listing already calls that queue immature.
+Later kernel wait queues close the gap by holding the queue lock across the
+state store and the condition test. `prepare_to_wait_event`
+(`kernel/sched/wait.c` lines 270–303, commit
+`adc218676eef25575469234709c2d87185ca223a`) calls `set_current_state` at
+line 298 while `wq_head->lock` is held.
+
+A userspace mutex keeps the uncontended path out of the kernel. That fast
+path is an atomic update of a user word in the calling thread. The slow path
+is a futex: `futex_wait` re-reads the word under the hash-bucket lock and
+sleeps only while it still matches, and `futex_wake` wakes waiters on that
+key (`kernel/futex/waitwake.c`). Where a low-priority owner must not block a
+high-priority waiter, priority inheritance is a separate protocol in
+`kernel/futex/pi.c` (`futex_lock_pi` at line 918, `futex_unlock_pi` at line
+1112).
+
+ToyOS at the Week 7 milestone uses `TASK_BLOCKED` for a task that has
+finished, and it has no wait-queue head. A teaching OS that adds
+`sleep`/`wakeup` is the second system on [Day
+7](day-007-debuggers-sanitizers-and-system-comparison.md); quote it only
+from a revision you pin.
+
+## 4. Why a lock is a statement about an invariant
 
 Write the invariant before choosing the mutex. For this lab it is:
 
@@ -136,7 +158,7 @@ wait that names it has finished.
 
 ---
 
-## 4. Two kinds of ownership
+## 5. Two kinds of ownership
 
 **Mutex ownership.** A normal POSIX mutex has one owner while it is
 locked: the thread whose `pthread_mutex_lock` succeeded. That thread is
@@ -182,7 +204,7 @@ protocol needs no lock.
 
 ---
 
-## 5. Where the happens-before edge comes from
+## 6. Where the happens-before edge comes from
 
 Inside one thread, the store to `mutex_counter` is sequenced before the
 unlock. A mutex unlock **synchronizes with** a later successful lock of
@@ -210,7 +232,7 @@ checked total is a requirement of the program and the racy total is not.
 
 ---
 
-## 6. A global order when one thread needs two locks
+## 7. A global order when one thread needs two locks
 
 One lock has no deadlock cycle. Two locks do, as soon as one path
 acquires A then B and another acquires B then A. Each holds the lock the
@@ -256,7 +278,7 @@ takes the lock itself, or must be called with no locks held. The lab's
 
 ---
 
-## 7. Why the fast path stays in user mode
+## 8. Why the fast path stays in user mode
 
 [Week 8](../../08-user-mode-syscalls-and-ipc/sections/day-004-int80-syscall-abi.md)
 measured what a syscall costs: a privilege transition, a register packet,
@@ -313,16 +335,16 @@ the word free never appeared in the trace.
 
 ---
 
-## 8. What the kernel promises about wait and wake
+## 9. What the kernel promises about wait and wake
 
-`kernel/futex.c` opens with the contract. The waiter samples the user
-word, then asks the kernel to sleep only if the word is still that
+`kernel/futex/waitwake.c` opens with the contract. The waiter samples the
+user word, then asks the kernel to sleep only if the word is still that
 value. The waker updates the word, then asks the kernel to wake. Both
 sides compute a hash bucket and take its lock.
 
 ```c
-/* kernel/futex.c :: file comment :: tree c9b2385d6793
- * lines 47–64
+/* kernel/futex/waitwake.c :: file comment :: adc218676eef25575469234709c2d87185ca223a
+ * lines 10–26
  */
 /*
  * READ this before attempting to hack on futexes!
@@ -341,7 +363,6 @@ sides compute a hash bucket and take its lock.
  * futex_wake(). This function computes the hash bucket and acquires the
  * hash bucket lock. Then it looks for waiters on that futex in the hash
  * bucket and wakes them.
- *
 ```
 
 The comment then shows the bug those steps exist to close. A waiter can
@@ -352,8 +373,8 @@ the waiter sees the new value and refuses to sleep, or the waker sees the
 waiter and wakes it:
 
 ```c
-/* kernel/futex.c :: file comment :: tree c9b2385d6793
- * lines 91–121
+/* kernel/futex/waitwake.c :: file comment :: adc218676eef25575469234709c2d87185ca223a
+ * lines 54–84
  */
  * The correct serialization ensures that a waiter either observes
  * the changed user space value before blocking or is woken by a
@@ -384,41 +405,45 @@ waiter and wakes it:
  *     waiters--; (b)                        unlock(hash_bucket(futex));
  *
  * Where (A) orders the waiters increment and the futex value read through
- * atomic operations (see hb_waiters_inc) and where (B) orders the write
- * to futex and the waiters read (see hb_waiters_pending()).
+ * atomic operations (see futex_hb_waiters_inc) and where (B) orders the write
+ * to futex and the waiters read (see futex_hb_waiters_pending()).
 ```
 
-Barrier (B) is the `smp_mb` in `hb_waiters_pending` (lines 341–348), which
-the wake path calls before it decides the queue is empty. Barrier (A) is
-the matching count increment on the wait path. Together they are the
-kernel's statement of the lost-wakeup problem you will meet again with
-condition variables on day 4: the sleep decision and the wake decision
-have to share an order, or a wakeup is consumed by nobody.
+Barrier (B) is the `smp_mb` in `futex_hb_waiters_pending`
+(`kernel/futex/futex.h` lines 284–295), which the wake path calls before it
+decides the queue is empty. Barrier (A) is `futex_hb_waiters_inc` (lines
+262–271), the matching count increment, whose `smp_mb__after_atomic` is
+line 269. Together they are the kernel's statement of the lost-wakeup
+problem you will meet again with condition variables on day 4: the sleep
+decision and the wake decision have to share an order, or a wakeup is
+consumed by nobody. A mismatch on that re-read returns `-EWOULDBLOCK`
+(`futex_wait_setup` line 641). `include/uapi/asm-generic/errno.h` line 22
+defines `EWOULDBLOCK` as `EAGAIN`.
 
-`EAGAIN` from the run in section 7 is this re-read succeeding in the
+`EAGAIN` from the run in section 8 is this re-read succeeding in the
 useful direction. The waiter reached the kernel, the word had already
 moved, and `futex_wait` returned instead of sleeping. The userspace lock
 path tries the atomic update again.
 
 ---
 
-## 9. One hash bucket for many user addresses
+## 10. One hash bucket for many user addresses
 
-Wait queues live in a fixed table of buckets. `hash_futex` maps a key
+Wait queues live in a fixed table of buckets. `futex_hash` maps a key
 derived from the user address into that table:
 
 ```c
-/* kernel/futex.c :: hash_futex :: tree c9b2385d6793
- * lines 354–367
+/* kernel/futex/core.c :: futex_hash :: adc218676eef25575469234709c2d87185ca223a
+ * lines 110–123
  */
 /**
- * hash_futex - Return the hash bucket in the global hash
+ * futex_hash - Return the hash bucket in the global hash
  * @key:	Pointer to the futex key for which the hash is calculated
  *
  * We hash on the keys returned from get_futex_key (see below) and return the
  * corresponding hash bucket in the global hash.
  */
-static struct futex_hash_bucket *hash_futex(union futex_key *key)
+struct futex_hash_bucket *futex_hash(union futex_key *key)
 {
 	u32 hash = jhash2((u32 *)key, offsetof(typeof(*key), both.offset) / 4,
 			  key->both.offset);
@@ -427,46 +452,43 @@ static struct futex_hash_bucket *hash_futex(union futex_key *key)
 }
 ```
 
-Waiters for different user addresses can share a bucket. `match_futex`
+Waiters for different user addresses can share a bucket. `futex_match`
 compares the full key so a wake only unblocks waiters for the address it
 was asked about. The bucket lock is kernel serialization for the queue.
 It is a different object from `counter_lock`, which is the user word the
 critical section is built on.
 
-`futex_wait` is the sleep side. It rejects an empty bitset, prepares an
-optional timeout, and calls `futex_wait_setup` to re-read the user word
-and enqueue under the bucket lock. Only then does it schedule:
+`futex_wait` (line 688) builds an optional timer and calls `__futex_wait`.
+`__futex_wait` rejects an empty bitset and calls `futex_wait_setup` to
+re-read the user word under the bucket lock. Only then does it schedule:
 
 ```c
-/* kernel/futex.c :: futex_wait :: tree c9b2385d6793
- * lines 2684–2709
+/* kernel/futex/waitwake.c :: __futex_wait :: adc218676eef25575469234709c2d87185ca223a
+ * lines 647–669
  */
-static int futex_wait(u32 __user *uaddr, unsigned int flags, u32 val,
-		      ktime_t *abs_time, u32 bitset)
+int __futex_wait(u32 __user *uaddr, unsigned int flags, u32 val,
+		 struct hrtimer_sleeper *to, u32 bitset)
 {
-	struct hrtimer_sleeper timeout, *to;
-	struct restart_block *restart;
-	struct futex_hash_bucket *hb;
 	struct futex_q q = futex_q_init;
+	struct futex_hash_bucket *hb;
 	int ret;
 
 	if (!bitset)
 		return -EINVAL;
+
 	q.bitset = bitset;
 
-	to = futex_setup_timer(abs_time, &timeout, flags,
-			       current->timer_slack_ns);
 retry:
 	/*
-	 * Prepare to wait on uaddr. On success, holds hb lock and increments
-	 * q.key refs.
+	 * Prepare to wait on uaddr. On success, it holds hb->lock and q
+	 * is initialized.
 	 */
 	ret = futex_wait_setup(uaddr, val, flags, &q, &hb);
 	if (ret)
-		goto out;
+		return ret;
 
-	/* queue_me and wait for wakeup, timeout, or a signal. */
-	futex_wait_queue_me(hb, &q, to);
+	/* futex_queue and wait for wakeup, timeout, or a signal. */
+	futex_wait_queue(hb, &q, to);
 ```
 
 `uaddr` is the user virtual address of the word. `val` is the value the
@@ -479,40 +501,40 @@ the bucket lock when the waiter count says the bucket is empty — the fast
 path of the wake, still a syscall, but a short one:
 
 ```c
-/* kernel/futex.c :: futex_wake :: tree c9b2385d6793
- * lines 1586–1611
+/* kernel/futex/waitwake.c :: futex_wake :: adc218676eef25575469234709c2d87185ca223a
+ * lines 155–179
  */
-/*
- * Wake up waiters matching bitset queued on this futex (uaddr).
- */
-static int
-futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
+int futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
 {
 	struct futex_hash_bucket *hb;
 	struct futex_q *this, *next;
 	union futex_key key = FUTEX_KEY_INIT;
-	int ret;
 	DEFINE_WAKE_Q(wake_q);
+	int ret;
 
 	if (!bitset)
 		return -EINVAL;
 
-	ret = get_futex_key(uaddr, flags & FLAGS_SHARED, &key, FUTEX_READ);
+	ret = get_futex_key(uaddr, flags, &key, FUTEX_READ);
 	if (unlikely(ret != 0))
 		return ret;
 
-	hb = hash_futex(&key);
+	if ((flags & FLAGS_STRICT) && !nr_wake)
+		return 0;
+
+	hb = futex_hash(&key);
 
 	/* Make sure we really have tasks to wakeup */
-	if (!hb_waiters_pending(hb))
+	if (!futex_hb_waiters_pending(hb))
 		return ret;
 
 	spin_lock(&hb->lock);
 ```
 
-The loop that follows walks `hb->chain` with `match_futex`, calls
-`mark_wake_futex` for up to `nr_wake` matches, drops the bucket lock, and
-`wake_up_q`s them. A pthread unlock that knows a waiter exists calls this
+The loop that follows walks `hb->chain` with `futex_match`, calls
+`this->wake` for up to `nr_wake` matches, drops the bucket lock, and
+`wake_up_q`s them. `futex_q_init` (`kernel/futex/requeue.c` lines 60–62)
+sets that callback to `futex_wake_mark`. A pthread unlock that knows a waiter exists calls this
 with `nr_wake` of 1. The woken thread returns to user mode and tries the
 atomic lock of the word again. Between the wake and that successful
 compare-and-swap, another thread may have taken the word; the woken
@@ -521,11 +543,11 @@ with the user-word protocol libc maintains.
 
 ---
 
-## 10. Execution trace: one critical section, then a sleep
+## 11. Execution trace: one critical section, then a sleep
 
 One iteration of `increment_mutex` on thread A that finds the word free,
 overlapping a thread B that finds it held. The word values here are the
-design in section 7; the trace's expected value of 2 is this libc's
+design in section 8; the trace's expected value of 2 is this libc's
 "waiters" state, and a different libc can use a different encoding.
 
 ```text
@@ -537,16 +559,16 @@ incq mutex_counter
                                        CAS fails (word is held)
                                        store "waiters"
                                        syscall futex_wait(word, val)
-                                                                         hash_futex(key)
+                                                                         futex_hash(key)
                                                                          re-read *word
                                                                          val still matches
                                                                          enqueue on bucket
                                                                          schedule B out
 store free
 word says waiters → syscall futex_wake(word, 1)
-                                                                         hash_futex
-                                                                         hb_waiters_pending
-                                                                         bucket lock, match_futex
+                                                                         futex_hash
+                                                                         futex_hb_waiters_pending
+                                                                         bucket lock, futex_match
                                                                          wake B
                                        futex_wait returns
                                        CAS free → held
@@ -571,7 +593,7 @@ to see the invariant.
 
 ---
 
-## 11. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-003-mutex-ownership.sh`](../challenges/day-003-mutex-ownership.sh).
 Predict `mutex_counter=800000`, `joined_value=42` with `freed_by=parent`,
@@ -592,7 +614,7 @@ million lines, and leave the exact count unpredicted.
   is what day 6's opposite-order cycle lacks.
 - The uncontended lock is a user-mode atomic on a word in the shared
   `mm`. `futex_wait` and `futex_wake` are the sleep and the wakeup.
-  `hash_futex` places both on a bucket in `futex_queues`. The kernel
+  `futex_hash` places both on a bucket in `futex_queues`. The kernel
   re-reads the user word under the bucket lock so a wake and a wait
   cannot miss each other.
 
@@ -666,9 +688,11 @@ taking them in opposite orders.
 
 ## References used selectively
 
-- Linux tree `c9b2385d6793`, `kernel/futex.c`: the wait/wake comment at
-  lines 47–122, `hash_futex`, `futex_wait`, `futex_wake`,
-  `hb_waiters_pending`.
+- Linux 6.12 commit `adc218676eef25575469234709c2d87185ca223a`, `kernel/futex/waitwake.c`: the ordering
+  comment at lines 10–108, `futex_wake` at lines 155–201, `__futex_wait` at
+  lines 647–686; `kernel/futex/core.c` `futex_hash` at lines 110–123;
+  `kernel/futex/futex.h` `futex_hb_waiters_pending` at lines 284–295 and
+  `futex_match` at lines 212–218.
 - [Day 2's missing edge](day-002-data-races-and-the-c-abstract-machine.md)
   and [Week 8's syscall boundary](../../08-user-mode-syscalls-and-ipc/sections/day-004-int80-syscall-abi.md).
 

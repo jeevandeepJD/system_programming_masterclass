@@ -69,30 +69,43 @@ Bochs through the GDB stub, so a breakpoint is a C source line in the
 kernel you just read.
 
 What carries forward is the habit of naming the task and reading its
-state from outside the program. What changes in 5.10 is the window:
-`proc_pid_status` generates text from `task_struct` at read time, and
-ptrace parks a live task in `TASK_TRACED` so strace and GDB can print
-syscalls and registers. Develop against that procfs and ptrace path.
-A `printk` of `task[64]` and a Bochs stub are the 0.12 observation tools.
+state from outside the program. A `printk` of `task[64]` and a Bochs
+stub are the 0.12 observation tools.
 
 ToyOS shows the one user image with a serial marker or a GDB remote
 stop
 ([Week 6](../../06-toyos-bootstrap-and-exceptions/sections/day-006-tss-ist-page-fault-and-gdb.md)).
-0.12 adds the loop over every task. The 5.10 files below are the
-generated `/proc` text and the ptrace stop.
+0.12 adds the loop over every task.
 
-Now move to the 5.10 implementation.
+## 3. Evolution: why the early design changed
 
-Line-level claims below are from tree `c9b2385d6793`, a 5.10.134-based
-kernel. Before you repeat a line number, record `uname -r` and the tree
-id you actually opened. Names move. A function that is `proc_pid_status`
-here may be split or renamed in a later release, and the string it
-prints can gain fields. The man page for procfs is the application
-contract. This file is one kernel's generator.
+Linux 0.12 prints the task array with `printk`, and a developer reads
+the same kernel through Bochs and GDB. That is one observer, looking
+at one machine's task table.
+
+The window moved into the kernel's own interfaces. procfs generates
+text from `task_struct` when a process reads `/proc`, in the reader's
+pid namespace. ptrace parks a live task in `TASK_TRACED`, so strace
+and GDB are ordinary user programs rather than a simulator stub.
+Later, tracepoints, perf, ftrace, and eBPF added event streams beside
+that snapshot. The snapshot and the stop are still the first evidence
+this week uses.
+
+What survived is the habit of naming the task and reading it from
+outside the program. The 6.12/current path below is `proc_pid_status`
+and `ptrace_stop`.
+
+Line-level claims below are from Linux 6.12, tag `v6.12`, commit
+`adc218676eef`. Before you repeat a line number, record `uname -r` and
+the tree id you actually opened. Names move. A function that is
+`proc_pid_status` here may be split or renamed in a later release, and
+the string it prints can gain fields. The man page for procfs is the
+application contract. This file is one kernel's generator. Develop
+against this 6.12/current path.
 
 ---
 
-## 3. Why the view has to be generated
+## 4. Why the view has to be generated
 
 A task's exit state, real parent, blocked signals, and session id live
 in kernel memory, in objects the C abstract machine of the process does
@@ -111,14 +124,14 @@ It is fresh text, produced for that `read`.
 
 `fs/proc/base.c` in this tree publishes the name. The task directory
 contains an entry of the form `ONE("status", S_IRUGO, proc_pid_status)`
-(the occurrences are at lines 3201 and 3545). Opening `status` and
+(the occurrences are at lines 3317 and 3668). Opening `status` and
 reading it runs `proc_pid_status`.
 
 ---
 
-## 4. The state letter is an index into a table
+## 5. The state letter is an index into a table
 
-`fs/proc/array.c`, tree `c9b2385d6793`, lines 124–150:
+`fs/proc/array.c`, tree `adc218676eef`, lines 120–146:
 
 ```c
 /*
@@ -151,12 +164,12 @@ static inline const char *get_task_state(struct task_struct *tsk)
 ```
 
 The comment values match the flags in `include/linux/sched.h` in this
-tree: `__TASK_TRACED` is `0x0008`, `EXIT_DEAD` is `0x0010`, `EXIT_ZOMBIE`
-is `0x0020`. Day 4's assignment `tsk->exit_state = EXIT_ZOMBIE` is why a
+tree: `__TASK_TRACED` is `0x00000008`, `EXIT_DEAD` is `0x00000010`, `EXIT_ZOMBIE`
+is `0x00000020`. Day 4's assignment `tsk->exit_state = EXIT_ZOMBIE` is why a
 later read can print `Z (zombie)`. A ptrace stop, below, is why the same
 table can print `t (tracing stop)`. The letter in `/proc/PID/stat` is
 the first character of that string. `do_task_stat` takes it with
-`state = *get_task_state(task)` at line 460. The long form in `status`
+`state = *get_task_state(task)` at line 488. The long form in `status`
 prints the whole string.
 
 `get_task_state` indexes the table. It does not run the program, sample
@@ -166,9 +179,9 @@ value into text.
 
 ---
 
-## 5. `proc_pid_status` walks the task and prints
+## 6. `proc_pid_status` walks the task and prints
 
-`fs/proc/array.c`, `proc_pid_status`, lines 408–432:
+`fs/proc/array.c`, `proc_pid_status`, tree `adc218676eef`, lines 439–465:
 
 ```c
 int proc_pid_status(struct seq_file *m, struct pid_namespace *ns,
@@ -184,8 +197,9 @@ int proc_pid_status(struct seq_file *m, struct pid_namespace *ns,
 
 	if (mm) {
 		task_mem(m, mm);
-		task_core_dumping(m, mm);
+		task_core_dumping(m, task);
 		task_thp_status(m, mm);
+		task_untag_mask(m, mm);
 		mmput(mm);
 	}
 	task_sig(m, task);
@@ -194,6 +208,7 @@ int proc_pid_status(struct seq_file *m, struct pid_namespace *ns,
 	task_cpus_allowed(m, task);
 	cpuset_task_status_allowed(m, task);
 	task_context_switch_counts(m, task);
+	arch_proc_pid_thread_features(m, task);
 	return 0;
 }
 ```
@@ -205,7 +220,7 @@ the `if (mm)` body is skipped and the file still carries the state line
 from `task_state`. That is why `Z` can appear in a file that has no user
 address space left to describe.
 
-`task_state` is where Pid and PPid are computed. Lines 163–192:
+`task_state` is where Pid and PPid are computed. Lines 159–188:
 
 ```c
 	rcu_read_lock();
@@ -245,13 +260,13 @@ Day 4's reparenting changes `real_parent`, and the next `status` read
 prints the new number. `TracerPid` is the ptracer when one is attached,
 which is a different parent pointer from `real_parent`. Day 6's session
 and process group show up in the `NSpid` / `NSpgid` / `NSsid` lines this
-function prints a little later, under `CONFIG_PID_NS` (lines 212–224).
+function prints a little later, under `CONFIG_PID_NS` (lines 208–221).
 The numbers are namespace-relative. A container and its host can print
 different pids for one task.
 
 `task_sig`, called from `proc_pid_status`, prints the pending, shared
 pending, blocked, ignored, and caught sets through `render_sigset_t`
-(the calls are at lines 298–302). Day 5's three facts — pending,
+(the calls are at lines 296–300). Day 5's three facts — pending,
 blocked, disposition — have a text form here. A blocked `SIGUSR1` that
 has been posted can show up in `SigPnd` or `ShdPnd` while `SigBlk`
 contains the same bit. That is the pending-mode experiment, seen from
@@ -290,7 +305,7 @@ that line is deliberately uninformative for a running task:
 		 */
 ```
 
-`fs/proc/array.c`, `do_task_stat`, lines 460–474. The comment is the
+`fs/proc/array.c`, `do_task_stat`, lines 488–502. The comment is the
 bridge to the next section. User `rip` / `pc` / `epc` and the user stack
 pointer change whenever the task runs. A procfs read would sample them
 without stopping the task, and the sample would be a race. The kernel
@@ -301,7 +316,7 @@ still.
 
 ---
 
-## 6. A ptrace stop is a task state
+## 7. A ptrace stop is a task state
 
 strace and GDB are both tracers. They attach with `ptrace`, and the
 kernel parks the tracee in `TASK_TRACED` until the tracer says to
@@ -309,14 +324,11 @@ continue. That park is the same kind of kernel state as `EXIT_ZOMBIE`:
 a value in the task, visible to `wait` and to procfs, with no user
 instruction retiring while it holds.
 
-`kernel/signal.c`, `ptrace_stop`, tree `c9b2385d6793`, lines 2133–2160:
+`kernel/signal.c`, `ptrace_stop`, tree `adc218676eef`, lines 2263–2288:
 
 ```c
-	/*
-	 * schedule() will not sleep if there is a pending signal that
-	 * can awaken the task.
-	 */
 	set_special_state(TASK_TRACED);
+	current->jobctl |= JOBCTL_TRACED;
 
 	/*
 	 * We're committing to trapping.  TRACED should be visible before
@@ -338,21 +350,24 @@ instruction retiring while it holds.
 	 */
 	smp_wmb();
 
+	current->ptrace_message = message;
 	current->last_siginfo = info;
 	current->exit_code = exit_code;
 ```
 
-`set_special_state(TASK_TRACED)` is the store. `TASK_TRACED` includes
-`__TASK_TRACED`, the bit `get_task_state` maps to `t (tracing stop)`.
-The comment's two-column picture is the memory-ordering reason for
-`smp_wmb`: the tracer's `wait` must observe `TRACED` before it trusts
-the stop. `last_siginfo` and `exit_code` hold what the tracer can read
-back about why the stop happened. Day 4 used `exit_code` for a
+`set_special_state(TASK_TRACED)` and `current->jobctl |= JOBCTL_TRACED`
+are the stores. `TASK_TRACED` includes `__TASK_TRACED`, the bit
+`get_task_state` maps to `t (tracing stop)`. The comment's two-column
+picture is the memory-ordering reason for `smp_wmb`: the tracer's
+`wait` must observe `TRACED` before it trusts the stop.
+`ptrace_message`, `last_siginfo`, and `exit_code` hold what the tracer
+can read back about why the stop happened. Day 4 used `exit_code` for a
 terminating task. Here the same field carries the stop code while the
 task is alive and frozen for the tracer.
 
 `get_signal` calls `ptrace_signal` before it honors a caught
-disposition (Day 5, around line 2664). A tracer can therefore stop on a
+disposition (Day 5, lines 2803–2807), unless that disposition has
+`SA_IMMUTABLE`. A tracer can therefore stop on a
 signal, rewrite it, or swallow it, and the tracee stays in `TASK_TRACED`
 across that stop. Syscall tracing uses the same state at syscall entry
 and exit: the architecture entry path notices the trace flag, and the
@@ -380,7 +395,7 @@ tracer perturbed.
 
 ---
 
-## 7. strace is that stop, printed as a syscall list
+## 8. strace is that stop, printed as a syscall list
 
 strace attaches, asks to stop at syscall entry and exit, and prints a
 decoded line: name, arguments, return value. With `-f` it follows
@@ -413,7 +428,7 @@ claim inside what one trace can support.
 
 ---
 
-## 8. GDB is the same stop, plus symbols
+## 9. GDB is the same stop, plus symbols
 
 GDB attaches or launches through ptrace as well. The extra ingredient
 is the ELF symbol table and DWARF line table Week 3 produced at link
@@ -427,7 +442,7 @@ program's own checked marker.
 `main` is a C function. The first user instruction after `exec` is the
 ELF entry or the dynamic linker, as Week 3's loading lesson followed.
 A breakpoint at `main` fires after that startup. Registers at the stop
-are the `pt_regs` from section 6, shown with names GDB took from the
+are the `pt_regs` from section 7, shown with names GDB took from the
 ABI and from the debug info. Locals appear when DWARF describes them.
 A stripped binary can still have a function symbol and lack the local
 names. Say which of those you actually had.
@@ -448,27 +463,26 @@ debugging step than collecting every register.
 
 ---
 
-## 9. Version discipline
+## 10. Version discipline
 
 Write these down before a line-number claim:
 
 ```text
 uname -r                         the kernel that produced /proc and ptrace
-tree id c9b2385d6793             the 5.10.134-based sources these notes quote
+tree id adc218676eef             the Linux 6.12 sources these notes quote
 config / distributor patches     if you discovered the running tree differs
 architecture                     x86-64, AArch64, or RISC-V, for syscall names
 compiler, libc, strace, GDB      when a tool's decoding is part of the claim
 binary hashes                    the ELF files the lab actually exec'd
 ```
 
-The running kernel and the tree you are reading can differ. Fedora, the
-lab VM, and this Anolis-based tree can carry the same mechanism under
-shifted line numbers. When they differ, describe the mechanism at the
-level that survived — `EXIT_ZOMBIE` is a retained exit word, `wait4`
-copies it out, a signal frame is architectural — and attach line numbers
-only to the tree you opened. The notes in Days 4–6 did that for
-`c9b2385d6793`. Your report does it for the machine that printed
-`uname -r`.
+The running kernel and the tree you are reading can differ. A
+distributor kernel can carry the same mechanism under shifted line
+numbers. When they differ, describe the mechanism at the level that
+survived — `EXIT_ZOMBIE` is a retained exit word, `wait4` copies it
+out, a signal frame is architectural — and attach line numbers only to
+the tree you opened. These notes did that for `adc218676eef`. Your
+report does it for the machine that printed `uname -r`.
 
 Syscall numbers, `/proc` field order, and GDB's default follow-fork
 behavior are versioned. The stable questions are the ones the lab
@@ -477,7 +491,7 @@ a child whose PGID equals its PID, and the injected errno values.
 
 ---
 
-## 10. ToyOS, xv6, and this Linux tree
+## 11. ToyOS, xv6, and this Linux tree
 
 The comparison is about who holds the exit word, who can stop a task,
 and what a debugger can see. It is three concrete designs.
@@ -514,7 +528,7 @@ would freeze someone else's line numbers into this report.
 threads can share an `mm` and a file table. `do_exit` stores `exit_code`
 and `exit_notify` publishes `EXIT_ZOMBIE` until `wait_task_zombie`
 copies it through `wait4`. `find_new_reaper` prefers a subreaper over
-the namespace init. `__send_signal` posts a pending bit, `get_signal`
+the namespace init. `__send_signal_locked` posts a pending bit, `get_signal`
 chooses a disposition, and the architecture file builds the frame.
 `setpgid` and `ksys_setsid` maintain PGID and SID. `proc_pid_status`
 prints the result. `ptrace_stop` freezes a live task in `TASK_TRACED`
@@ -524,7 +538,7 @@ state with an owner, which is why the lab reaps every child and limits
 signals to the process family it created.
 
 ```text
-question            ToyOS                    xv6                     Linux c9b2385d6793
+question            ToyOS                    xv6                     Linux 6.12
 exit word           the one task ends        slot status, zombie     exit_code, EXIT_ZOMBIE
 who collects it     the run ends             wait in the parent      wait4 / subreaper
 image replace       the loader you wrote     exec in the slot        execve + ELF handler
@@ -542,7 +556,7 @@ GDB remote protocol on ToyOS and a `TASK_TRACED` task on Linux.
 
 ---
 
-## 11. Execution trace: one report
+## 12. Execution trace: one report
 
 This is the shape of
 [`../challenges/day-007-debug-report.sh`](../challenges/day-007-debug-report.sh).
@@ -601,7 +615,7 @@ results are assertions. They are not a search of every errno.
 
 ---
 
-## 12. What the wrapper is allowed to touch
+## 13. What the wrapper is allowed to touch
 
 Run the wrapper from the Week 10 directory. It uses the project
 Makefile, creates only descendants, reaps them, and sends signals only
@@ -613,12 +627,12 @@ printed.
 Predict `WEEK10 PASS`, three hashes, the procfs fields for the lab
 process itself, the decoded statuses, and either a real strace/GDB
 transcript or an explicit skip. Then write one sentence of comparison
-for the exit word, in the form section 10 used, tied to the sources you
+for the exit word, in the form section 11 used, tied to the sources you
 opened.
 
 ---
 
-## 13. Mastery: Explain · Draw · Observe · Build
+## 14. Mastery: Explain · Draw · Observe · Build
 
 The wrapper is
 [`../challenges/day-007-debug-report.sh`](../challenges/day-007-debug-report.sh).
@@ -657,7 +671,7 @@ a tree you identified.
 ### Build
 
 Write the comparison in your report with one invariant per row, using
-section 10's questions. Name the ToyOS marker you would actually look at
+section 11's questions. Name the ToyOS marker you would actually look at
 (serial line or GDB), the xv6 idea in your own words, and the Linux
 function from this tree that implements the same idea. Leave the
 wrapper's temporary report path in the write-up so the evidence can be

@@ -44,17 +44,49 @@ while (count>0) {
 
 Trace. `PIPE_SIZE` is the bytes sitting between head and tail. An empty pipe wakes writers, then returns what was already read when `i_count != 2` (the writer is gone: EOF). A pending signal returns `-ERESTARTSYS` if nothing was read yet. Otherwise the reader sleeps on `PIPE_READ_WAIT`. With data present, `chars` is clamped to the request, to the bytes before the end of the page, and to `size`. The function then advances `PIPE_TAIL`, masks it with `PAGE_SIZE-1`, copies with `put_fs_byte`, and `wake_up`s writers. `write_pipe` on printed page 804 is the mirror: a full page sleeps on `PIPE_WRITE_WAIT`, and `i_count != 2` does `current->signal |= (1<<(SIGPIPE-1))` and returns `written ? written : -1`.
 
-What carries forward is the bounded buffer, sleep when empty or full, EOF when the writer is gone, and a signal when a write finds no reader. The single page, the inode fields used as head/tail, `i_count != 2` as the lifetime test, and the direct signal bit belong to this kernel. Linux 5.10 keeps the causal picture and uses a ring of pipe pages, `readers`/`writers` counts, `pipe_read`/`pipe_write`, poll wait queues, and `-EPIPE` together with `SIGPIPE`.
+What carries forward is the bounded buffer, sleep when empty or full, EOF when the writer is gone, and a signal when a write finds no reader. The single page, the inode fields used as head/tail, `i_count != 2` as the lifetime test, and the direct signal bit belong to this kernel. Linux 6.12 keeps the causal picture and uses a ring of pipe pages, `readers`/`writers` counts, `pipe_read`/`pipe_write`, poll wait queues, and `-EPIPE` together with `SIGPIPE`.
 
-ToyOS has the queue in miniature. [Week 8's pipe](../../08-user-mode-syscalls-and-ipc/sections/day-006-process-fd-ipc.md) is one 64-byte array and a read position, copied in each direction, without this sleep, EOF, and `SIGPIPE` protocol.
+The shared [Linux 0.12 map](../../references/EARLY_LINUX_012_MAP.md) shows the same empty-reader loop. The sections below are the pipe in Linux 6.12, tree `adc218676eef`. Read 0.12 as the first complete implementation. Develop against the 6.12 tree.
 
-The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) shows the same empty-reader loop. The sections below are the pipe in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete implementation. Develop against the 5.10 tree.
-
-The excerpts in this lesson are Linux 5.10.134 at tree `c9b2385d6793`.
+The excerpts in this lesson are Linux 6.12 at tree `adc218676eef`.
 Record `uname -r` before you treat a line number as true of the machine
 you are tracing. Names and widths move between releases. The POSIX
 contract for `pipe`, `read`, `write`, and `dup2` is the application
 interface. This file is one kernel's implementation of that contract.
+
+## 3. Evolution: why the early design changed
+
+Linux 0.12's pipe is one page. Head and tail live in inode fields, the
+reader sleeps on `PIPE_READ_WAIT`, end-of-file is `i_count != 2`, and a
+write with no reader sets the `SIGPIPE` bit on `current` directly.
+
+One page is a small bound, and the inode count is the wrong lifetime. `dup`
+and `fork` add references that are not "the other end." The ring, the wait,
+and the signal need an object of their own.
+
+`struct pipe_inode_info` (`include/linux/pipe_fs_i.h` lines 58–78) holds
+`head`, `tail`, `readers`, `writers`, `bufs`, and `rd_wait` / `wr_wait`.
+Each slot is a `struct pipe_buffer` (lines 26–32): a page, an offset, a
+length, and `pipe_buf_operations`. `alloc_pipe_info` (`fs/pipe.c` line 790)
+builds that ring. `pipe_read` and `pipe_write` (lines 250 and 428) are
+installed as `read_iter` and `write_iter` (lines 1234–1235).
+
+Those buffer operations are how splice avoids a private copy.
+`pipe_buf_operations` (lines 95–124 of the same header) can confirm,
+release, and `try_steal` a page. `splice_folio_into_pipe` (`mm/filemap.c`
+lines 2840–2856) fills a `pipe_buffer` from a cache folio with
+`page_cache_pipe_buf_ops`. Poll uses the same wait queues: a writer wakes
+`rd_wait` with `EPOLLIN`.
+
+End-of-file and backpressure stayed. `pipe_read` stops when `writers` is
+zero (line 352). `pipe_write` sends `SIGPIPE` and returns `-EPIPE` before it
+copies when `readers` is zero (lines 457–460). The same check inside the
+copy loop (lines 498–502) keeps a positive short count if bytes were already
+copied. A full ring with `O_NONBLOCK` returns `-EAGAIN` (lines 557–561).
+
+## 4. Why the bytes cannot live in either process
+
+ToyOS has the queue in miniature. [Week 8's pipe](../../08-user-mode-syscalls-and-ipc/sections/day-006-process-fd-ipc.md) is one 64-byte array and a read position, copied in each direction, without this sleep, EOF, and `SIGPIPE` protocol.
 
 ToyOS already has the smallest version of the idea. [Week 8's pipe](../../08-user-mode-syscalls-and-ipc/sections/day-006-process-fd-ipc.md)
 is one 64-byte array, two fixed descriptors, and a copy in each
@@ -62,8 +94,6 @@ direction. Today's work is the part that array leaves out: two real
 file objects, a ring that reuses slots, sleep when the ring is full or
 empty, end-of-file when the last writer releases its file, and
 `SIGPIPE` when a write finds no reader.
-
-## 3. Why the bytes cannot live in either process
 
 A producer and a consumer are two address spaces. [Week 10](../../10-linux-processes-and-signals/sections/day-001-process-mental-model.md)
 gives each task its own page tables. A store the producer executes
@@ -100,14 +130,14 @@ already made a descriptor an index into a per-task table of open files.
 A pipe does not add a new syscall family for data movement. It adds a
 pair of files whose `read_iter` and `write_iter` implement this queue.
 
-## 4. One ring, two counters, pages for slots
+## 5. One ring, two counters, pages for slots
 
 `include/linux/pipe_fs_i.h` in this tree describes the object. The
 comment is the data model. The fields under it are what `pipe_read` and
 `pipe_write` actually update.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: include/linux/pipe_fs_i.h
  * lines: 34–64
  * function: struct pipe_inode_info (definition)
@@ -145,8 +175,8 @@ struct pipe_inode_info {
 	unsigned int ring_size;
 ```
 
-`head` and `tail` are stored unmasked. The comment at lines 62–66 of
-the same header says they wrap naturally, and that the ring is a power
+`head` and `tail` are stored unmasked. The comment at lines 63–66 of
+`fs/pipe.c` says they wrap naturally, and that the ring is a power
 of two, at most `2^31`. A slot is `bufs[index & (ring_size - 1)]`, a
 `struct pipe_buffer` with a `struct page *`, an offset, and a length.
 `PIPE_SIZE` is `PAGE_SIZE`. One slot is one page of pipe bytes, not one
@@ -162,15 +192,17 @@ pages. That product is not a second named constant.
 `pipe_empty` is `head == tail`. `pipe_full` is `head - tail >= max_usage`
 at the `pipe_read` and `pipe_write` call sites. Unsigned subtraction is
 what lets the ring be full with no spare slot reserved to tell full
-from empty. `__pipe_lock` takes `pipe->mutex` directly. While it is
-held, `head`, `tail`, and the buffer lengths move together. The waiter
+from empty. `pipe_read` and `pipe_write` take `pipe->mutex` with `mutex_lock`.
+`pipe_lock` (`fs/pipe.c` lines 89–93) does the same when `pipe->files`
+is set. While the mutex is held, `head`, `tail`, and the buffer lengths
+move together. The waiter
 is whichever task next enters `read` or `write`, the kernel analogue of
 the pthread mutex in [Week 11's queue](../../11-threads-and-concurrency/sections/day-004-condition-variables-and-bounded-queues.md).
 
-## 5. `pipe()` builds two files and publishes two descriptors
+## 6. `pipe()` builds two files and publishes two descriptors
 
 `get_pipe_inode` allocates the inode on the pipe pseudo-filesystem,
-calls `alloc_pipe_info`, and at lines 882–885 sets `inode->i_pipe`,
+calls `alloc_pipe_info`, and at lines 894–897 sets `inode->i_pipe`,
 `pipe->files = 2`, `pipe->readers = pipe->writers = 1`, and
 `inode->i_fop = &pipefifo_fops`.
 
@@ -188,9 +220,9 @@ file` is write-only. The read end is a clone of it. Both store the same
 `pipe_inode_info` in `private_data`.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/pipe.c
- * lines: 926–948
+ * lines: 938–962
  * function: create_pipe_files
  */
 	f = alloc_file_pseudo(inode, pipe_mnt, "",
@@ -203,6 +235,7 @@ file` is write-only. The read end is a clone of it. Both store the same
 	}
 
 	f->private_data = inode->i_pipe;
+	f->f_pipe = 0;
 
 	res[0] = alloc_file_clone(f, O_RDONLY | (flags & O_NONBLOCK),
 				  &pipefifo_fops);
@@ -212,6 +245,7 @@ file` is write-only. The read end is a clone of it. Both store the same
 		return PTR_ERR(res[0]);
 	}
 	res[0]->private_data = inode->i_pipe;
+	res[0]->f_pipe = 0;
 	res[1] = f;
 	stream_open(inode, res[0]);
 	stream_open(inode, res[1]);
@@ -220,7 +254,7 @@ file` is write-only. The read end is a clone of it. Both store the same
 
 `res[0]` is the read end. `res[1]` is the write end. `O_NONBLOCK` is
 copied onto both. `O_DIRECT` is applied to the write end only; `pipe_write`
-later treats that flag as packet mode, which section 11 keeps separate
+later treats that flag as packet mode, which section 12 keeps separate
 from the ordinary byte stream. `stream_open` marks both as streams, so
 they have no shared file position that a seek could name. `pipefifo_fops`
 wires `.read_iter` to `pipe_read`, `.write_iter` to `pipe_write`,
@@ -229,9 +263,9 @@ wires `.read_iter` to `pipe_read`, `.write_iter` to `pipe_write`,
 `pipe2` and `pipe` both land in `do_pipe2`. `pipe` passes flags 0.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/pipe.c
- * lines: 1001–1021
+ * lines: 1018–1037
  * function: do_pipe2
  */
 static int do_pipe2(int __user *fildes, int flags)
@@ -254,7 +288,6 @@ static int do_pipe2(int __user *fildes, int flags)
 		}
 	}
 	return error;
-}
 ```
 
 `SYSCALL_DEFINE2(pipe2)` returns `do_pipe2`. `__do_pipe_flags` calls
@@ -272,7 +305,7 @@ queue. A `write` on the read index fails the direction check before
 A `read` on the write index fails the same way. The direction lives in
 the file, not in a bit the user has to pass on every call.
 
-## 6. `fork` plus `dup2` is how a shell aims the queue
+## 7. `fork` plus `dup2` is how a shell aims the queue
 
 A pipe inside one process is only a queue the process can use to talk
 to itself. A pipeline needs a second task whose standard input or
@@ -309,10 +342,10 @@ If the parent forgets `close(w)`, `writers` never drops. The consumer
 sleeps in `read` after the producer has exited, because the parent
 still holds the write file. A child that `dup2`s the read end onto
 stdin and leaves the write end open has made itself a writer, so its
-own later read will not see end-of-file. Section 8 is that rule in
+own later read will not see end-of-file. Section 9 is that rule in
 `pipe_release`.
 
-## 7. Three bytes, from the user buffer to the other user buffer
+## 8. Three bytes, from the user buffer to the other user buffer
 
 Take a blocking pipe, one writer, one reader, and a three-byte write of
 `'a'`, `'b'`, `'c'`. `pipe_write` locks the pipe. `readers` is 1, so it
@@ -343,33 +376,24 @@ Both copies are kernel copies through a pipe page. The user's `write`
 never stores into the consumer's address space. Day 6 is what changes
 when a load names the page through the consumer's own page tables.
 
-## 8. End-of-file is "no writer remains"
+## 9. End-of-file is "no writer remains"
 
 An empty pipe and a closed pipe look the same if you only test
 `head == tail`. The reader needs a second fact: will any future `write`
-still be able to append? `pipe_readable` (lines 220–227) answers the
+still be able to append? `pipe_readable` (lines 211–218) answers the
 wait. It loads `head`, `tail`, and `writers` with `READ_ONCE`, because
 it runs without the mutex, and it returns true when the ring is
 non-empty or when `writers` is zero. The locked path in `pipe_read`
 makes the decision that becomes the syscall result:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/pipe.c
- * lines: 322–348
+ * lines: 343–360
  * function: pipe_read
  */
-			if (!buf->len) {
-				pipe_buf_release(pipe, buf);
-				spin_lock_irq(&pipe->rd_wait.lock);
-#ifdef CONFIG_WATCH_QUEUE
-				if (buf->flags & PIPE_BUF_FLAG_LOSS)
-					pipe->note_loss = true;
-#endif
-				tail++;
-				pipe->tail = tail;
-				spin_unlock_irq(&pipe->rd_wait.lock);
-			}
+			if (!buf->len)
+				tail = pipe_update_tail(pipe, buf, tail);
 			total_len -= chars;
 			if (!total_len)
 				break;	/* common path: read succeeded */
@@ -381,11 +405,11 @@ makes the decision that becomes the syscall result:
 			break;
 		if (ret)
 			break;
-		if (filp->f_flags & O_NONBLOCK) {
+		if ((filp->f_flags & O_NONBLOCK) ||
+		    (iocb->ki_flags & IOCB_NOWAIT)) {
 			ret = -EAGAIN;
 			break;
 		}
-		__pipe_unlock(pipe);
 ```
 
 The sleep itself is the next call, still inside `pipe_read`, after the
@@ -393,9 +417,9 @@ comment that explains why an interrupt here can return `-ERESTARTSYS`
 directly: the lock is already dropped and no byte was copied.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/pipe.c
- * lines: 367–378
+ * lines: 380–391
  * function: pipe_read
  */
 		if (unlikely(was_full))
@@ -426,9 +450,9 @@ both as end-of-file will stop while the writer is merely slow.
 end's `struct file` loses its last reference.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/pipe.c
- * lines: 711–729
+ * lines: 722–744
  * function: pipe_release
  */
 static int
@@ -436,7 +460,7 @@ pipe_release(struct inode *inode, struct file *file)
 {
 	struct pipe_inode_info *pipe = file->private_data;
 
-	__pipe_lock(pipe);
+	mutex_lock(&pipe->mutex);
 	if (file->f_mode & FMODE_READ)
 		pipe->readers--;
 	if (file->f_mode & FMODE_WRITE)
@@ -449,7 +473,11 @@ pipe_release(struct inode *inode, struct file *file)
 		kill_fasync(&pipe->fasync_readers, SIGIO, POLL_IN);
 		kill_fasync(&pipe->fasync_writers, SIGIO, POLL_OUT);
 	}
-	__pipe_unlock(pipe);
+	mutex_unlock(&pipe->mutex);
+
+	put_pipe_info(inode, pipe);
+	return 0;
+}
 ```
 
 The condition `!pipe->readers != !pipe->writers` is true when one side
@@ -464,18 +492,17 @@ Data already in the ring is still readable after the writers have gone.
 the `!pipe->writers` test return 0. End-of-file is ordered after the
 last byte, not instead of it.
 
-## 9. No readers: the signal and the error are both generated
+## 10. No readers: the signal and the error are both generated
 
 The matching failure on the write side is a pipe that will never be
 read again. `pipe_write` checks before copying anything:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/pipe.c
- * lines: 414–436
+ * lines: 428–461
  * function: pipe_write
  */
-static ssize_t
 pipe_write(struct kiocb *iocb, struct iov_iter *from)
 {
 	struct file *filp = iocb->ki_filp;
@@ -487,11 +514,23 @@ pipe_write(struct kiocb *iocb, struct iov_iter *from)
 	bool was_empty = false;
 	bool wake_next_writer = false;
 
+	/*
+	 * Reject writing to watch queue pipes before the point where we lock
+	 * the pipe.
+	 * Otherwise, lockdep would be unhappy if the caller already has another
+	 * pipe locked.
+	 * If we had to support locking a normal pipe and a notification pipe at
+	 * the same time, we could set up lockdep annotations for that, but
+	 * since we don't actually need that, it's simpler to just bail here.
+	 */
+	if (pipe_has_watch_queue(pipe))
+		return -EXDEV;
+
 	/* Null write succeeds. */
 	if (unlikely(total_len == 0))
 		return 0;
 
-	__pipe_lock(pipe);
+	mutex_lock(&pipe->mutex);
 
 	if (!pipe->readers) {
 		send_sig(SIGPIPE, current, 0);
@@ -507,7 +546,7 @@ decides what the task sees. The default disposition terminates the
 process, so the C statement after `write` never runs. `SIG_IGN` or a
 blocked signal lets `write` return `-1` with `errno == EPIPE`.
 
-The same check repeats inside the copy loop (lines 477–482), because
+The same check repeats inside the copy loop (lines 498–502), because
 the writer drops the mutex while it waits for space. `send_sig` still
 runs. If some bytes are already copied, `ret` stays the positive short
 count and is not replaced with `-EPIPE`. A writer that ignored
@@ -517,20 +556,21 @@ path after a partial copy, because the signal is posted either way.
 `EPIPE` is the syscall errno. `SIGPIPE` is the signal beside it. Day 7
 puts both in one report.
 
-## 10. Backpressure is a sleep on `wr_wait`
+## 11. Backpressure is a sleep on `wr_wait`
 
 The bound is enforced in the same loop. When `pipe_full` is true and
 the file is blocking, the writer wakes any reader that might be waiting
 on an empty pipe, then sleeps:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/pipe.c
- * lines: 546–571
+ * lines: 556–567
  * function: pipe_write
  */
 		/* Wait for buffer space to become available. */
-		if (filp->f_flags & O_NONBLOCK) {
+		if ((filp->f_flags & O_NONBLOCK) ||
+		    (iocb->ki_flags & IOCB_NOWAIT)) {
 			if (!ret)
 				ret = -EAGAIN;
 			break;
@@ -540,21 +580,6 @@ on an empty pipe, then sleeps:
 				ret = -ERESTARTSYS;
 			break;
 		}
-
-		/*
-		 * We're going to release the pipe lock and wait for more
-		 * space. We wake up any readers if necessary, and then
-		 * after waiting we need to re-check whether the pipe
-		 * become empty while we dropped the lock.
-		 */
-		__pipe_unlock(pipe);
-		if (was_empty)
-			wake_up_interruptible_sync_poll(&pipe->rd_wait, EPOLLIN | EPOLLRDNORM);
-		kill_fasync(&pipe->fasync_readers, SIGIO, POLL_IN);
-		wait_event_interruptible_exclusive(pipe->wr_wait, pipe_writable(pipe));
-		__pipe_lock(pipe);
-		was_empty = pipe_empty(pipe->head, pipe->tail);
-		wake_next_writer = true;
 ```
 
 `pipe_writable` is the mirror of `pipe_readable`: the ring is not full,
@@ -573,12 +598,12 @@ behind. The `PIPE_MIN_DEF_BUFFERS` comment at the top of `fs/pipe.c`
 names the other failure: a one-slot pipe blocks a writer that still
 owes the pipe a token, which is how GNU make's jobserver uses one.
 
-## 11. `PIPE_BUF` is an atomicity bound
+## 12. `PIPE_BUF` is an atomicity bound
 
 The uapi header names the constant applications are told to rely on.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: include/uapi/linux/limits.h
  * lines: 5–17
  * function: (macros)
@@ -600,8 +625,8 @@ The uapi header names the constant applications are told to rely on.
 
 The comment says atomic write. It does not say message. `fs/pipe.c`
 never compares a transfer against the identifier `PIPE_BUF`. The write
-path holds `__pipe_lock` across the copy and drops it only to sleep in
-section 10. Two writers cannot interleave while one holds the mutex. A
+path holds `pipe->mutex` across the copy and drops it only to sleep in
+section 11. Two writers cannot interleave while one holds the mutex. A
 write that does not fit publishes what it copied, releases the mutex,
 and continues after the wake, so the other writer can append between
 the two halves.
@@ -622,7 +647,7 @@ in half, keep each record at most that size, and still find the record
 boundary in the bytes. Do not read the constant as "every `write`
 becomes one `read`."
 
-## 12. ToyOS has the queue and not the protocol
+## 13. ToyOS has the queue and not the protocol
 
 [Week 8](../../08-user-mode-syscalls-and-ipc/sections/day-006-process-fd-ipc.md)
 implements `pipe_data[64]`. A write succeeds only when the whole
@@ -647,7 +672,7 @@ one global pipe, fds 3 and 4       two struct file objects, any free indexes
 no second process                  fork copies the files, dup2 aims them
 ```
 
-## 13. A pipeline small enough to trace by hand
+## 14. A pipeline small enough to trace by hand
 
 The following is the protocol from sections 4, 6, and 7 in one process
 tree. It is ordinary POSIX C. It does not open the kernel objects
@@ -695,7 +720,7 @@ read end in the child before the parent writes, and the parent dies on
 the default `SIGPIPE`. Ignore the signal and the same `write` returns
 `-1` with `errno == EPIPE`.
 
-## 14. Mastery: Explain · Draw · Observe · Build
+## 15. Mastery: Explain · Draw · Observe · Build
 
 The exercise is
 [../challenges/day-004-pipes.sh](../challenges/day-004-pipes.sh).

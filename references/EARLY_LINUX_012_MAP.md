@@ -1,16 +1,18 @@
-# Linux 0.12 → Linux 5.10 Reading Map
+# Linux 0.12 → Linux 6.12 Reading Map
 
 Use this reference with Weeks 10–12.
 
 Linux 0.12 is the first implementation map: its small source tree makes the
 whole path visible. First learn the C or assembly syntax used by that path;
 otherwise compact old code can hide the mechanism behind unfamiliar
-notation. The local 5.10.134-based tree at `c9b2385d6793` remains the
-engineering reference for modern Linux. Read in this order:
+notation. The pinned upstream Linux 6.12 tree at tag `v6.12`, commit
+`adc218676eef25575469234709c2d87185ca223a`, is the engineering reference
+for modern Linux. Read in this order:
 
 ```text
 question → required C/assembly syntax → Linux 0.12 whole mechanism
-         → ToyOS reconstruction → Linux 5.10 implementation
+         → why the design evolved → ToyOS reconstruction
+         → Linux 6.12 implementation
          → current upstream verification
 ```
 
@@ -62,9 +64,9 @@ int copy_mem(int nr, struct task_struct *p)
 This exposes the durable idea: the child receives a new execution identity
 and page-table view while physical pages initially remain shared through
 copy-on-write. The segmentation layout, fixed `TASK_SIZE` slot, 80386 task
-machinery, and function names are historical. Week 10 Day 2 then follows the
-modern split through `kernel_clone`, `copy_process`, `copy_mm`, and the
-write-protect fault path in the 5.10 tree.
+machinery, and function names are historical. Week 10 Day 2 then explains
+why that design evolved and follows the modern split through `kernel_clone`,
+`copy_process`, `copy_mm`, and the write-protect fault path in Linux 6.12.
 
 ### Exit and zombie state
 
@@ -116,7 +118,7 @@ or SMP memory-ordering problem. Therefore:
 
 - use 0.12 to see the whole sleep/wakeup and task-switch shape;
 - use ToyOS to reconstruct the minimal mechanism;
-- use Week 11 and the 5.10 tree for threads, futexes, lock ownership,
+- use Week 11 and the Linux 6.12 tree for threads, futexes, lock ownership,
   condition variables, atomics, barriers, false sharing, and tooling.
 
 For Week 11, replacing the modern source with 0.12 would remove the mechanism
@@ -193,9 +195,10 @@ return -EINVAL;
 ```
 
 This is a clear first picture of “one syscall, object-specific behavior.”
-Linux 0.12 predates the modern VFS model. Week 12 follows the same purpose
-through `vfs_read`, `file_operations`, user-access helpers, and filesystem or
-device implementations in the 5.10 tree.
+Linux 0.12 predates the modern VFS model. Week 12 explains the intervening
+scalability and abstraction pressures, then follows the same purpose through
+`vfs_read`, `file_operations`, user-access helpers, and filesystem or device
+implementations in Linux 6.12.
 
 ### Pipe sleep, wakeup, EOF, and backpressure
 
@@ -233,7 +236,7 @@ Linux 0.12 has `select`, a buffer cache, Minix filesystem code, and 80386
 paging. It does not provide the modern VFS/page-cache model, `poll`, `epoll`,
 edge-triggered readiness, current `mmap` behavior, SMP locking, or present-day
 durability stack. Use it for the initial control-flow picture only. Weeks 12
-Days 3, 5, and 6 must remain grounded in the 5.10 source and current API
+Days 3, 5, and 6 must remain grounded in Linux 6.12 and current API
 contracts.
 
 ## Source-discipline rule
@@ -242,7 +245,7 @@ For every early excerpt, state three things:
 
 1. the stable mechanism it makes visible;
 2. the historical implementation detail that must not be generalized;
-3. the 5.10/current source path that verifies the modern implementation.
+3. the Linux 6.12/current source path that verifies the modern implementation.
 
 This preserves the clarity of Linux 0.12 without converting historical code
 into modern kernel guidance.

@@ -11,21 +11,26 @@
 
 The lab is [projects/linux-io](../projects/linux-io/). Wrappers build through
 its Makefile and print only the claim the run supports. Kernel names below
-were read from tree `c9b2385d6793`, whose top-level `Makefile` sets
-`VERSION = 5`, `PATCHLEVEL = 10`, `SUBLEVEL = 134`. Those names are that
+were read from Linux 6.12, commit
+`adc218676eef25575469234709c2d87185ca223a`, whose top-level `Makefile` sets
+`VERSION = 6`, `PATCHLEVEL = 12`, `SUBLEVEL = 0`. Those names are that
 snapshot. The host that runs the lab may be another kernel; the wrappers
 print `uname`. Re-open the pinned tree, or the sources for the kernel you
 boot, before treating a symbol, field, or errno path as current.
 
-## Required order: syntax, Linux 0.12, ToyOS, then 5.10
+## Required order: syntax, Linux 0.12, evolution, ToyOS, then 6.12
 
 Each day opens in this order, and the order is required:
 
 1. the few C forms that day's source actually uses;
 2. the Linux 0.12 path, read end to end while the whole mechanism still
    fits in one function;
-3. the ToyOS reconstruction of that mechanism from Weeks 7–9;
-4. the Linux 5.10.134 tree `c9b2385d6793`, then a check against current
+3. why that early design changed, in the constraint the fixed tables, type
+   switches, block buffer cache, one-page pipe, `select` scan, executable-only
+   fault, or printk-and-Bochs picture could not keep;
+4. the ToyOS reconstruction of that mechanism from Weeks 7–9;
+5. the Linux 6.12 tree
+   `adc218676eef25575469234709c2d87185ca223a`, then a check against current
    upstream before a symbol is treated as current.
 
 Linux 0.12 is the first conceptual implementation. Its fixed tables, Minix
@@ -33,10 +38,10 @@ inodes, buffer cache, `select`, and 80386 demand paging make the control
 flow visible. They are not the authority for the modern API: VFS
 operations, the unified page cache, `poll`/`epoll`, `mmap`, SMP lifetime
 rules, or today's errno and durability contracts. Those belong to the
-5.10/current source.
+6.12/current source.
 
 The shared
-[Linux 0.12 → Linux 5.10 map](../references/EARLY_LINUX_012_MAP.md)
+[Linux 0.12 map](../references/EARLY_LINUX_012_MAP.md)
 extracts the early `open`, `read`, pipe, and `select` paths with printed
 book pages. Use it beside the day sections. Return here for how the seven
 days fit together.
@@ -196,7 +201,8 @@ the logs, and leave a question blank when the run did not speak to it:
    timing comparison are you refusing to generalize?
 7. Which errno came from a closed descriptor, a pipe with no reader, and an
    `epoll_ctl` on a regular file?
-8. Which kernel names did you re-read in tree `c9b2385d6793`, and which host
+8. Which kernel names did you re-read in commit
+   `adc218676eef25575469234709c2d87185ca223a`, and which host
    `uname` actually ran the lab?
 
 Do not auto-fill mastery, confidence, hours, or completion. The

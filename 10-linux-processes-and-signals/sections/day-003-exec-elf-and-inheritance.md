@@ -75,25 +75,45 @@ Trace: load the header, keep this `task_struct`, replace the saved
 `eip` and stack pointer. The syscall return then begins at `a_entry`.
 
 What carries forward is image replacement on the calling task, with the
-pid left in place. What changes in 5.10 is the format and the safety
-around it: ELF, `linux_binprm`, `PT_INTERP`, the auxiliary vector,
-credentials, and close-on-exec in `fs/exec.c` and `fs/binfmt_elf.c`.
-Develop against those. `a.out`, `ZMAGIC`, and a direct store into the
+pid left in place. `a.out`, `ZMAGIC`, and a direct store into the
 80386 frame are the 0.12 loader.
 
 ToyOS `process_init` maps one ELF and `process_start` enters it with
 `iretq` ([`process.c`](../../projects/toyos/src/process.c)). 0.12 runs
 that replacement against a task that already exists.
 
-Now move to the 5.10 implementation.
+## 3. Evolution: why the early design changed
 
-The excerpts are from the local tree
-`5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`). It is a
-5.10-based tree. Names and line placement on current mainline differ.
+Linux 0.12 understands one executable format. `do_execve` reads an
+`a.out` header and rewrites the user frame in place. A second format, a
+dynamic linker, or a different ISA means that function would have to
+grow a special case for each one.
+
+The kernel split format from identity. `linux_binprm` carries the file
+and the new stack image. A `binfmt` handler, for ELF the function
+`load_elf_binary`, maps `PT_LOAD` and, when `PT_INTERP` is present,
+maps the interpreter and records both entries in the auxiliary vector.
+The task, the pid, and the file table stay. The address space is
+replaced.
+
+Two further pressures sit on that path. Address-space layout
+randomization moves the load bias so the same ELF does not land at a
+fixed virtual address. Security hooks and credential setup run before
+the new image is committed, so a setuid-style change is a new `cred`
+object rather than a field written after the jump.
+
+What survived is replacement of the calling task: one identity, a new
+image, and a stack that carries `argc`, `argv`, and `envp`. The
+6.12/current path below is that replacement for ELF.
+
+The excerpts below are from Linux 6.12, tag `v6.12`, commit
+`adc218676eef`. Names and line placement on a later mainline release
+can move. Develop against `fs/exec.c` and `fs/binfmt_elf.c` in this
+6.12/current tree.
 
 ---
 
-## 3. Replacement is a property of the calling task
+## 4. Replacement is a property of the calling task
 
 `fork` answers "who is the new task?" `execve` answers "what user image
 does this task run next?" Shells need both because a shell must remain the
@@ -116,10 +136,10 @@ ends the task with a fatal signal.
 
 ---
 
-## 4. The system call builds a `linux_binprm` and hands it to the format
+## 5. The system call builds a `linux_binprm` and hands it to the format
 
-In `fs/exec.c`, `SYSCALL_DEFINE3(execve)`, same tree, and the `execveat`
-sibling that shares `do_execveat`:
+In `fs/exec.c`, `SYSCALL_DEFINE3(execve)`, same tree, lines 2097–2114, and
+the `execveat` sibling that shares `do_execveat`:
 
 ```c
 SYSCALL_DEFINE3(execve,
@@ -136,10 +156,8 @@ SYSCALL_DEFINE5(execveat,
 		const char __user *const __user *, envp,
 		int, flags)
 {
-	int lookup_flags = (flags & AT_EMPTY_PATH) ? LOOKUP_EMPTY : 0;
-
 	return do_execveat(fd,
-			   getname_flags(filename, lookup_flags, NULL),
+			   getname_uflags(filename, flags),
 			   argv, envp, flags);
 }
 ```
@@ -154,41 +172,63 @@ Week 8's rule on a larger buffer: `copy_from_user` translates the user
 virtual address through the caller's page tables and writes the bytes into
 pages that will become the new user stack.
 
-`bprm_execve` is the body that opens the file and runs the handler. In
-`fs/exec.c`, `bprm_execve`, same tree:
+`alloc_bprm` opens the executable before `bprm_execve` runs the handler.
+In `fs/exec.c`, lines 1503–1519:
 
 ```c
-static int bprm_execve(struct linux_binprm *bprm,
-		       int fd, struct filename *filename, int flags)
+static struct linux_binprm *alloc_bprm(int fd, struct filename *filename, int flags)
 {
+	struct linux_binprm *bprm;
 	struct file *file;
-	int retval;
+	int retval = -ENOMEM;
 
-	/*
-	 * Cancel any io_uring activity across execve
-	 */
-	io_uring_task_cancel();
+	file = do_open_execat(fd, filename, flags);
+	if (IS_ERR(file))
+		return ERR_CAST(file);
+
+	bprm = kzalloc(sizeof(*bprm), GFP_KERNEL);
+	if (!bprm) {
+		do_close_execat(file);
+		return ERR_PTR(-ENOMEM);
+	}
+
+	bprm->file = file;
+```
+
+`bprm_execve` then prepares credentials and searches for a format. Same
+file, lines 1821–1845:
+
+```c
+static int bprm_execve(struct linux_binprm *bprm)
+{
+	int retval;
 
 	retval = prepare_bprm_creds(bprm);
 	if (retval)
 		return retval;
 
+	/*
+	 * Check for unsafe execution states before exec_binprm(), which
+	 * will call back into begin_new_exec(), into bprm_creds_from_file(),
+	 * where setuid-ness is evaluated.
+	 */
 	check_unsafe_exec(bprm);
 	current->in_execve = 1;
-
-	file = do_open_execat(fd, filename, flags);
-	retval = PTR_ERR(file);
-	if (IS_ERR(file))
-		goto out_unmark;
+	sched_mm_cid_before_execve(current);
 
 	sched_exec();
 
-	bprm->file = file;
+	/* Set the unchanging part of bprm->cred */
+	retval = security_bprm_creds_for_exec(bprm);
+	if (retval)
+		goto out;
+
+	retval = exec_binprm(bprm);
 ```
 
 `prepare_bprm_creds` builds the credential object the new image will
-commit. `do_open_execat` opens the executable and stores the `struct file`
-on `bprm`. `exec_binprm`, which this function calls next, records
+commit. `do_open_execat` has already stored the `struct file` on `bprm`.
+`exec_binprm`, which this function calls next, records
 `old_pid = current->pid` before it searches for a binary handler, then
 calls `search_binary_handler`. The comment there says the pid is fetched
 before `load_binary` changes it. For a single-threaded caller,
@@ -206,10 +246,11 @@ the old image receives a return value only on the failure path.
 
 ---
 
-## 5. `begin_new_exec` is the point of no return
+## 6. `begin_new_exec` is the point of no return
 
 The ELF handler, once it has parsed headers and built a new `mm`, calls
-`begin_new_exec`. In `fs/exec.c`, `begin_new_exec`, same tree:
+`begin_new_exec`. In `fs/exec.c`, `begin_new_exec`, same tree, lines
+1222–1269:
 
 ```c
 int begin_new_exec(struct linux_binprm * bprm)
@@ -223,6 +264,14 @@ int begin_new_exec(struct linux_binprm * bprm)
 		return retval;
 
 	/*
+	 * This tracepoint marks the point before flushing the old exec where
+	 * the current task is still unchanged, but errors are fatal (point of
+	 * no return). The later "sched_process_exec" tracepoint is called after
+	 * the current task has successfully switched to the new exec.
+	 */
+	trace_sched_prepare_exec(current, bprm);
+
+	/*
 	 * Ensure all future errors are fatal.
 	 */
 	bprm->point_of_no_return = true;
@@ -234,6 +283,11 @@ int begin_new_exec(struct linux_binprm * bprm)
 	if (retval)
 		goto out;
 
+	/*
+	 * Cancel any io_uring activity across execve
+	 */
+	io_uring_task_cancel();
+
 	/* Ensure the files table is not shared. */
 	retval = unshare_files();
 	if (retval)
@@ -241,15 +295,17 @@ int begin_new_exec(struct linux_binprm * bprm)
 
 	/*
 	 * Must be called _before_ exec_mmap() as bprm->mm is
-	 * not visibile until then. This also enables the update
-	 * to be lockless.
+	 * not visible until then. Doing it here also ensures
+	 * we don't race against replace_mm_exe_file().
 	 */
-	set_mm_exe_file(bprm->mm, bprm->file);
+	retval = set_mm_exe_file(bprm->mm, bprm->file);
+	if (retval)
+		goto out;
 ```
 
 `point_of_no_return` is why a later mapping error kills the task.
 `de_thread` makes this task the sole member of the thread group, as
-section 4 described. `unshare_files` gives the task a private
+section 5 described. `unshare_files` gives the task a private
 `files_struct` if it had been sharing one under `CLONE_FILES`, so the
 closes that follow affect this task's table. `set_mm_exe_file` installs
 the executable `struct file` on the new `mm`. That is the object
@@ -257,7 +313,7 @@ the executable `struct file` on the new `mm`. That is the object
 back.
 
 `exec_mmap` then publishes the new address space. In `fs/exec.c`,
-`exec_mmap`, same tree:
+`exec_mmap`, same tree, lines 986–1003:
 
 ```c
 	task_lock(tsk);
@@ -267,6 +323,7 @@ back.
 	active_mm = tsk->active_mm;
 	tsk->active_mm = mm;
 	tsk->mm = mm;
+	mm_init_cid(mm);
 	/*
 	 * This prevents preemption while active_mm is being loaded and
 	 * it and mm are being updated, which could cause problems for
@@ -287,9 +344,9 @@ user translations change underneath the still-running kernel path. Week 5's
 walk, from the next user instruction on, starts at the new root. ToyOS
 `address_space_activate` is the one-process form of `activate_mm`.
 
-Still in `begin_new_exec`, after the old mappings are released, the
-function makes the signal table private, drops thread state, and applies
-close-on-exec:
+Still in `begin_new_exec`, after the old mappings are released, lines
+1298–1318, the function makes the signal table private, drops thread
+state, and applies close-on-exec:
 
 ```c
 	/*
@@ -299,16 +356,12 @@ close-on-exec:
 	if (retval)
 		goto out_unlock;
 
-	/*
-	 * Ensure that the uaccess routines can actually operate on userspace
-	 * pointers:
-	 */
-	force_uaccess_begin();
-
-	me->flags &= ~(PF_RANDOMIZE | PF_FORKNOEXEC | PF_KTHREAD |
+	me->flags &= ~(PF_RANDOMIZE | PF_FORKNOEXEC |
 					PF_NOFREEZE | PF_NO_SETAFFINITY);
 	flush_thread();
 	me->personality &= ~bprm->per_clear;
+
+	clear_syscall_work_syscall_user_dispatch(me);
 
 	/*
 	 * We have to apply CLOEXEC before we change whether the process is
@@ -325,7 +378,7 @@ now exec'd. `do_close_on_exec` runs before the image is entered, so the new
 program's descriptor table already lacks the close-on-exec indices.
 
 The disposition update and the credential commit are the next committed
-steps. Same function:
+steps. Same function, lines 1350–1366:
 
 ```c
 	__set_task_comm(me, kbasename(bprm->filename), true);
@@ -334,6 +387,10 @@ steps. Same function:
 	   group */
 	WRITE_ONCE(me->self_exec_id, me->self_exec_id + 1);
 	flush_signal_handlers(me, 0);
+
+	retval = set_cred_ucounts(bprm->cred);
+	if (retval < 0)
+		goto out_unlock;
 
 	/*
 	 * install the new credentials for this executable
@@ -345,15 +402,15 @@ steps. Same function:
 
 `__set_task_comm` stores the new short name on the task. Day 1's `comm`
 field is that array. `flush_signal_handlers(me, 0)` rewrites dispositions.
-`commit_creds` installs the prepared `struct cred` into the task's
+`set_cred_ucounts` runs, then `commit_creds` installs the prepared `struct cred` into the task's
 credential pointers. The task object is the same pointer `current` was at
 the start of the syscall.
 
 ---
 
-## 6. Caught handlers become `SIG_DFL`; `SIG_IGN` stays
+## 7. Caught handlers become `SIG_DFL`; `SIG_IGN` stays
 
-In `kernel/signal.c`, `flush_signal_handlers`, same tree:
+In `kernel/signal.c`, `flush_signal_handlers`, same tree, lines 532–547:
 
 ```c
 void
@@ -392,13 +449,13 @@ image's job, after it begins running.
 
 ---
 
-## 7. `FD_CLOEXEC` closes one descriptor index
+## 8. `FD_CLOEXEC` closes one descriptor index
 
 Day 2's `dup_fd` copied the `close_on_exec` bitmap into the child's private
 `files_struct`. The bit lives beside the descriptor index. `struct file`
 holds `f_pos` and `f_count`. The close-on-exec bit lives in the fdtable.
 
-In `fs/file.c`, `do_close_on_exec`, same tree:
+In `fs/file.c`, `do_close_on_exec`, same tree, lines 796–826:
 
 ```c
 void do_close_on_exec(struct files_struct *files)
@@ -452,12 +509,12 @@ because `dup_fd` copied them and this loop left them in place.
 
 ---
 
-## 8. The ELF handler maps `PT_LOAD` and chooses an entry
+## 9. The ELF handler maps `PT_LOAD` and chooses an entry
 
 Week 3's program headers are what `load_elf_binary` reads. In
-`fs/binfmt_elf.c`, `load_elf_binary`, same tree, after the locals that name
-`elf_entry`, `e_entry`, and the program-header cursor, the handler checks
-the image and scans for `PT_INTERP`:
+`fs/binfmt_elf.c`, `load_elf_binary`, same tree, lines 841–869, after the
+locals that name `elf_entry`, `e_entry`, and the program-header cursor, the
+handler checks the image and scans for `PT_INTERP`:
 
 ```c
 	retval = -ENOEXEC;
@@ -504,7 +561,7 @@ exceeds `p_filesz`, `set_brk` and `padzero` cover the zero-filled tail.
 That is Week 3's `.bss` rule, performed with anonymous pages.
 
 After the executable's segments are mapped, the handler selects the user
-entry. Same function:
+entry. Same function, lines 1234–1264:
 
 ```c
 	if (interpreter) {
@@ -512,7 +569,7 @@ entry. Same function:
 					    interpreter,
 					    load_bias, interp_elf_phdata,
 					    &arch_state);
-		if (!IS_ERR((void *)elf_entry)) {
+		if (!IS_ERR_VALUE(elf_entry)) {
 			/*
 			 * load_elf_interp() returns relocation
 			 * adjustment
@@ -521,13 +578,12 @@ entry. Same function:
 			elf_entry += interp_elf_ex->e_entry;
 		}
 		if (BAD_ADDR(elf_entry)) {
-			retval = IS_ERR((void *)elf_entry) ?
+			retval = IS_ERR_VALUE(elf_entry) ?
 					(int)elf_entry : -EINVAL;
 			goto out_free_dentry;
 		}
 		reloc_func_desc = interp_load_addr;
 
-		exe_file_allow_write_access(interpreter);
 		fput(interpreter);
 
 		kfree(interp_elf_ex);
@@ -554,13 +610,13 @@ which is the ToyOS path: map `PT_LOAD`, jump to the header entry.
 
 ---
 
-## 9. The initial stack carries `argc`, `argv`, `envp`, and auxv
+## 10. The initial stack carries `argc`, `argv`, `envp`, and auxv
 
 `copy_strings` has already placed the argument and environment bytes at the
 high end of the new stack, walking downward. `create_elf_tables` builds the
 pointer vector the ABI requires below them. In `fs/binfmt_elf.c`,
-`create_elf_tables`, same tree, the auxiliary vector is assembled in
-`mm->saved_auxv` and then copied to user memory:
+`create_elf_tables`, same tree, lines 241–261, the auxiliary vector is
+assembled in `mm->saved_auxv` and then copied to user memory:
 
 ```c
 	NEW_AUX_ENT(AT_HWCAP, ELF_HWCAP);
@@ -570,7 +626,9 @@ pointer vector the ABI requires below them. In `fs/binfmt_elf.c`,
 	NEW_AUX_ENT(AT_PHENT, sizeof(struct elf_phdr));
 	NEW_AUX_ENT(AT_PHNUM, exec->e_phnum);
 	NEW_AUX_ENT(AT_BASE, interp_load_addr);
-	NEW_AUX_ENT(AT_FLAGS, 0);
+	if (bprm->interp_flags & BINPRM_FLAGS_PRESERVE_ARGV0)
+		flags |= AT_FLAGS_PRESERVE_ARGV0;
+	NEW_AUX_ENT(AT_FLAGS, flags);
 	NEW_AUX_ENT(AT_ENTRY, e_entry);
 	NEW_AUX_ENT(AT_UID, from_kuid_munged(cred->user_ns, cred->uid));
 	NEW_AUX_ENT(AT_EUID, from_kuid_munged(cred->user_ns, cred->euid));
@@ -622,10 +680,13 @@ names `argc`.
 At the end of `load_elf_binary` the handler takes `current_pt_regs()`, the
 saved user frame on this task's kernel stack, optionally runs
 `ELF_PLAT_INIT` for ABIs that seed extra registers, calls `finalize_exec`,
-and calls `start_thread(regs, elf_entry, bprm->p)`.
+and calls `START_THREAD(elf_ex, regs, elf_entry, bprm->p)`. The macro in
+`include/linux/elf.h` is `start_thread(regs, elf_entry, bprm->p)` unless
+the architecture overrides it.
 
 On x86-64, `start_thread` in `arch/x86/kernel/process_64.c` passes
-`__USER_CS` and `__USER_DS` to `start_thread_common`. Same tree:
+`__USER_CS` and `__USER_DS` to `start_thread_common`. Same tree, lines
+536–586:
 
 ```c
 	if (static_cpu_has(X86_BUG_NULL_SEG)) {
@@ -634,16 +695,43 @@ On x86-64, `start_thread` in `arch/x86/kernel/process_64.c` passes
 		load_gs_index(__USER_DS);
 	}
 
+	reset_thread_features();
+
 	loadsegment(fs, 0);
 	loadsegment(es, _ds);
 	loadsegment(ds, _ds);
 	load_gs_index(0);
 
-	regs->ip		= new_ip;
-	regs->sp		= new_sp;
-	regs->cs		= _cs;
-	regs->ss		= _ss;
-	regs->flags		= X86_EFLAGS_IF;
+	regs->ip	= new_ip;
+	regs->sp	= new_sp;
+	regs->csx	= _cs;
+	regs->ssx	= _ss;
+	/*
+	 * Allow single-step trap and NMI when starting a new task, thus
+	 * once the new task enters user space, single-step trap and NMI
+	 * are both enabled immediately.
+	 *
+	 * Entering a new task is logically speaking a return from a
+	 * system call (exec, fork, clone, etc.). As such, if ptrace
+	 * enables single stepping a single step exception should be
+	 * allowed to trigger immediately upon entering user space.
+	 * This is not optional.
+	 *
+	 * NMI should *never* be disabled in user space. As such, this
+	 * is an optional, opportunistic way to catch errors.
+	 *
+	 * Paranoia: High-order 48 bits above the lowest 16 bit SS are
+	 * discarded by the legacy IRET instruction on all Intel, AMD,
+	 * and Cyrix/Centaur/VIA CPUs, thus can be set unconditionally,
+	 * even when FRED is not enabled. But we choose the safer side
+	 * to use these bits only when FRED is enabled.
+	 */
+	if (cpu_feature_enabled(X86_FEATURE_FRED)) {
+		regs->fred_ss.swevent	= true;
+		regs->fred_ss.nmi	= true;
+	}
+
+	regs->flags	= X86_EFLAGS_IF | X86_EFLAGS_FIXED;
 }
 
 void
@@ -661,7 +749,7 @@ The task that returns is the task that entered `execve`.
 
 ---
 
-## 10. Execution trace: the status lab's child becomes `/bin/sh`
+## 11. Execution trace: the status lab's child becomes `/bin/sh`
 
 `mode_status` in
 [`projects/linux-system-programming/src/process_lab.c`](../../projects/linux-system-programming/src/process_lab.c)
@@ -676,8 +764,8 @@ real child pid.
 
 2. `SYSCALL_DEFINE3(execve)` runs in task C. `copy_strings` pulls
    `"sh"`, `"-c"`, and `"exit 7"` from C's user memory with
-   `copy_from_user`. `bprm_execve` opens `/bin/sh` and sets
-   `current->in_execve`.
+   `copy_from_user`. `alloc_bprm` opens `/bin/sh` through `do_open_execat`.
+   `bprm_execve` sets `current->in_execve`.
 
 3. `load_elf_binary` checks `ELFMAG`, accepts `ET_DYN` or `ET_EXEC`, and
    checks `e_machine`. `/bin/sh` on a typical Linux host is a dynamic ELF,
@@ -716,7 +804,7 @@ replacement happened in the child that reached a successful `execve`.
 
 ---
 
-## 11. Architecture lens — x86-64, AArch64, and RISC-V
+## 12. Architecture lens — x86-64, AArch64, and RISC-V
 
 `execve`, `begin_new_exec`, `load_elf_binary`, and `create_elf_tables` are
 generic C. The ISA changes three things: which `e_machine` `elf_check_arch`
@@ -724,12 +812,14 @@ accepts, which register `start_thread` writes as the resume PC, and which
 page-table root register `activate_mm` loads from `mm->pgd`.
 
 On x86-64 in this tree, `start_thread_common` writes `regs->ip`,
-`regs->sp`, `__USER_CS`, `__USER_DS`, and `X86_EFLAGS_IF`. On AArch64,
-`start_thread` in `arch/arm64/include/asm/processor.h` writes `regs->pc`,
-`regs->sp`, and `regs->pstate = PSR_MODE_EL0t` after clearing the rest of
-`pt_regs`. On RISC-V, `start_thread` in `arch/riscv/kernel/process.c`
-writes `regs->epc`, `regs->sp`, and `regs->status = SR_PIE`, then adds the
-FPU, vector, and XLEN bits this configuration uses. `ELF_PLAT_INIT`,
+`regs->sp`, `regs->csx` (`__USER_CS`), `regs->ssx` (`__USER_DS`), and
+`regs->flags` (`X86_EFLAGS_IF | X86_EFLAGS_FIXED`). On AArch64,
+`start_thread` in `arch/arm64/include/asm/processor.h` keeps `syscallno`,
+clears the rest of `pt_regs`, writes `regs->pc`, then sets
+`regs->pstate = PSR_MODE_EL0t` and `regs->sp`. On RISC-V, `start_thread`
+in `arch/riscv/kernel/process.c` writes `regs->status = SR_PIE`, adds the
+FPU and XLEN bits this configuration uses, then writes `regs->epc` and
+`regs->sp`. Vector state is reset in `flush_thread`. `ELF_PLAT_INIT`,
 invoked just before `start_thread` when the architecture defines it, seeds
 any extra entry registers. The initial stack keeps the SysV shape —
 `argc`, pointer vectors, auxiliary vector — with pointer width following
@@ -743,7 +833,7 @@ its own machine, `PT_INTERP`, and `e_entry`, into the same task.
 
 ---
 
-## 12. Mastery: Explain · Draw · Observe · Build
+## 13. Mastery: Explain · Draw · Observe · Build
 
 The wrapper is evidence after the trace. From the week directory, run
 [`challenges/day-003-exec-elf-inheritance.sh`](../challenges/day-003-exec-elf-inheritance.sh).
@@ -775,7 +865,7 @@ It runs `process_lab status` and prints ELF headers of that lab binary.
 
 1. Task C before and after `exec_mmap`: same `task_struct`, old `mm`
    released, new `mm->pgd` installed.
-2. The initial stack from section 9, with `AT_ENTRY` and `AT_BASE` labeled
+2. The initial stack from section 10, with `AT_ENTRY` and `AT_BASE` labeled
    for a dynamic `/bin/sh`.
 3. The child's fd table across `do_close_on_exec`: one index with the bit
    set, removed; descriptors 0, 1, and 2 still pointing at the same

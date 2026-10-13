@@ -19,8 +19,8 @@ should select only the pages or examples needed for the current tracker topic.
 - [`ARCHITECTURE_COMPARISON.md`](ARCHITECTURE_COMPARISON.md) — reusable
   x86-64, AArch64, and RISC-V comparison map.
 - [`EARLY_LINUX_012_MAP.md`](EARLY_LINUX_012_MAP.md) — reusable Weeks 10–12
-  bridge from the complete, small Linux 0.12 implementation to the local
-  5.10.134-based engineering source.
+  bridge from the complete, small Linux 0.12 implementation, through the
+  reasons it evolved, to pinned upstream Linux 6.12.
 - [`electronics/transistor-family-primer.pdf`](electronics/transistor-family-primer.pdf)
   — optional overview of BJTs, JFETs, MOSFET modes, FinFETs, GAAFETs, and why
   dense CPU logic uses CMOS. The Markdown source is retained beside the PDF.

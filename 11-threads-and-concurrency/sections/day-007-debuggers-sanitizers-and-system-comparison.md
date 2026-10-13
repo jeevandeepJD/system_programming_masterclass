@@ -67,23 +67,41 @@ every `task_struct`, `schedule`, `sleep_on`, and `printk` is in the image
 you can stop, and `printk` is the trace the kernel emits while it runs.
 
 What carries forward is the habit of naming the layer a fact came from.
-ToyOS is the first system this day already compares: two ring-0 tasks,
-cooperative `schedule` and the timer path, `TASK_BLOCKED` meaning finished.
-That reconstruction is section 11 below, in
-[projects/toyos/src/tasks.c](../../projects/toyos/src/tasks.c). The
-teaching-OS `sleep`/`wakeup` is section 12, quoted only after you pin a
-revision.
 
 Linux 0.12 cannot teach Valgrind Memcheck, ASan, UBSan, or ThreadSanitizer,
 and it cannot teach a data race in hosted multithreaded C. Those tools
 instrument a different language implementation than this freestanding
 uniprocessor kernel. The shared
-[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
-(Week 11) keeps 0.12 as the small map. The following sections are the
-modern tools on the lab binary, then ToyOS and Linux 5.10 side by side.
-The 5.10 excerpts already in this week stay at tree `c9b2385d6793`.
+[Linux 0.12 reading map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) keeps 0.12 as the small map.
 
-## 3. Why the layers have to stay apart
+## 3. Evolution: why the early design changed
+
+`printk` and a Bochs gdbstub show one image: stop the machine, or read what
+the kernel printed. A hosted multithreaded C program is several layers, and
+one stop answers one kind of question. GDB reads architectural state at a
+stop. Memcheck follows heap definedness. ASan and UBSan are
+compiler-inserted checks. ThreadSanitizer reports conflicting accesses that
+lack happens-before.
+
+The kernel grew evidence layers beside those user tools. lockdep
+(`kernel/locking/lockdep.c`, `lock_acquire` at line 5790) checks lock order
+when `CONFIG_PROVE_LOCKING` is on. KCSAN (`include/linux/kcsan.h`) watches
+concurrent accesses; `data_race` is how kernel C marks an access as
+intentional. Tracepoints such as `trace_sched_process_fork` in
+`kernel_clone` (`kernel/fork.c` line 2796, commit
+`adc218676eef25575469234709c2d87185ca223a`) record an event. They are not
+the C memory model. A finished report names which layer produced each
+sentence.
+
+ToyOS is the first system this day compares: two ring-0 tasks, cooperative
+`schedule` and the timer path, `TASK_BLOCKED` meaning finished. That
+reconstruction is section 12, in
+[projects/toyos/src/tasks.c](../../projects/toyos/src/tasks.c). The
+teaching-OS `sleep`/`wakeup` is section 13, quoted only after you pin a
+revision.
+
+## 4. Why the layers have to stay apart
 
 A concurrent C program is several machines at once.
 
@@ -127,7 +145,7 @@ undefined behavior. The wrapper runs it as a bounded specimen. A printed
 count, including a count that equals 800000, is part of the specimen. It is
 not a test that the source is defined.
 
-## 4. Identity before interpretation
+## 5. Identity before interpretation
 
 The report starts with a UTC timestamp, `uname -a`, the first line of
 `cc --version`, and SHA-256 hashes of `thread_lab`, `queue_lab`,
@@ -145,13 +163,13 @@ wrapper uses `-O1`, the ordinary lab build uses the Makefile's flags, and
 Day 5's assembly sample uses `-O2`. Three translations, three identities.
 
 The kernel that executes the lab is whatever `uname` prints. The kernel
-*text* quoted on Days 4, 5, and 6 was read from tree `c9b2385d6793`, whose
-top-level `Makefile` says version 5.10.134. Those are allowed to differ. A
-futex path you traced with `strace` on the host is the running kernel's
-path. A comment quoted from `kernel/futex.c` is the tree's comment. Version
-discipline is writing both names down.
+text quoted in the day sections was read from commit `adc218676eef25575469234709c2d87185ca223a`, whose
+top-level `Makefile` says `VERSION` 6, `PATCHLEVEL` 12, `SUBLEVEL` 0. Those
+are allowed to differ. A futex path you traced with `strace` on the host is
+the running kernel's path. A comment quoted from `kernel/futex/waitwake.c`
+is that commit's comment. Version discipline is writing both names down.
 
-## 5. Execution trace: one report, top to bottom
+## 6. Execution trace: one report, top to bottom
 
 What follows is the trace of the wrapper, in the order the sections appear.
 It records evidence. The interleaving of the four worker threads is a
@@ -191,7 +209,7 @@ checks that a caveat was printed, which is a check that the program admitted
 its limit. They are not checks that the padded counter was faster or that
 `both_zero` had a required value.
 
-## 6. GDB reads architectural state at a stop
+## 7. GDB reads architectural state at a stop
 
 The wrapper runs, when `gdb` is on `PATH`:
 
@@ -232,7 +250,7 @@ property of the environment. The skip records that no stop-state evidence
 was collected. The create/join result from the uninstrumented binary is a
 different section and still stands.
 
-## 7. Valgrind Memcheck follows heap ownership
+## 8. Valgrind Memcheck follows heap ownership
 
 When `valgrind` is installed, the wrapper runs Memcheck on `queue_lab` with
 `--leak-check=full`, `--errors-for-leak-kinds=all`, and an error exit code
@@ -262,7 +280,7 @@ the log against the source before changing anything: a leak in the result
 path would be a lifetime bug, and a complaint inside the C library's thread
 startup would be a tool-and-runtime interaction to record as such.
 
-## 8. ASan and UBSan instrument the translation
+## 9. ASan and UBSan instrument the translation
 
 The wrapper compiles `thread_lab.c` with `-fsanitize=address,undefined`,
 `-fno-omit-frame-pointer`, and `-O1`, then runs the `ownership` mode with
@@ -293,7 +311,7 @@ log retained. Both are report material. A skip means the layer was not
 observed. The uninstrumented ownership check inside `WEEK11 PASS` is the
 other layer, the plain binary's assertions, and it remains.
 
-## 9. ThreadSanitizer instruments conflicting accesses
+## 10. ThreadSanitizer instruments conflicting accesses
 
 The TSan section compiles `thread_lab.c` with `-fsanitize=thread -O1` and,
 if the binary links, runs `thread_lab race` with `TSAN_OPTIONS=exitcode=66`.
@@ -333,7 +351,7 @@ and it does not satisfy the deterministic suite. The suite already passed
 or failed on its own, with TSan out of that recipe. Absence of a report is
 not proof that the accesses were ordered.
 
-## 10. One stopped consumer, and the sentence it supports
+## 11. One stopped consumer, and the sentence it supports
 
 Picture a GDB stop of `queue_lab` while a consumer sits in `get`. The
 wrapper does not perform this stop — its breakpoint is `mode_basic` — but
@@ -388,7 +406,7 @@ second is an instrumented run whose purpose is to name the conflicting
 accesses. Keep both, and do not let either one's exit code rewrite the
 other.
 
-## 11. ToyOS: two kernel tasks, cooperative and preemptive
+## 12. ToyOS: two kernel tasks, cooperative and preemptive
 
 The course kernel at
 [projects/toyos/src/tasks.c](../../projects/toyos/src/tasks.c)
@@ -423,7 +441,7 @@ and a small syscall surface. They do not import glibc's pthread condvar or
 the C11 order parameters into this scheduler. When you compare, compare
 mechanisms that are actually in the milestone you built.
 
-## 12. A teaching kernel's sleep, and Linux beside it
+## 13. A teaching kernel's sleep, and Linux beside it
 
 The second system is the small teaching OS the wrapper names: pin a
 revision, then read its `proc` structure, its spinlock, and its
@@ -473,7 +491,7 @@ context switch has to save them, which ToyOS does in miniature in
 entry.
 
 When the lab blocks, it blocks in the kernel on a futex. Day 4 quoted
-`futex_wait_setup` and `futex_wait` from tree `c9b2385d6793`: the hash-bucket
+`futex_wait_setup` and `__futex_wait` from commit `adc218676eef25575469234709c2d87185ca223a`: the hash-bucket
 lock is held across the test of the userspace word, a spurious wakeup retries,
 and the task state store that decides to sleep carries a barrier documented
 on `set_current_state`. That is Linux's wait path. glibc's `pthread_cond_t`
@@ -506,7 +524,7 @@ inherits that hart's memory model and has to say so. The lab inherits the
 host, and Day 5's point still stands: an x86-64 litmus count is a fact about
 the host.
 
-## 13. Version discipline, written as part of the answer
+## 14. Version discipline, written as part of the answer
 
 Every comparison sentence in the report should carry the versions that make
 it true.
@@ -514,8 +532,8 @@ it true.
 ```text
 lab binaries        the four SHA-256 lines
 host kernel         uname -a from the report
-excerpt tree        c9b2385d6793, Makefile version 5.10.134
-                    paths quoted on Days 4–6 only
+excerpt commit      adc218676eef25575469234709c2d87185ca223a
+                    Makefile VERSION 6, PATCHLEVEL 12, SUBLEVEL 0
 C compiler          cc --version, plus -O1/-O2/sanitizer flags per section
 C library           the glibc (or other libc) that provided pthread and,
                     if TSan ran, the sanitizer runtime
@@ -541,7 +559,7 @@ limits section from the source you read and the logs you have. Leave a blank
 row blank. A stack trace belongs to the binary that produced it, and a line
 number belongs to the revision you opened.
 
-## 14. Mastery: Explain · Draw · Observe · Build
+## 15. Mastery: Explain · Draw · Observe · Build
 
 ### Explain
 
@@ -555,12 +573,12 @@ number belongs to the revision you opened.
 - How ToyOS's `TASK_BLOCKED` differs, in the milestone you can point at,
   from a teaching-OS `sleep` and from a Linux futex wait.
 - Which two kernel identities a careful report names: the running `uname`,
-  and the excerpt tree `c9b2385d6793`.
+  and the excerpt commit `adc218676eef25575469234709c2d87185ca223a`.
 
 ### Draw
 
-Draw the four-layer picture from section 3 and place each tool on the arrow
-it observes. Draw the three-system table from section 12 with one extra
+Draw the four-layer picture from section 4 and place each tool on the arrow
+it observes. Draw the three-system table from section 13 with one extra
 column you fill only from files you opened: a function name for ToyOS
 (`schedule` or `scheduler_tick`), a function name from the pinned teaching
 OS, and `futex_wait` from the excerpt tree.
@@ -579,7 +597,7 @@ and what it leaves unchanged about the source.
 
 Write the debugging report the wrapper's landmarks section asks for, as
 prose around those logs. Include the binary hashes, the layered tool
-results, the three-system comparison at the resolution of section 12, and an
+results, the three-system comparison at the resolution of section 13, and an
 explicit list of what this run does not prove: unexecuted schedules,
 fairness, a kernel you did not boot, and a C behavior inferred from one
 ISA's litmus count. The report is the deliverable. Completing the wrapper

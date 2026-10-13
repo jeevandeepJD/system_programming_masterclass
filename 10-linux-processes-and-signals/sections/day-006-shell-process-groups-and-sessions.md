@@ -78,24 +78,40 @@ result to `SIGHUP` and `SIGCONT` a newly orphaned group that still has
 a stopped job.
 
 What carries forward is the pair of ids, the session leader, and the
-orphaned-group rule. What changes in 5.10 is the table and the tty
-object: `setpgid`, `ksys_setsid`, pid namespaces, and the terminal's
-foreground group. Develop against `kernel/sys.c` in the 5.10 tree. The
-fixed `task[]` scan and `tty = -1` are the 0.12 form.
+orphaned-group rule. The fixed `task[]` scan and `tty = -1` are the
+0.12 form.
 
 ToyOS has one user task and no second id for a job. 0.12 is the first
 place those extra integers show up next to `pid`.
 
-Now move to the 5.10 implementation.
+## 3. Evolution: why the early design changed
 
-Excerpts are from tree `c9b2385d6793`, a 5.10.134-based kernel. Record
-`uname -r` beside that id. `setpgid` and `setsid` are the POSIX calls a
-program may rely on. The C functions in `kernel/sys.c` are one
-implementation, and their line numbers belong to this tree.
+Linux 0.12 already has a process group, a session, `setsid`, and the
+orphaned-group rule. A stopped job whose parents have left the session
+gets `SIGHUP` and then `SIGCONT`. The ids were fields in the fixed
+`task[]` table, and the terminal was a small integer.
+
+The pressure was more than one machine and more than one pid space.
+A process group and a session became `struct pid` objects of type
+`PIDTYPE_PGID` and `PIDTYPE_SID`, looked up inside a pid namespace.
+The terminal layer serializes `setpgid`, `setsid`, and the exit path
+that drops a controlling tty. The orphan check still posts those two
+signals, and it walks pid objects under the tasklist lock.
+
+What survived is the job name. A pipeline is still one group, a login
+is still one session, and an orphaned stopped group is still hung up.
+The 6.12/current path below is `setpgid`, `ksys_setsid`, and
+`kill_orphaned_pgrp`.
+
+The excerpts below come from Linux 6.12, tag `v6.12`, commit
+`adc218676eef`. Record `uname -r` beside that id. `setpgid` and
+`setsid` are the POSIX calls a program may rely on. The C functions in
+`kernel/sys.c` are one implementation, and their line numbers belong
+to this tree. Develop against this 6.12/current path.
 
 ---
 
-## 3. Why a PID is the wrong name for a job
+## 4. Why a PID is the wrong name for a job
 
 A pipeline such as `producer | consumer` is two tasks. Each has a PID,
 an address space, and a file table. The user thinks of them as one job:
@@ -143,7 +159,7 @@ exists for that second meaning.
 
 ---
 
-## 4. `setpgid` moves a task between groups
+## 5. `setpgid` moves a task between groups
 
 A new task inherits its parent's PGID and SID at `fork`. The shell then
 moves the child, or the child moves itself, before `exec`. Both sides
@@ -151,8 +167,8 @@ often call `setpgid`, because the parent and the child run concurrently
 and either may reach the call first. The kernel accepts the call from
 either side under the rules in this function.
 
-`kernel/sys.c`, `SYSCALL_DEFINE2(setpgid)`, tree `c9b2385d6793`, lines
-1026–1053:
+`kernel/sys.c`, `SYSCALL_DEFINE2(setpgid)`, tree `adc218676eef`, lines
+1082–1109:
 
 ```c
 SYSCALL_DEFINE2(setpgid, pid_t, pid, pid_t, pgid)
@@ -191,7 +207,7 @@ helper child does with `setpgid(0, 0)`. The tasklist lock is held so the
 parent pointer cannot change during the permission checks. Only a thread
 group leader carries a PGID; a sibling thread gets `-EINVAL`.
 
-The permission half, lines 1055–1080:
+The permission half, lines 1111–1136:
 
 ```c
 	if (same_thread_group(p->real_parent, group_leader)) {
@@ -230,7 +246,7 @@ it has closed. If the caller is the target itself, the `else` branch
 allows the call. A session leader (`signal->leader`) stays put. Joining
 an existing group requires that group to live in the same session.
 
-The update, after `security_task_setpgid` (lines 1082–1095):
+The update, after `security_task_setpgid` (lines 1138–1151):
 
 ```c
 	err = security_task_setpgid(p, pgid);
@@ -263,14 +279,14 @@ and child and treats "already in the right group" as success.
 
 ---
 
-## 5. `setsid` starts a session and drops the terminal
+## 6. `setsid` starts a session and drops the terminal
 
 A new session is how a daemon, or a shell that wants a new terminal,
 detaches from the session that `fork` inherited. `SYSCALL_DEFINE0(setsid)`
-at line 1211 of `kernel/sys.c` calls `ksys_setsid`. The work is:
+at line 1267 of `kernel/sys.c` calls `ksys_setsid`. The work is:
 
 `kernel/sys.c`, `set_special_pids` and `ksys_setsid`, tree
-`c9b2385d6793`, lines 1167–1199:
+`adc218676eef`, lines 1223–1257:
 
 ```c
 static void set_special_pids(struct pid *pid)
@@ -306,6 +322,8 @@ int ksys_setsid(void)
 	set_special_pids(sid);
 
 	proc_clear_tty(group_leader);
+
+	err = session;
 ```
 
 The new SID is the caller's own PID. `set_special_pids` points both
@@ -313,7 +331,7 @@ The new SID is the caller's own PID. `set_special_pids` points both
 also a process-group leader of a fresh group. `signal->leader` records
 the session-leader bit that `setpgid` later refuses to move.
 `proc_clear_tty` drops the controlling terminal. The same function then
-returns the new session id (line 1201) when the checks passed.
+stores the new session id in `err` (line 1257) when the checks passed.
 
 The failure checks are the reason a shell that wants a new session forks
 twice, or forks once and has the child call `setsid`. The caller must
@@ -337,14 +355,14 @@ released with the rest of the user-facing resources.
 
 ---
 
-## 6. An orphaned process group is a job-control fact
+## 7. An orphaned process group is a job-control fact
 
 Day 4's `exit_notify` calls `kill_orphaned_pgrp` when the whole thread
 group dies, and `reparent_leader` calls it when children move to a new
 parent. The function's comment names the POSIX rule.
 
-`kernel/exit.c`, `kill_orphaned_pgrp`, tree `c9b2385d6793`, lines
-316–345:
+`kernel/exit.c`, `kill_orphaned_pgrp`, tree `adc218676eef`, lines
+369–398:
 
 ```c
 /*
@@ -385,7 +403,7 @@ do that has left the session, the job would wait with no process left
 that is allowed to foreground it. The kernel then posts `SIGHUP` and
 `SIGCONT` to the group. `SIGHUP`'s default action terminates. `SIGCONT`
 wakes the stop so the hangup can be delivered. `has_stopped_jobs` (line
-304) looks for `SIGNAL_STOP_STOPPED`.
+357) looks for `SIGNAL_STOP_STOPPED`.
 
 This is a different word from Day 4's orphan process. An orphan process
 has a new `real_parent` and keeps running. An orphaned process group may
@@ -403,7 +421,7 @@ Day 5 meet in one place.
 
 ---
 
-## 7. A shell is a loop, plus group identity
+## 8. A shell is a loop, plus group identity
 
 For one external command the shell:
 
@@ -461,7 +479,7 @@ word. A pipeline's reported status might be the last command's status,
 or the first nonzero status if the shell's `pipefail` option is on.
 That choice is the shell's. The kernel's contribution is one wait word
 per task, plus the ability to wait for a PGID because `kernel_wait4`
-treats a negative pid as `PIDTYPE_PGID` (Day 4, lines 1618–1620).
+treats a negative pid as `PIDTYPE_PGID` (`kernel_wait4`, lines 1834–1836).
 
 `SIGCHLD` tells the shell a child changed state. The handler belongs to
 Day 5's discipline: a `sig_atomic_t` or one byte on a self-pipe, and the
@@ -480,7 +498,7 @@ the members.
 
 ---
 
-## 8. Execution trace: one foreground command, then the lab's child group
+## 9. Execution trace: one foreground command, then the lab's child group
 
 Imagine the shell is the foreground group and the user runs a single
 external program that exits 7. This trace is the mechanism. The wrapper
@@ -533,7 +551,7 @@ every child the wrapper created is waited for.
 
 ---
 
-## 9. Where the earlier weeks sit
+## 10. Where the earlier weeks sit
 
 **Registers and the ISA.** `setpgid` and `setsid` are ordinary syscalls.
 The call number and the return register depend on the architecture, as
@@ -568,14 +586,14 @@ to it. There is no second task to put in a group, and no terminal
 foreground id. xv6's shell is a small loop of `fork`, `exec`, `pipe`,
 and `wait`. It builds pipelines by arranging file descriptors. It has
 no session, no `setpgid`, and no controlling-terminal foreground. That
-is enough to see why the descriptor half of section 7 exists. Linux adds
+is enough to see why the descriptor half of section 8 exists. Linux adds
 the group and session objects so a terminal can name a job. Read the
 xv6 `sh` you have for the actual loop, and keep today's line numbers
-attached to `c9b2385d6793`.
+attached to `adc218676eef`.
 
 ---
 
-## 10. What the wrapper is allowed to touch
+## 11. What the wrapper is allowed to touch
 
 Run
 [`../challenges/day-006-shell-job-control.sh`](../challenges/day-006-shell-job-control.sh)
@@ -595,7 +613,7 @@ answer as a property of the environment that started the wrapper.
 
 ---
 
-## 11. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 The wrapper is
 [`../challenges/day-006-shell-job-control.sh`](../challenges/day-006-shell-job-control.sh).
@@ -617,7 +635,7 @@ terminal needs a PGID is still yours. These notes leave mastery open.
 
 Draw a session with one foreground group of two pipeline members and one
 background group. Label SID, PGIDs, and the terminal's foreground id.
-Then draw the single-command trace from section 8 up through `exec` and
+Then draw the single-command trace from section 9 up through `exec` and
 `wait`, and mark the step the lab actually performs and the step it
 leaves to an interactive shell.
 
@@ -630,7 +648,7 @@ the decoded status 7, and the helper's PID-equals-PGID result. Record
 ### Build
 
 Write a paragraph that places one pipe, two children, and one PGID into
-the loop from section 7, including which descriptors each process
+the loop from section 8, including which descriptors each process
 closes. Keep it on paper or in the notebook. The wrapper stays the
 bounded run: one status child, one group-leader child, every child
 waited for.

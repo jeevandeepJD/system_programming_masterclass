@@ -37,7 +37,7 @@ make -C "$PROJECT" --no-print-directory build
   printf '%s\n' \
     'ToyOS: pin the Week 8/9 milestone; descriptors and the small pipe are not a VFS or a page cache.' \
     'xv6: pin a revision before quoting file.c or pipe.c.' \
-    'Linux excerpt: tree c9b2385d6793, Makefile version 5.10.134. Re-read that tree or the booted sources before calling a line current.'
+    'Linux excerpt: v6.12 at adc218676eef25575469234709c2d87185ca223a. Re-read that tree or the booted sources before calling a line current.'
   printf '\n== limits ==\n'
   echo 'No root, no network, no crash-durability claim, and no universal mmap ranking.'
 } >"$REPORT" 2>&1

@@ -48,11 +48,9 @@ int sys_sync(void)
 
 Trace. `sync_inodes` writes modified in-memory inodes into buffers, which can set more `b_dirt` bits. `bh` starts at `start_buffer` and steps once per slot. `wait_on_buffer` sleeps while `b_lock` is set. A dirty header becomes a `WRITE` request through `ll_rw_block`. The function then returns 0. `sync_dev` (same file, just below) does two such passes around `sync_inodes` for one device.
 
-What carries forward is the dirty bit and an explicit sync that asks for write-out. The fixed `NR_BUFFERS` array, the per-block `buffer_head`, and `ll_rw_block` belong to this kernel. This is a block buffer cache. Linux 0.12 has no VFS `file_operations` table and no unified page cache hanging off an inode. Linux 5.10 keeps "dirty memory, then a sync that waits" and implements it as the page cache: an `address_space` of pages shared by every open of that inode, with `fsync` waiting for writeback. A successful `write` is still a cache update.
+What carries forward is the dirty bit and an explicit sync that asks for write-out. The fixed `NR_BUFFERS` array, the per-block `buffer_head`, and `ll_rw_block` belong to this kernel. This is a block buffer cache. Linux 0.12 has no VFS `file_operations` table and no unified page cache hanging off an inode. Linux 6.12 keeps "dirty memory, then a sync that waits" and implements it as the page cache: an `address_space` of pages shared by every open of that inode, with `fsync` waiting for writeback. A successful `write` is still a cache update.
 
-ToyOS finishes the byte update inside the call. [`vfs_write`](../../projects/toyos/src/vfs.c) stores into `inode->data` before it returns. There is no dirty buffer and no later sync.
-
-The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) marks this as where the early map stops. The sections below are the VFS and the unified page cache in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete picture of a dirty cache. Develop against the 5.10 tree.
+The shared [Linux 0.12 map](../../references/EARLY_LINUX_012_MAP.md) marks this as where the early map stops. The sections below are the VFS and the unified page cache in Linux 6.12, tree `adc218676eef`. Read 0.12 as the first complete picture of a dirty cache. Develop against the 6.12 tree.
 
 Day 1 separated the descriptor, the `struct file`, and the inode. Day 2
 separated a requested count from the bytes one attempt actually moved. A
@@ -61,13 +59,46 @@ sit in RAM, tagged dirty, while the storage underneath has not taken
 them. `fsync` is the call that waits. A crash, or a writeback error,
 lives in that gap.
 
-The excerpts are from the local tree
-`5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`). This
-revision's `mm/filemap.c` still speaks of `struct page`, `PageDirty`, and
-the page cache. Later mainline trees renamed much of that to folios. The
-names below are this tree's names.
+The excerpts are from Linux 6.12, commit
+`adc218676eef25575469234709c2d87185ca223a`. `generic_perform_write` and
+`filemap_fault` speak of folios. `struct page` remains for helpers such
+as `grab_cache_page_write_begin` and for the `vmf->page` a fault installs.
+The names below are this tree's names.
 
-## 3. Why the cache is not the open file
+## 3. Evolution: why the early design changed
+
+Linux 0.12 caches disk blocks. `NR_BUFFERS` is a fixed array of
+`buffer_head`, `b_dirt` marks a block, and `sys_sync` walks that array into
+`ll_rw_block`. A file byte and a cached block are different objects. Two
+opens do not share a page with a later `mmap`.
+
+The cache that `read` and `write` share is per inode, not a machine-wide
+block table. `struct address_space` (`include/linux/fs.h` lines 465–485)
+hangs off the inode: `i_pages` is an xarray, `a_ops` fills and writes back,
+and `wb_err` records a writeback error. `inode_init_always_gfp`
+(`fs/inode.c` lines 162, 207, and 224) points `i_data.host` at the inode and
+stores `&inode->i_data` in `i_mapping`. `do_dentry_open` copies that pointer
+to `f_mapping` (`fs/open.c` line 916). Every open of the inode shares the
+cache and keeps its own `f_pos`.
+
+A buffered write copies into that cache and marks it dirty.
+`generic_perform_write` (`mm/filemap.c` lines 4015–4100) calls
+`a_ops->write_begin` and `write_end` on folios. `__filemap_fdatawrite_range`
+(lines 421–431) starts writeback. `filemap_fdatawait_range` (line 556)
+waits. `do_fsync` (`fs/sync.c` lines 206–215) is the syscall that asks, and
+`vfs_fsync_range` (lines 180–188) calls `f_op->fsync`. `mapping_set_error`
+(`include/linux/pagemap.h` lines 238–255) stores the error on the mapping so
+a later `fsync` can return it.
+
+Under that page cache, a filesystem that still uses blocks dirties a
+`buffer_head` in `mark_buffer_dirty` (`fs/buffer.c` line 1175), which also
+emits `trace_block_dirty_buffer`. The page cache, writeback, and the block
+layer are stacked. A successful `write` is still a cache update. `fsync`
+waits for writeback. It is not a proof that power loss kept the bytes.
+
+## 4. Why the cache is not the open file
+
+ToyOS finishes the byte update inside the call. [`vfs_write`](../../projects/toyos/src/vfs.c) stores into `inode->data` before it returns. There is no dirty buffer and no later sync.
 
 A path is input to lookup. A dentry remembers a name; `d_inode` is
 "where the name belongs" (`include/linux/dcache.h`). An inode is the
@@ -75,50 +106,40 @@ object: mode, size, and the operations. An open file is one description
 of that object, with its own `f_pos` and `f_count`. None of those is a
 cache of the bytes.
 
-The cache hangs off the inode. `inode_init_always` in `fs/inode.c` sets
-`mapping` to `&inode->i_data` (line 137), points `mapping->host` back at
-the inode (line 182), and stores that pointer in `inode->i_mapping` (line
-195). `do_dentry_open` copies it onto the open file (`fs/open.c` line
-796, `f->f_mapping = inode->i_mapping`). Two opens of one inode share one
+The cache hangs off the inode. `inode_init_always` in `include/linux/fs.h`
+(lines 3086–3088) calls `inode_init_always_gfp`. That function, in
+`fs/inode.c`, sets `mapping` to `&inode->i_data` (line 162), points
+`mapping->host` back at the inode (line 207), and stores that pointer in
+`inode->i_mapping` (line 224). `do_dentry_open` copies it onto the open
+file (`fs/open.c` line 916, `f->f_mapping = inode->i_mapping`). Two opens of one inode share one
 `address_space`. They do not share `f_pos`. Day 1's duplicates share
 `f_pos` and also share this cache, because they share the file and
 therefore the inode pointer inside it.
 
 ```c
-/* include/linux/fs.h :: struct address_space :: tree c9b2385d6793
- * lines 470–501
+/* include/linux/fs.h :: struct address_space :: tree adc218676eef
+ * lines 465–485
  */
 struct address_space {
 	struct inode		*host;
 	struct xarray		i_pages;
+	struct rw_semaphore	invalidate_lock;
 	gfp_t			gfp_mask;
 	atomic_t		i_mmap_writable;
 #ifdef CONFIG_READ_ONLY_THP_FOR_FS
 	/* number of thp, only for non-shmem files */
 	atomic_t		nr_thps;
 #endif
-#ifdef CONFIG_DUPTEXT
-	/* number of dup text, in pages */
-	atomic_t                nr_duptext;
-#endif
 	struct rb_root_cached	i_mmap;
-	struct rw_semaphore	i_mmap_rwsem;
 	unsigned long		nrpages;
-	unsigned long		nrexceptional;
 	pgoff_t			writeback_index;
 	const struct address_space_operations *a_ops;
 	unsigned long		flags;
 	errseq_t		wb_err;
-	spinlock_t		private_lock;
-	struct list_head	private_list;
-	void			*private_data;
-
-	struct fast_reflink_work *fast_reflink_work;
-
-	CK_KABI_RESERVE(1)
-	CK_KABI_RESERVE(2)
-	CK_KABI_RESERVE(3)
-	CK_KABI_RESERVE(4)
+	spinlock_t		i_private_lock;
+	struct list_head	i_private_list;
+	struct rw_semaphore	i_mmap_rwsem;
+	void *			i_private_data;
 } __attribute__((aligned(sizeof(long)))) __randomize_layout;
 ```
 
@@ -155,16 +176,19 @@ struct file
 ```
 
 The page index is a file offset in page units. `generic_perform_write`
-computes the byte offset inside a page as `pos & (PAGE_SIZE - 1)`.
-`grab_cache_page_write_begin` takes that cache position as a `pgoff_t
-index`. The process's page tables are not consulted to find it. They are
-consulted to find the user buffer the bytes are copied from.
+takes the byte offset inside the folio as `pos & (chunk - 1)`, where
+`chunk` is `mapping_max_folio_size`. `grab_cache_page_write_begin` still
+exists, in `mm/folio-compat.c` (lines 88–93), and returns a `struct page`
+for the few callers that still want one. The buffered write path itself
+asks `a_ops->write_begin` for a folio. The process's page tables are not
+consulted to find that folio. They are consulted to find the user buffer
+the bytes are copied from.
 
-## 4. The method table is where read, write, and fsync meet
+## 5. The method table is where read, write, and fsync meet
 
 ```c
-/* include/linux/fs.h :: struct file_operations :: tree c9b2385d6793
- * lines 1981–2001
+/* include/linux/fs.h :: struct file_operations :: tree adc218676eef
+ * lines 2062–2080
  */
 struct file_operations {
 	struct module *owner;
@@ -176,13 +200,11 @@ struct file_operations {
 	ssize_t (*write_iter) (struct kiocb *, struct iov_iter *);
 	int (*iopoll)(struct kiocb *kiocb, struct io_comp_batch *,
 			unsigned int flags);
-	int (*iterate) (struct file *, struct dir_context *);
 	int (*iterate_shared) (struct file *, struct dir_context *);
 	__poll_t (*poll) (struct file *, struct poll_table_struct *);
 	long (*unlocked_ioctl) (struct file *, unsigned int, unsigned long);
 	long (*compat_ioctl) (struct file *, unsigned int, unsigned long);
 	int (*mmap) (struct file *, struct vm_area_struct *);
-	unsigned long mmap_supported_flags;
 	int (*open) (struct inode *, struct file *);
 	int (*flush) (struct file *, fl_owner_t id);
 	int (*release) (struct inode *, struct file *);
@@ -192,8 +214,8 @@ struct file_operations {
 Day 2's `vfs_read` ends by calling one of those read methods:
 
 ```c
-/* fs/read_write.c :: vfs_read :: tree c9b2385d6793
- * lines 493–505
+/* fs/read_write.c :: vfs_read :: tree adc218676eef
+ * lines 566–577
  */
 	if (file->f_op->read)
 		ret = file->f_op->read(file, buf, count, pos);
@@ -207,66 +229,53 @@ Day 2's `vfs_read` ends by calling one of those read methods:
 	}
 	inc_syscr(current);
 	return ret;
-}
 ```
 
 `new_sync_read` calls `read_iter`. For a page-cache filesystem that
-method is `generic_file_read_iter` (`mm/filemap.c` lines 2719–2724).
-A miss finds or allocates a `struct page` in `i_pages` and copies it out.
-`page_cache_sync_ra` (`mm/readahead.c` lines 581–607) widens the fill
+method is `generic_file_read_iter` (`mm/filemap.c` lines 2791–2798).
+A miss finds or allocates a folio in `i_pages` and copies it out.
+`page_cache_sync_ra` (`mm/readahead.c` line 538) widens the fill
 through `ondemand_readahead`, unless random access or congestion forces
 a smaller read. `f_op->fsync` is a different method: write accepts bytes,
 and `fsync` pushes them and reports failure.
 
-## 5. A buffered write copies into a page and marks it dirty
+## 6. A buffered write copies into a page and marks it dirty
 
-`grab_cache_page_write_begin` is the page-cache vocabulary of this tree:
-a `struct page`, a page-cache index, a locked page.
+`generic_perform_write` asks `a_ops->write_begin` for a folio.
+`grab_cache_page_write_begin` is the remaining helper that still returns
+a `struct page` for a page-cache index.
 
 ```c
-/* mm/filemap.c :: grab_cache_page_write_begin :: tree c9b2385d6793
- * lines 3510–3528
- */
-/*
- * Find or create a page at the given pagecache position. Return the locked
- * page. This function is specifically for buffered writes.
+/* mm/folio-compat.c :: grab_cache_page_write_begin :: tree adc218676eef
+ * lines 88–93
  */
 struct page *grab_cache_page_write_begin(struct address_space *mapping,
-					pgoff_t index, unsigned flags)
+					pgoff_t index)
 {
-	struct page *page;
-	int fgp_flags = FGP_LOCK|FGP_WRITE|FGP_CREAT;
-
-	if (flags & AOP_FLAG_NOFS)
-		fgp_flags |= FGP_NOFS;
-	if (flags & AOP_FLAG_DONTCACHE)
-		fgp_flags |= FGP_DONTCACHE;
-
-	page = pagecache_get_page(mapping, index, fgp_flags,
+	return pagecache_get_page(mapping, index, FGP_WRITEBEGIN,
 			mapping_gfp_mask(mapping));
-	if (page)
-		wait_for_stable_page(page);
+}
 ```
 
 `generic_perform_write` is the loop a buffered `write_iter` uses. Each
 pass covers one page, faults the user side in first, and copies.
 
 ```c
-/* mm/filemap.c :: generic_perform_write :: tree c9b2385d6793
- * lines 3556–3588
+/* mm/filemap.c :: generic_perform_write :: tree adc218676eef
+ * lines 4033–4070
  */
-		offset = (pos & (PAGE_SIZE - 1));
-		bytes = min_t(unsigned long, PAGE_SIZE - offset,
-						iov_iter_count(i));
+retry:
+		offset = pos & (chunk - 1);
+		bytes = min(chunk - offset, bytes);
+		balance_dirty_pages_ratelimited(mapping);
 
-again:
 		/*
 		 * Bring in the user page that we will copy from _first_.
 		 * Otherwise there's a nasty deadlock on copying from the
 		 * same page as we're writing to, without it being marked
 		 * up-to-date.
 		 */
-		if (unlikely(iov_iter_fault_in_readable(i, bytes))) {
+		if (unlikely(fault_in_iov_iter_readable(i, bytes) == bytes)) {
 			status = -EFAULT;
 			break;
 		}
@@ -276,21 +285,26 @@ again:
 			break;
 		}
 
-		if (iocb->ki_flags & IOCB_DONTCACHE)
-			flags |= AOP_FLAG_DONTCACHE;
-
-		status = a_ops->write_begin(file, mapping, pos, bytes, flags,
-						&page, &fsdata);
+		status = a_ops->write_begin(file, mapping, pos, bytes,
+						&folio, &fsdata);
 		if (unlikely(status < 0))
 			break;
 
-		if (mapping_writably_mapped(mapping))
-			flush_dcache_page(page);
+		offset = offset_in_folio(folio, pos);
+		if (bytes > folio_size(folio) - offset)
+			bytes = folio_size(folio) - offset;
 
-		copied = iov_iter_copy_from_user_atomic(page, i, offset, bytes);
+		if (mapping_writably_mapped(mapping))
+			flush_dcache_folio(folio);
+
+		copied = copy_folio_from_iter_atomic(folio, offset, bytes, i);
+		flush_dcache_folio(folio);
+
+		status = a_ops->write_end(file, mapping, pos, bytes, copied,
+						folio, fsdata);
 ```
 
-The user pointer is still a virtual address. `iov_iter_fault_in_readable`
+The user pointer is still a virtual address. `fault_in_iov_iter_readable`
 walks the caller's page tables and brings the source page in before the
 filesystem locks the cache page. That order is the deadlock comment: the
 source and the destination might be the same frame if the process has the
@@ -307,14 +321,27 @@ For a buffer-head filesystem, `write_end` reaches `__block_commit_write`,
 which marks the touched buffers dirty:
 
 ```c
-/* fs/buffer.c :: __block_commit_write :: tree c9b2385d6793
- * lines 2077–2101
+/* fs/buffer.c :: __block_commit_write :: tree adc218676eef
+ * lines 2174–2211
  */
+static void __block_commit_write(struct folio *folio, size_t from, size_t to)
+{
+	size_t block_start, block_end;
+	bool partial = false;
+	unsigned blocksize;
+	struct buffer_head *bh, *head;
+
+	bh = head = folio_buffers(folio);
+	if (!bh)
+		return;
+	blocksize = bh->b_size;
+
+	block_start = 0;
 	do {
 		block_end = block_start + blocksize;
 		if (block_end <= from || block_start >= to) {
 			if (!buffer_uptodate(bh))
-				partial = 1;
+				partial = true;
 		} else {
 			set_buffer_uptodate(bh);
 			mark_buffer_dirty(bh);
@@ -328,20 +355,20 @@ which marks the touched buffers dirty:
 
 	/*
 	 * If this is a partial write which happened to make all buffers
-	 * uptodate then we can optimize away a bogus readpage() for
-	 * the next read(). Here we 'discover' whether the page went
+	 * uptodate then we can optimize away a bogus read_folio() for
+	 * the next read(). Here we 'discover' whether the folio went
 	 * uptodate as a result of this (potentially partial) write.
 	 */
 	if (!partial)
-		SetPageUptodate(page);
-	return 0;
+		folio_mark_uptodate(folio);
+}
 ```
 
 `mark_buffer_dirty` says what "dirty" means here:
 
 ```c
-/* fs/buffer.c :: mark_buffer_dirty :: tree c9b2385d6793
- * lines 1099–1111
+/* fs/buffer.c :: mark_buffer_dirty :: tree adc218676eef
+ * lines 1163–1190
  */
 /**
  * mark_buffer_dirty - mark a buffer_head as needing writeout
@@ -352,17 +379,33 @@ which marks the touched buffers dirty:
  * and then attach the address_space's inode to its superblock's dirty
  * inode list.
  *
- * mark_buffer_dirty() is atomic.  It takes bh->b_page->mapping->private_lock,
+ * mark_buffer_dirty() is atomic.  It takes bh->b_folio->mapping->i_private_lock,
  * i_pages lock and mapping->host->i_lock.
  */
 void mark_buffer_dirty(struct buffer_head *bh)
+{
+	WARN_ON_ONCE(!buffer_uptodate(bh));
+
+	trace_block_dirty_buffer(bh);
+
+	/*
+	 * Very *carefully* optimize the it-is-already-dirty case.
+	 *
+	 * Don't let the final "is it dirty" escape to before we
+	 * perhaps modified the buffer.
+	 */
+	if (buffer_dirty(bh)) {
+		smp_mb();
+		if (buffer_dirty(bh))
+			return;
 ```
 
-The tag is `PAGECACHE_TAG_DIRTY` on `i_pages`. The page's `PageDirty` bit
-is set along the way (`TestSetPageDirty` in the body at line 1134). The
-inode joins the superblock's dirty list. All of that is bookkeeping in
-memory. `generic_write_end` may also extend `i_size` while the page is
-still locked (the comment at lines 2183–2185), then `mark_inode_dirty` if
+The tag is `PAGECACHE_TAG_DIRTY` on `i_pages`. `folio_test_set_dirty`
+(line 1198) marks the folio, and `__folio_mark_dirty` (line 1201) records
+the tag. The inode joins the superblock's dirty list through
+`__mark_inode_dirty` (line 1205). All of that is bookkeeping in
+memory. `generic_write_end` may also extend `i_size` while the folio is
+still locked (the comment at lines 2290–2291), then `mark_inode_dirty` if
 the size changed. A larger `i_size` is metadata. It is not a promise that
 the device has the new bytes.
 
@@ -370,16 +413,26 @@ the device has the new bytes.
 not grow without bound. That cleaning is writeback. The `write` syscall
 can return while tagged pages remain.
 
-## 6. Writeback moves dirty pages; `fsync` waits
+## 7. Writeback moves dirty pages; `fsync` waits
 
 ```c
-/* mm/filemap.c :: __filemap_fdatawrite_range :: tree c9b2385d6793
- * lines 414–433
+/* mm/filemap.c :: __filemap_fdatawrite_range :: tree adc218676eef
+ * lines 410–432
+ */
+ *
+ * Start writeback against all of a mapping's dirty pages that lie
+ * within the byte offsets <start, end> inclusive.
+ *
+ * If sync_mode is WB_SYNC_ALL then this is a "data integrity" operation, as
+ * opposed to a regular memory cleansing writeback.  The difference between
+ * these two operations is that if a dirty page/buffer is encountered, it must
+ * be waited upon, and not just skipped over.
+ *
+ * Return: %0 on success, negative error code otherwise.
  */
 int __filemap_fdatawrite_range(struct address_space *mapping, loff_t start,
 				loff_t end, int sync_mode)
 {
-	int ret;
 	struct writeback_control wbc = {
 		.sync_mode = sync_mode,
 		.nr_to_write = LONG_MAX,
@@ -387,18 +440,11 @@ int __filemap_fdatawrite_range(struct address_space *mapping, loff_t start,
 		.range_end = end,
 	};
 
-	if (!mapping_can_writeback(mapping) ||
-	    !mapping_tagged(mapping, PAGECACHE_TAG_DIRTY))
-		return 0;
-
-	wbc_attach_fdatawrite_inode(&wbc, mapping->host);
-	ret = do_writepages(mapping, &wbc);
-	wbc_detach_inode(&wbc);
-	return ret;
+	return filemap_fdatawrite_wbc(mapping, &wbc);
 }
 ```
 
-The comment above this function (lines 404–410) calls `WB_SYNC_ALL` a
+The comment above this function (lines 414–417) calls `WB_SYNC_ALL` a
 data-integrity operation: a dirty page must be waited on, not skipped.
 `do_writepages` is the handoff from the cache to `a_ops`. Below that call
 are the filesystem's block mapping and the block device. This lesson
@@ -408,8 +454,8 @@ moves a page from the dirty tag toward `PAGECACHE_TAG_WRITEBACK`.
 Waiting is a second step:
 
 ```c
-/* mm/filemap.c :: filemap_fdatawait_range :: tree c9b2385d6793
- * lines 561–582
+/* mm/filemap.c :: filemap_fdatawait_range :: tree adc218676eef
+ * lines 540–561
  */
 /**
  * filemap_fdatawait_range - wait for writeback to complete
@@ -436,8 +482,8 @@ int filemap_fdatawait_range(struct address_space *mapping, loff_t start_byte,
 ```
 
 `__filemap_fdatawait_range` looks up `PAGECACHE_TAG_WRITEBACK` and calls
-`wait_on_page_writeback` on each `struct page`. `filemap_check_errors`
-(lines 373–384) returns `-ENOSPC` if `AS_ENOSPC` is set and `-EIO` if
+`folio_wait_writeback` on each folio. `filemap_check_errors`
+(lines 354–365) returns `-ENOSPC` if `AS_ENOSPC` is set and `-EIO` if
 `AS_EIO` is set, clearing the bit it reports. The comment says the caller
 must check that return. A wait that ignores it has observed the sleep and
 dropped the error.
@@ -446,16 +492,16 @@ The syscall entry does not call these helpers by name. It calls the
 filesystem method:
 
 ```c
-/* fs/sync.c :: do_fsync, fsync, fdatasync :: tree c9b2385d6793
- * lines 220–240
+/* fs/sync.c :: do_fsync, fsync, fdatasync :: tree adc218676eef
+ * lines 206–226
  */
 static int do_fsync(unsigned int fd, int datasync)
 {
 	struct fd f = fdget(fd);
 	int ret = -EBADF;
 
-	if (f.file) {
-		ret = vfs_fsync(f.file, datasync);
+	if (fd_file(f)) {
+		ret = vfs_fsync(fd_file(f), datasync);
 		fdput(f);
 	}
 	return ret;
@@ -473,7 +519,7 @@ SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
 ```
 
 `vfs_fsync` calls `vfs_fsync_range(file, 0, LLONG_MAX, datasync)`. That
-helper's comment (lines 184–192) says it writes back data in the range
+helper's comment (lines 176–178) says it writes back data in the range
 and metadata for the file, and that `datasync` limits metadata to what is
 needed to access the modified data. The code then requires `f_op->fsync`
 and calls it. `fsync` passes `datasync = 0`. `fdatasync` passes 1. On
@@ -482,13 +528,13 @@ generic table numbers them 82 and 83. The descriptor is still Day 1's
 index. `fdget` turns it into the `struct file` whose `f_mapping` names
 the cache.
 
-## 7. The failure is recorded on the mapping
+## 8. The failure is recorded on the mapping
 
 A writeback error is stored where a later `fsync` can find it.
 
 ```c
-/* include/linux/pagemap.h :: mapping_set_error :: tree c9b2385d6793
- * lines 39–70
+/* include/linux/pagemap.h :: mapping_set_error :: tree adc218676eef
+ * lines 224–255
  */
 /**
  * mapping_set_error - record a writeback error in the address_space
@@ -543,7 +589,7 @@ dirty tag happened. `fsync` returning 0 means `f_op->fsync` returned 0.
 the method returned, reached the syscall. Between those two returns the
 dirty page is still RAM.
 
-## 8. A hole is an extent fact, not a missing cache page
+## 9. A hole is an extent fact, not a missing cache page
 
 `generic_file_llseek_size` has no hole map of its own. Its `SEEK_DATA`
 arm (`fs/read_write.c` lines 111–118) treats every offset below the end
@@ -552,13 +598,23 @@ at the end of the file and, when the offset is below that end, returns
 `i_size`. A filesystem that stores holes replaces `llseek`. ext4 does:
 
 ```c
-/* fs/ext4/file.c :: ext4_llseek :: tree c9b2385d6793
- * lines 868–888
+/* fs/ext4/file.c :: ext4_llseek :: tree adc218676eef
+ * lines 891–922
+ */
+/*
+ * ext4_llseek() handles both block-mapped and extent-mapped maxbytes values
+ * by calling generic_file_llseek_size() with the appropriate maxbytes
+ * value for each.
  */
 loff_t ext4_llseek(struct file *file, loff_t offset, int whence)
 {
 	struct inode *inode = file->f_mapping->host;
-	loff_t maxbytes = ext4_get_maxbytes(inode);
+	loff_t maxbytes;
+
+	if (!(ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)))
+		maxbytes = EXT4_SB(inode->i_sb)->s_bitmap_maxbytes;
+	else
+		maxbytes = inode->i_sb->s_maxbytes;
 
 	switch (whence) {
 	default:
@@ -576,6 +632,7 @@ loff_t ext4_llseek(struct file *file, loff_t offset, int whence)
 					 &ext4_iomap_report_ops);
 		inode_unlock_shared(inode);
 		break;
+	}
 ```
 
 The inode lock is shared. The answer comes from `iomap_seek_hole`.
@@ -584,7 +641,7 @@ that answers `SEEK_DATA` / `SEEK_HOLE`. A hole is a range of file offsets
 with no allocated blocks. `i_size`, that map, and `i_pages` are three
 records of the file.
 
-## 9. Execution trace: write, dirty, writeback, fsync, error
+## 10. Execution trace: write, dirty, writeback, fsync, error
 
 One regular file, buffer-head `a_ops`, descriptor 3, `f_pos` at 0. The
 user calls `write(3, buf, 4096)` and the copy succeeds. Then `fsync(3)`.
@@ -593,14 +650,14 @@ user calls `write(3, buf, 4096)` and the copy succeeds. Then `fsync(3)`.
 write(3, buf, 4096)
   ksys_write -> vfs_write -> write_iter
     generic_perform_write
-      offset = 0 within the page
-      iov_iter_fault_in_readable(user buf)     page tables of current->mm
-      a_ops->write_begin                       grab or create struct page
+      offset = pos & (chunk - 1)
+      fault_in_iov_iter_readable(user buf)     page tables of current->mm
+      a_ops->write_begin                       grab or create a folio
                                                at this page-cache index
-      copy from user into that page
+      copy_folio_from_iter_atomic
       __block_commit_write
         mark_buffer_dirty
-          PageDirty, PAGECACHE_TAG_DIRTY
+          folio dirty, PAGECACHE_TAG_DIRTY
           inode on the superblock dirty list
       i_size updated if the write extended the file
     return 4096
@@ -632,7 +689,7 @@ that treats the first as durability has stopped at the dirty tag.
 Code that ignores `fsync`'s return has waited and dropped
 `filemap_check_errors`.
 
-## 10. A small C picture of the two calls
+## 11. A small C picture of the two calls
 
 ```c
 #include <unistd.h>
@@ -663,7 +720,7 @@ retried leaves a prefix dirty and the tail unsent. An `fsync` error
 after a successful `write` means the prefix was accepted into the cache
 and the integrity path later failed.
 
-## 11. Registers, locks, and ToyOS
+## 12. Registers, locks, and ToyOS
 
 `fsync`'s descriptor arrives in the same argument register as `read`'s:
 `rdi` on x86-64, `x0` on AArch64, `a0` on RISC-V. The syscall number is
@@ -671,7 +728,7 @@ in `rax`, `regs[8]`, or `a7`. The return is 0 or a negative errno. No
 user buffer is copied. The objects are reached from `current->files`.
 
 `generic_write_end` updates `i_size` while the page is locked so
-writeback cannot zero past `i_size` (`fs/buffer.c` lines 2183–2185).
+writeback cannot zero past `i_size` (`fs/buffer.c` lines 2290–2291).
 `mark_buffer_dirty` takes `mapping->private_lock`, the `i_pages` lock,
 and `mapping->host->i_lock`. `ext4_llseek` takes `inode_lock_shared`.
 The user buffer is translated by the process page tables. The cache page
@@ -684,7 +741,7 @@ ToyOS writes `inode->data` before
 on the open slot. Linux returns at the dirty tag and waits when the
 program calls `fsync`.
 
-## 12. Mastery: Explain · Draw · Observe · Build
+## 13. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-003-page-cache.sh`](../challenges/day-003-page-cache.sh)
 after this explanation.

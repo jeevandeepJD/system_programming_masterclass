@@ -54,11 +54,9 @@ return (fd);
 
 Trace. The `fd` loop has already found a null `filp` slot; that index is the descriptor. `f` walks `file_table` until `f_count` is 0. The parenthesized assignment stores `f` in `filp[fd]` and takes a reference before `open_namei` runs. If lookup fails, the slot is cleared and the error code `i` returns. On success the same `struct file` receives the inode and `f_pos = 0`, and the caller receives `fd`.
 
-What carries forward is the split: descriptor, open-file object, inode, and a position stored on the open file. The fixed `NR_FILE` table, the `0+file_table` spelling, the Minix `m_inode`, and `f_mode` holding the inode's mode word belong to this kernel. Linux 5.10 keeps the split and uses a growable fd table, RCU and refcounts, a dentry and a mount, and an `f_mode` that records read/write access. `f_pos` still lives on the open file, so `dup` still shares one offset.
+What carries forward is the split: descriptor, open-file object, inode, and a position stored on the open file. The fixed `NR_FILE` table, the `0+file_table` spelling, the Minix `m_inode`, and `f_mode` holding the inode's mode word belong to this kernel. Linux 6.12 keeps the split and uses a growable fd table, RCU and refcounts, a dentry and a mount, and an `f_mode` that records read/write access. `f_pos` still lives on the open file, so `dup` still shares one offset.
 
-ToyOS builds the same chain with four slots. [`vfs_open`](../../projects/toyos/src/vfs.c) returns `VFS_FILE_BASE + i` and stores the inode and `offset` in `files[i]`.
-
-The week picture is the shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md). The sections below follow this chain in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete implementation of the idea. Develop against the 5.10 tree.
+The week picture is the shared [Linux 0.12 map](../../references/EARLY_LINUX_012_MAP.md). The sections below follow this chain in Linux 6.12, tree `adc218676eef`. Read 0.12 as the first complete implementation of the idea. Develop against the 6.12 tree.
 
 Week 8 crossed into the kernel with a saved user register frame and a
 checked copy. Week 9's ToyOS table already returns an integer for a slot
@@ -70,11 +68,55 @@ on the open file, so two indexes can share one position and two opens of
 one path can have two positions.
 
 The excerpts below are from the local tree
-`5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`). That tree
-is 5.10-based. Field layout in a later mainline release can move. The
+`adc218676eef25575469234709c2d87185ca223a` (commit `adc218676eef`). That tree
+is 6.12. Field layout in a later mainline release can move. The
 names quoted here are what this revision actually contains.
 
-## 3. Why an integer is the handle
+## 3. Evolution: why the early design changed
+
+Linux 0.12 keeps two fixed arrays. `current->filp` is one slot per
+descriptor, and `file_table[NR_FILE]` is one `struct file` for the whole
+machine. A full table returns `-EINVAL`. Every open walks the global array
+looking for `f_count == 0`, and the inode pointer is a Minix `m_inode`
+stored on that slot.
+
+That stops working once a task can open more files than a compile-time
+array, and once two CPUs open, duplicate, and close at once. The slot and
+the object need separate lifetimes. Closing one index must not free a file
+another index still holds, and looking up an index must not lock every open
+on the machine.
+
+`struct fdtable` in `include/linux/fdtable.h` (lines 26–33) is the growable
+array: `max_fds`, an RCU-published `fd` pointer vector, and bitmaps for
+`open_fds`, `close_on_exec`, and `full_fds_bits`. `files_struct` (lines
+38–57) embeds the first `NR_OPEN_DEFAULT` slots and points `fdt` at the live
+table. `alloc_fd` in `fs/file.c` (lines 485–541) calls `expand_files` when
+the next index does not fit, then sets the open bit under `file_lock` before
+the `struct file` exists.
+
+The open file is no longer a row in a global array. `alloc_empty_file`
+(`fs/file_table.c` lines 191–209) takes it from `filp_cachep`, and
+`init_file` (lines 148–178) sets `f_count` to 1. `get_file`
+(`include/linux/fs.h` lines 1079–1084) adds a reference. `f_path` is a mount
+plus a dentry (`include/linux/path.h` lines 8–10). `do_dentry_open`
+(`fs/open.c` lines 911–916) caches `dentry->d_inode` in `f_inode`. The name
+and the inode can outlive any one open.
+
+Lookup and close stay off the global scan because the published pointer is
+RCU. `files_lookup_fd_raw` (lines 72–86 of `fdtable.h`) masks an
+out-of-range index with `array_index_mask_nospec` and loads through that
+mask. `fd_install` (lines 588–613 of `fs/file.c`) publishes with
+`rcu_assign_pointer`. `file_close_fd_locked` (lines 628–644) clears one slot
+under `file_lock` and returns the pointer. The last `fput` or `__fput_sync`
+runs release later.
+
+The integer the user holds is still an index. `f_pos` still lives on the
+open file, and `dup` still shares that file. The rest of this day reads that
+chain in Linux 6.12, commit `adc218676eef25575469234709c2d87185ca223a`.
+
+## 4. Why an integer is the handle
+
+ToyOS builds the same chain with four slots. [`vfs_open`](../../projects/toyos/src/vfs.c) returns `VFS_FILE_BASE + i` and stores the inode and `offset` in `files[i]`.
 
 A user program needs to name an open file across many calls. The name it
 is allowed to hold is a small integer in its own memory. On the next
@@ -83,9 +125,11 @@ it as a subscript into a table only the kernel allocates. Week 8's
 `copy_from_user` is the same rule for addresses: a value in a user
 register is an address in that process's page tables.
 
-`files_lookup_fd_raw` in `include/linux/fdtable.h` refuses an index at or
-past `max_fds`, then clamps it with `array_index_nospec` before the load.
-`pick_file` in `fs/file.c` does the same clamp before it clears a slot.
+`files_lookup_fd_raw` in `include/linux/fdtable.h` (lines 72–86) turns an
+index at or past `max_fds` into a zero mask with `array_index_mask_nospec`,
+then loads `fd[fd & mask]` and masks the pointer. `file_close_fd_locked` in
+`fs/file.c` (lines 635–638) still clamps with `array_index_nospec` before it
+clears a slot.
 A page-table walk has the same shape. The tables decide the translation.
 The task's file table decides which open file the integer names.
 
@@ -95,15 +139,15 @@ returns `VFS_FILE_BASE + i` for a free slot in `files[4]`. `file_for`
 rejects a number outside that range and a slot whose `open` flag is
 clear. The user program never holds `&files[i]`.
 
-## 4. The table is an object the task points at
+## 5. The table is an object the task points at
 
 `task_struct` has a `files` pointer. Week 10's picture stopped there.
 The object on the other end of that pointer is `files_struct`, and the
 array inside it is an `fdtable`. Both live in `include/linux/fdtable.h`.
 
 ```c
-/* include/linux/fdtable.h :: struct fdtable :: tree c9b2385d6793
- * lines 27–44
+/* include/linux/fdtable.h :: struct fdtable :: tree adc218676eef
+ * lines 26–33
  */
 struct fdtable {
 	unsigned int max_fds;
@@ -113,21 +157,11 @@ struct fdtable {
 	unsigned long *full_fds_bits;
 	struct rcu_head rcu;
 };
-
-static inline bool close_on_exec(unsigned int fd, const struct fdtable *fdt)
-{
-	return test_bit(fd, fdt->close_on_exec);
-}
-
-static inline bool fd_is_open(unsigned int fd, const struct fdtable *fdt)
-{
-	return test_bit(fd, fdt->open_fds);
-}
 ```
 
 ```c
-/* include/linux/fdtable.h :: struct files_struct :: tree c9b2385d6793
- * lines 49–68
+/* include/linux/fdtable.h :: struct files_struct :: tree adc218676eef
+ * lines 38–57
  */
 struct files_struct {
   /*
@@ -174,66 +208,70 @@ task C after fork (CLONE_FILES clear)
 
 `dup_fd` is the fork copy. The next section is the object it points at.
 
-## 5. `struct file` is the open instance
+## 6. `struct file` is the open instance
 
 The pointer in `fd[i]` aims at `struct file` in `include/linux/fs.h`.
 This is the object Week 9 called an open-file slot, with a kernel
 lifetime of its own.
 
 ```c
-/* include/linux/fs.h :: struct file :: tree c9b2385d6793
- * lines 959–978
+/* include/linux/fs.h :: struct file :: tree adc218676eef
+ * lines 1032–1051
  */
 struct file {
-	union {
-		struct llist_node	fu_llist;
-		struct rcu_head 	fu_rcuhead;
-	} f_u;
-	struct path		f_path;
-	struct inode		*f_inode;	/* cached value */
+	atomic_long_t			f_count;
+	spinlock_t			f_lock;
+	fmode_t				f_mode;
 	const struct file_operations	*f_op;
-
-	/*
-	 * Protects f_ep_links, f_flags.
-	 * Must not be taken from IRQ context.
-	 */
-	spinlock_t		f_lock;
-	enum rw_hint		f_write_hint;
-	atomic_long_t		f_count;
-	unsigned int 		f_flags;
-	fmode_t			f_mode;
-	struct mutex		f_pos_lock;
-	loff_t			f_pos;
+	struct address_space		*f_mapping;
+	void				*private_data;
+	struct inode			*f_inode;
+	unsigned int			f_flags;
+	unsigned int			f_iocb_flags;
+	const struct cred		*f_cred;
+	/* --- cacheline 1 boundary (64 bytes) --- */
+	struct path			f_path;
+	union {
+		/* regular files (with FMODE_ATOMIC_POS) and directories */
+		struct mutex		f_pos_lock;
+		/* pipes */
+		u64			f_pipe;
+	};
+	loff_t				f_pos;
 ```
 
 `f_count` is the reference count. `get_file` (`include/linux/fs.h` lines
-1008–1012) increments it. Each index that holds the pointer is one
+1079–1084) increments it with `atomic_long_fetch_inc_relaxed` and warns if
+the count was already zero. Each index that holds the pointer is one
 reference, and so is a kernel lookup that has not put the file yet.
-`f_pos` is the byte offset. `f_pos_lock` guards it when more than one
-reference exists. `f_flags` holds status such as `O_NONBLOCK`. `f_lock`
-guards that word. `f_mode` holds kernel bits such as `FMODE_READ` and
-`FMODE_LSEEK`. `f_op` is the method table. `f_inode` is the cached inode.
-`f_path` is the `include/linux/path.h` pair of mount and dentry; the
-dentry's `d_inode` is "where the name belongs."
+`f_pos` is the byte offset. `f_pos_lock` guards it when the file needs
+that lock. The field shares a union with `f_pipe`, and `init_file`
+(`fs/file_table.c` lines 161–167) says a pipe may reuse that space.
+`f_flags` holds status such as `O_NONBLOCK`. `setfl` takes `f_lock`
+around the store (`fs/fcntl.c` lines 83–86). `f_mode` holds kernel bits
+such as `FMODE_READ` and `FMODE_LSEEK`. `f_op` is the method table.
+`f_inode` is the cached inode. `f_path` is the `include/linux/path.h`
+pair of mount and dentry; the dentry's `d_inode` is "where the name
+belongs." `f_mapping` (line 1037) points at the inode's `address_space`.
 
-`__alloc_file` in `fs/file_table.c` allocates with `kmem_cache_zalloc` and
-sets `f_count` to 1, so a new open file's `f_pos` starts at 0. Line 995
-of `struct file`, `f_mapping`, points at the inode's `address_space`.
-Day 3 follows it. `do_dentry_open` stores `f_inode`, copies
+`alloc_empty_file` in `fs/file_table.c` (lines 191–230) allocates with
+`kmem_cache_zalloc` (line 209), and `init_file` (lines 148–178) sets
+`f_count` to 1, so a new open file's `f_pos` starts at 0. Day 3 follows `f_mapping`. `do_dentry_open`
+(`fs/open.c` lines 915–917, 936–937, and 974) stores `f_inode`, copies
 `inode->i_mapping` into `f_mapping`, installs `f_op`, sets
 `FMODE_ATOMIC_POS` for a regular file or a directory, and clears
 `O_CREAT`, `O_EXCL`, `O_NOCTTY`, and `O_TRUNC` from `f_flags`. Those four
 bits were instructions for open.
 
-## 6. Open reserves an index, then publishes the pointer
+## 7. Open reserves an index, then publishes the pointer
 
 The user-visible `open` on this tree is a thin wrapper. `sys_open` may
 set `O_LARGEFILE`, then calls `do_sys_open(AT_FDCWD, ...)`. `do_sys_open`
 packs the flags into an `open_how` and calls `do_sys_openat2`.
 
 ```c
-/* fs/open.c :: do_sys_openat2, do_sys_open :: tree c9b2385d6793
- * lines 1218–1251
+/* fs/open.c :: do_sys_openat2, do_sys_open :: tree adc218676eef
+ * lines 1399–1431
  */
 static long do_sys_openat2(int dfd, const char __user *filename,
 			   struct open_how *how)
@@ -256,7 +294,6 @@ static long do_sys_openat2(int dfd, const char __user *filename,
 			put_unused_fd(fd);
 			fd = PTR_ERR(f);
 		} else {
-			fsnotify_open(f);
 			fd_install(fd, f);
 		}
 	}
@@ -277,12 +314,12 @@ the user register is a virtual address in the caller's page tables.
 `struct file` only after that reservation. Failure calls `put_unused_fd`.
 Success calls `fd_install`. The `open_fds` bit stays set while
 `do_filp_open` runs, so two opens are not handed one index.
-`__put_unused_fd` (lines 586–591) clears the bit and may rewind `next_fd`,
+`__put_unused_fd` (lines 554–560) clears the bit and may rewind `next_fd`,
 which is how a closed integer gets reused.
 
 ```c
-/* fs/file.c :: alloc_fd (tail), get_unused_fd_flags :: tree c9b2385d6793
- * lines 560–583
+/* fs/file.c :: alloc_fd (tail), get_unused_fd_flags :: tree adc218676eef
+ * lines 521–551
  */
 	if (start <= files->next_fd)
 		files->next_fd = fd + 1;
@@ -293,6 +330,13 @@ which is how a closed integer gets reused.
 	else
 		__clear_close_on_exec(fd, fdt);
 	error = fd;
+#if 1
+	/* Sanity check */
+	if (rcu_access_pointer(fdt->fd[fd]) != NULL) {
+		printk(KERN_WARNING "alloc_fd: slot %d not NULL!\n", fd);
+		rcu_assign_pointer(fdt->fd[fd], NULL);
+	}
+#endif
 
 out:
 	spin_unlock(&files->file_lock);
@@ -316,13 +360,16 @@ ceiling is `RLIMIT_NOFILE`. `O_CLOEXEC` is still in this flags word;
 what records the bit in `close_on_exec`.
 
 ```c
-/* fs/file.c :: fd_install :: tree c9b2385d6793
- * lines 620–642
+/* fs/file.c :: fd_install :: tree adc218676eef
+ * lines 588–613
  */
 void fd_install(unsigned int fd, struct file *file)
 {
 	struct files_struct *files = current->files;
 	struct fdtable *fdt;
+
+	if (WARN_ON_ONCE(unlikely(file->f_mode & FMODE_BACKING)))
+		return;
 
 	rcu_read_lock_sched();
 
@@ -330,7 +377,7 @@ void fd_install(unsigned int fd, struct file *file)
 		rcu_read_unlock_sched();
 		spin_lock(&files->file_lock);
 		fdt = files_fdtable(files);
-		WARN_ON(fdt->fd[fd] != NULL);
+		BUG_ON(fdt->fd[fd] != NULL);
 		rcu_assign_pointer(fdt->fd[fd], file);
 		spin_unlock(&files->file_lock);
 		return;
@@ -344,22 +391,24 @@ void fd_install(unsigned int fd, struct file *file)
 }
 ```
 
-`rcu_assign_pointer` publishes the pointer. The comment at lines 616–617
+`rcu_assign_pointer` publishes the pointer. The comment at lines 584–585
 says this consumes the file reference, as if the caller had called
-`fput`. The `BUG_ON` is the reservation's promise: the slot is empty.
-The comment above the function names a `dup2` that would install a
-different file between the bitmap update and this store.
+`fput`. Both paths `BUG_ON` a slot that is already occupied: that is the
+reservation's promise. A backing file is refused before the publish
+(`FMODE_BACKING`, line 593). The comment above the function names a
+`dup2` that would install a different file between the bitmap update and
+this store.
 
-## 7. `dup` and `fork` share `f_pos`; a second `open` does not
+## 8. `dup` and `fork` share `f_pos`; a second `open` does not
 
 `dup` looks up the existing pointer, takes another reference, and
 installs that same pointer at a new index. `fork` does the same per
-slot inside `dup_fd` (`fs/file.c` lines 383–397): `get_file` on each
+slot inside `dup_fd` (`fs/file.c` lines 369–383): `get_file` on each
 live pointer, then `rcu_assign_pointer` into the child's new table.
 
 ```c
-/* fs/file.c :: sys_dup :: tree c9b2385d6793
- * lines 1228–1241
+/* fs/file.c :: sys_dup :: tree adc218676eef
+ * lines 1379–1392
  */
 SYSCALL_DEFINE1(dup, unsigned int, fildes)
 {
@@ -377,9 +426,9 @@ SYSCALL_DEFINE1(dup, unsigned int, fildes)
 }
 ```
 
-`fget_raw` is `__fget(fd, 0, 1)`, so it takes one reference and
-`fd_install` consumes it. Both indexes hold the same address and the
-same `f_pos`. `f_dupfd` (lines 1243–1254) is the `F_DUPFD` form: it
+`fget_raw` is `__fget(fd, 0)` (`fs/file.c` lines 1022–1024), so it takes
+one reference and `fd_install` consumes it. Both indexes hold the same address and the
+same `f_pos`. `f_dupfd` (lines 1394–1406) is the `F_DUPFD` form: it
 calls `get_file` and then `fd_install`. `sys_dup` passes flags `0`, so
 `alloc_fd` clears close-on-exec on the new index. `F_DUPFD_CLOEXEC`
 passes `O_CLOEXEC` and sets the bit on the new index only.
@@ -390,49 +439,53 @@ Week 11's `copy_files` is the other switch: `CLONE_FILES` increments
 `do_filp_open` again and gets a new `struct file` whose `f_pos` starts
 at 0.
 
-`file_needs_f_pos_lock` (`fs/file.c` lines 997–1000) is true when
-`FMODE_ATOMIC_POS` is set and `file_count` is greater than one, or the
-inode is a directory. `__fdget_pos` then takes `f_pos_lock` around the
-update of that one `loff_t`.
+`file_needs_f_pos_lock` (`fs/file.c` lines 1147–1150) is true when
+`FMODE_ATOMIC_POS` is set and either `file_count` is greater than one or
+`f_op->iterate_shared` is set. Directories get `FMODE_ATOMIC_POS` in
+`do_dentry_open`, and the comment above the helper says `iterate_shared`
+is why a directory still takes the lock. `fdget_pos` (lines 1153–1162)
+sets `FDPUT_POS_UNLOCK` in the `struct fd` word and takes `f_pos_lock`.
+`fd_file` recovers the pointer from that word (`include/linux/file.h`
+lines 44–50).
 
-## 8. Close clears one index and drops one reference
+## 9. Close clears one index and drops one reference
 
-`sys_close` calls `close_fd`, which calls `__close_fd`. The slot is
+`sys_close` (`fs/open.c` lines 1552–1559) calls `file_close_fd`, which
+takes `file_lock` and calls `file_close_fd_locked`. `close_fd` (lines
+647–659) is the same unpublish followed by `filp_close`. The slot is
 cleared before the file's release work runs.
 
 ```c
-/* fs/file.c :: pick_file, __close_fd :: tree c9b2385d6793
- * lines 646–679
+/* fs/file.c :: file_close_fd_locked, close_fd :: tree adc218676eef
+ * lines 628–659
  */
-static struct file *pick_file(struct files_struct *files, unsigned fd)
+struct file *file_close_fd_locked(struct files_struct *files, unsigned fd)
 {
-	struct file *file = NULL;
-	struct fdtable *fdt;
+	struct fdtable *fdt = files_fdtable(files);
+	struct file *file;
 
-	spin_lock(&files->file_lock);
-	fdt = files_fdtable(files);
+	lockdep_assert_held(&files->file_lock);
+
 	if (fd >= fdt->max_fds)
-		goto out_unlock;
+		return NULL;
+
 	fd = array_index_nospec(fd, fdt->max_fds);
 	file = fdt->fd[fd];
-	if (!file)
-		goto out_unlock;
-	rcu_assign_pointer(fdt->fd[fd], NULL);
-	__put_unused_fd(files, fd);
-
-out_unlock:
-	spin_unlock(&files->file_lock);
+	if (file) {
+		rcu_assign_pointer(fdt->fd[fd], NULL);
+		__put_unused_fd(files, fd);
+	}
 	return file;
 }
 
-/*
- * The same warnings as for __alloc_fd()/__fd_install() apply here...
- */
-int __close_fd(struct files_struct *files, unsigned fd)
+int close_fd(unsigned fd)
 {
+	struct files_struct *files = current->files;
 	struct file *file;
 
-	file = pick_file(files, fd);
+	spin_lock(&files->file_lock);
+	file = file_close_fd_locked(files, fd);
+	spin_unlock(&files->file_lock);
 	if (!file)
 		return -EBADF;
 
@@ -440,30 +493,33 @@ int __close_fd(struct files_struct *files, unsigned fd)
 }
 ```
 
-`pick_file` clamps the index, unpublishes `fd[fd]`, and returns `NULL`
-for an empty slot, which `__close_fd` turns into `-EBADF`.
+`file_close_fd_locked` clamps the index, unpublishes `fd[fd]`, and
+returns `NULL` for an empty slot, which `close_fd` and `sys_close` turn
+into `-EBADF`.
 `__put_unused_fd` clears `open_fds` and may rewind `next_fd`, so the next
 `alloc_fd` can reuse the integer. After that the old `int` is a stale
 name: a later `open` may install a different `struct file` at the same
 index. The bits in the user's variable survived; the object did not.
 
-`filp_close` (`fs/open.c` lines 1332–1349) calls `f_op->flush` when
-present, drops POSIX locks for this owner, then `fput`. `fput_many`
-(`fs/file_table.c` lines 335–354) subtracts from `f_count` with
-`atomic_long_sub_and_test` and queues `__fput` only when the count hits
-zero. A `dup`'d file stays alive when one index closes. `__fput` calls
-`f_op->release` and drops the path. The inode has its own `i_count`.
+`filp_flush` (`fs/open.c` lines 1516–1533) calls `f_op->flush` when
+present and drops POSIX locks for this owner. `filp_close` (lines
+1536–1543) is that flush plus `fput`. `sys_close` calls `filp_flush` and
+then `__fput_sync` (`fs/file_table.c` lines 513–516). `fput` (lines
+480–502) uses `atomic_long_dec_and_test` and queues `__fput` only when
+the count hits zero. A `dup`'d file stays alive when one index closes.
+`__fput` (line 405) calls `f_op->release` and `dput` on the path. The
+inode has its own `i_count`.
 
-`sys_close` has a second rule, written on the syscall itself: if
-`close_fd` returns a restart code, `sys_close` rewrites it to `-EINTR`.
-The comment says the close cannot be restarted because the table entry
-was already cleared. A signal arriving during flush must not replay an
-operation that has already unpublished the slot.
+`sys_close` has a second rule, written on the syscall itself (lines
+1569–1574): if `filp_flush` returns a restart code, `sys_close` rewrites
+it to `-EINTR`. The comment says the close cannot be restarted because
+the table entry was already cleared. A signal arriving during flush must
+not replay an operation that has already unpublished the slot.
 
-## 9. `O_CLOEXEC` is a slot bit; status flags live on the file
+## 10. `O_CLOEXEC` is a slot bit; status flags live on the file
 
-`build_open_flags` (`fs/open.c` lines 1042–1057) sets
-`strip = FMODE_NONOTIFY | O_CLOEXEC` and clears those bits from the local
+`build_open_flags` (`fs/open.c` lines 1215–1230) sets
+`strip = __FMODE_NONOTIFY | O_CLOEXEC` and clears those bits from the local
 flags that describe the open. The comment says `O_CLOEXEC` is not
 relevant to `struct open_flags`. `how->flags` is unchanged, so
 `get_unused_fd_flags(how->flags)` still sees the bit and `alloc_fd`
@@ -472,28 +528,34 @@ records it in `close_on_exec`. Two stores, two objects.
 `fcntl` keeps the split visible to user space. `do_fcntl` in `fs/fcntl.c`:
 
 ```c
-/* fs/fcntl.c :: do_fcntl :: tree c9b2385d6793
- * lines 337–356
+/* fs/fcntl.c :: do_fcntl :: tree adc218676eef
+ * lines 449–474
  */
 	switch (cmd) {
+	case F_CREATED_QUERY:
+		err = f_created_query(filp);
+		break;
 	case F_DUPFD:
-		err = f_dupfd(arg, filp, 0);
+		err = f_dupfd(argi, filp, 0);
 		break;
 	case F_DUPFD_CLOEXEC:
-		err = f_dupfd(arg, filp, O_CLOEXEC);
+		err = f_dupfd(argi, filp, O_CLOEXEC);
+		break;
+	case F_DUPFD_QUERY:
+		err = f_dupfd_query(argi, filp);
 		break;
 	case F_GETFD:
 		err = get_close_on_exec(fd) ? FD_CLOEXEC : 0;
 		break;
 	case F_SETFD:
 		err = 0;
-		set_close_on_exec(fd, arg & FD_CLOEXEC);
+		set_close_on_exec(fd, argi & FD_CLOEXEC);
 		break;
 	case F_GETFL:
 		err = filp->f_flags;
 		break;
 	case F_SETFL:
-		err = setfl(fd, filp, arg);
+		err = setfl(fd, filp, argi);
 		break;
 ```
 
@@ -506,30 +568,26 @@ filp->f_flags = (arg & SETFL_MASK) | (filp->f_flags & ~SETFL_MASK);
 ```
 
 with `SETFL_MASK` equal to `O_APPEND | O_NONBLOCK | O_NDELAY | O_DIRECT |
-O_NOATIME` (`fs/fcntl.c` line 33, assignment at line 80). `dup` shares those status bits, because `dup` shares the `struct file`.
+O_NOATIME` (`fs/fcntl.c` line 38, assignment at line 84). The same locked
+update stores `f_iocb_flags` (line 85). `dup` shares those status bits, because `dup` shares the `struct file`.
 `F_SETFD` changes one index's bitmap bit. `do_close_on_exec` walks that
 bitmap at `exec` and closes those indexes. Another index, or another
 task's table, can still hold the `struct file`.
 
-## 10. `lseek` writes the shared `f_pos`
+## 11. `lseek` writes the shared `f_pos`
 
 `read` and `write` also move `f_pos`. Day 2 follows that path. The seek
 path is the one that writes the field on purpose.
 
 ```c
-/* fs/read_write.c :: vfs_llseek, ksys_lseek :: tree c9b2385d6793
- * lines 291–320
+/* fs/read_write.c :: vfs_llseek, ksys_lseek :: tree adc218676eef
+ * lines 378–402
  */
 loff_t vfs_llseek(struct file *file, loff_t offset, int whence)
 {
-	loff_t (*fn)(struct file *, loff_t, int);
-
-	fn = no_llseek;
-	if (file->f_mode & FMODE_LSEEK) {
-		if (file->f_op->llseek)
-			fn = file->f_op->llseek;
-	}
-	return fn(file, offset, whence);
+	if (!(file->f_mode & FMODE_LSEEK))
+		return -ESPIPE;
+	return file->f_op->llseek(file, offset, whence);
 }
 EXPORT_SYMBOL(vfs_llseek);
 
@@ -537,12 +595,12 @@ static off_t ksys_lseek(unsigned int fd, off_t offset, unsigned int whence)
 {
 	off_t retval;
 	struct fd f = fdget_pos(fd);
-	if (!f.file)
+	if (!fd_file(f))
 		return -EBADF;
 
 	retval = -EINVAL;
 	if (whence <= SEEK_MAX) {
-		loff_t res = vfs_llseek(f.file, offset, whence);
+		loff_t res = vfs_llseek(fd_file(f), offset, whence);
 		retval = res;
 		if (res != (loff_t)retval)
 			retval = -EOVERFLOW;	/* LFS: should only happen on 32 bit platforms */
@@ -552,15 +610,17 @@ static off_t ksys_lseek(unsigned int fd, off_t offset, unsigned int whence)
 }
 ```
 
-`fdget_pos` is `__fdget_pos`: the index becomes a `struct file *`, and
+`fdget_pos` returns a `struct fd`. `fd_file` is the `struct file *`, and
 the position mutex is taken when `file_needs_f_pos_lock` says so. A
-missing file is `-EBADF`. `vfs_llseek` calls `no_llseek`, which returns
-`-ESPIPE`, unless `FMODE_LSEEK` is set and `f_op->llseek` is present.
+missing file is `-EBADF`. `vfs_llseek` returns `-ESPIPE` when
+`FMODE_LSEEK` is clear, and otherwise calls `f_op->llseek`.
+`do_dentry_open` clears `FMODE_LSEEK` when that method is absent (lines
+969–970), so the flag is the remaining check.
 `default_llseek` writes `file->f_pos` under `inode_lock`. The method
 writes the shared field, so `lseek` on one duplicate moves the position
 `read` will use on the other. `fdput_pos` drops the lookup reference.
 
-## 11. Execution trace: open, dup, read, lseek, close
+## 12. Execution trace: open, dup, read, lseek, close
 
 One task, already running, with its own `files_struct`. The path names a
 regular file. Numbers here are a walk through the calls, not a trace of
@@ -597,11 +657,11 @@ lseek(4, 0, SEEK_SET)        ksys_lseek → vfs_llseek
                                f_op->llseek writes f_pos = 0
                                a later read on fd 3 starts at 0
 
-close(4)                     pick_file clears fd[4]
-                               filp_close → fput
+close(4)                     file_close_fd_locked clears fd[4]
+                               filp_flush → __fput_sync
                                f_count = 1, file still alive
 
-close(3)                     pick_file clears fd[3]
+close(3)                     file_close_fd_locked clears fd[3]
                                fput → count reaches 0
                                __fput → f_op->release
 ```
@@ -610,7 +670,7 @@ A second `open` of the same path allocates another `struct file` at
 `f_pos == 0`. Day 2 expands the `read` steps. fd 3 and fd 4 are two
 slots and one `f_pos`.
 
-## 12. A small C picture of one shared offset
+## 13. A small C picture of one shared offset
 
 This is the user-space side of the trace. `open` and `dup` are libc
 wrappers around the syscalls above. The checks make the shared position
@@ -654,7 +714,7 @@ one `struct file`: the second `read` returns `'b'`, and `lseek` on
 After `close(fd)` the variable still holds the integer, and `next_fd`
 may already have reused the slot.
 
-## 13. Registers, locks, and the ToyOS table
+## 14. Registers, locks, and the ToyOS table
 
 On x86-64, `arch/x86/entry/entry_64.S` records the `syscall` registers:
 `rax` is the call number, `rdi`/`rsi`/`rdx` are the first three
@@ -670,7 +730,7 @@ The C behind the stub is `do_sys_open` and `ksys_lseek` on each of them.
 
 `getname` translates the path with the caller's `mm->pgd`. The new
 table and `struct file` are kernel objects. `files->file_lock` covers
-allocation and `pick_file`. `f_pos_lock` covers `f_pos` once
+allocation and `file_close_fd_locked`. `f_pos_lock` covers `f_pos` once
 `file_count` exceeds one. `f_lock` covers `f_flags`, so `F_SETFL` of
 `O_NONBLOCK` is visible on every index that shares the file. Threads
 with `CLONE_FILES` share the table.
@@ -683,7 +743,7 @@ adds `f_count`, the shared `f_pos`, the per-index close-on-exec bit, and
 a table tasks can share or duplicate. Day 2 follows `f_op`. Day 3 follows
 `f_mapping`.
 
-## 14. Mastery: Explain · Draw · Observe · Build
+## 15. Mastery: Explain · Draw · Observe · Build
 
 Run
 [`../challenges/day-001-descriptors.sh`](../challenges/day-001-descriptors.sh)
@@ -718,11 +778,11 @@ On the lab run, record each integer the program prints and say which
 kernel object it indexes. Mark which indexes share one `f_pos`, which
 close drops a reference without freeing the file, and which close drops
 the last reference. Record an `EBADF` from a stale or empty index as the
-`pick_file` miss.
+`file_close_fd_locked` miss, which `close` returns as `EBADF`.
 
 ### Build
 
-Extend the C picture in section 12 only by a second `open` of the same
+Extend the C picture in section 13 only by a second `open` of the same
 path. Predict, before you run it, that the new index has its own `f_pos`
 at 0 while `alias` still sees the shared position. Then name the call in
 `do_sys_openat2` that allocates that second `struct file`.
@@ -738,7 +798,7 @@ at 0 while `alias` still sees the shared position. Then name the call in
 6. Why is `O_CLOEXEC` stripped in `build_open_flags` and still honored
    by `alloc_fd`?
 7. Why can `close` return `-EINTR` without restarting?
-8. Why does `__fdget_pos` lock `f_pos` when `file_count` is greater than
+8. Why does `fdget_pos` lock `f_pos` when `file_count` is greater than
    one?
 9. Why does ToyOS store `offset` in `struct file` and the bytes in
    `struct inode`?

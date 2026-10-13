@@ -56,11 +56,9 @@ return -EINVAL;
 
 Trace. A bad index, a negative count, or a null `filp[fd]` returns `-EINVAL`. A zero count returns 0 before any copy. `verify_area` checks the user buffer. The inode then picks the body: a pipe calls `read_pipe` only when the low bit of `f_mode` is set; a character or block inode passes `&file->f_pos` into the device helper; a directory or regular file shrinks `count` to the bytes left before `i_size` and calls `file_read`. Anything else prints the mode and returns `-EINVAL`.
 
-What carries forward is one entry point, a per-object body, a checked user buffer, and a short or zero count as a real result. The `if` ladder on `i_mode`, `i_zone[0]` as a device number, and `verify_area` belong to this kernel. Linux 5.10 keeps the purpose and moves the dispatch to `vfs_read` and `file_operations`, with `access_ok` / `copy_to_user` at the boundary. A positive short count is still success for those bytes.
+What carries forward is one entry point, a per-object body, a checked user buffer, and a short or zero count as a real result. The `if` ladder on `i_mode`, `i_zone[0]` as a device number, and `verify_area` belong to this kernel. Linux 6.12 keeps the purpose and moves the dispatch to `vfs_read` and `file_operations`, with `access_ok` / `copy_to_user` at the boundary. A positive short count is still success for those bytes.
 
-ToyOS is the small short read. [`vfs_read`](../../projects/toyos/src/vfs.c) copies `min(length, available)` from the inode array, advances `offset`, and returns that count. Zero means the inode is exhausted.
-
-The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) shows this dispatch beside `open`. The sections below are the same purpose in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete implementation. Develop against the 5.10 tree.
+The shared [Linux 0.12 map](../../references/EARLY_LINUX_012_MAP.md) shows this dispatch beside `open`. The sections below are the same purpose in Linux 6.12, tree `adc218676eef`. Read 0.12 as the first complete implementation. Develop against the 6.12 tree.
 
 Day 1 made a descriptor an index into a `struct file`, and `f_pos` the
 position that index shares with its duplicates. This lesson is what a
@@ -69,10 +67,44 @@ buffer. The number you pass is a ceiling. The number that comes back is
 how far this attempt got.
 
 The excerpts are from the local tree
-`5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`), the same
-5.10-based tree as Day 1.
+`adc218676eef25575469234709c2d87185ca223a` (commit `adc218676eef`), the same
+6.12 tree as Day 1.
 
-## 3. Why the call is allowed to stop early
+## 3. Evolution: why the early design changed
+
+Linux 0.12's `sys_read` is one function with an `if` ladder on `i_mode`. A
+pipe, a character device, a block device, and a regular file each have a
+different body, and `verify_area` is the check on the user buffer. A zero
+count returns 0 before any of that. A short read of a regular file is
+whatever `file_read` copied.
+
+That ladder cannot grow. Every new object would add another type test in the
+syscall, and a wider copy from a user address needs a check that survives a
+speculative load, not only a range test before the copy.
+
+`struct file_operations` (`include/linux/fs.h` lines 2062–2069) puts `read`
+and `read_iter` on the object. `vfs_read` (`fs/read_write.c` lines 549–571)
+still makes one attempt: mode bits, `access_ok`, `rw_verify_area`, a cap at
+`MAX_RW_COUNT`, then either `f_op->read` or `new_sync_read`. `new_sync_read`
+(lines 478–492) builds an `iov_iter` with `iov_iter_ubuf` and calls
+`read_iter`. The byte-stream contract is the `ssize_t`. A positive short
+count is progress, zero on a nonzero request can be the end, and a negative
+value is `-errno`.
+
+The copy is hardened at the boundary. `copy_from_user`
+(`include/linux/uaccess.h` lines 204–213) refuses a size `check_copy_size`
+rejects. `_inline_copy_from_user` (lines 158–185) uses `access_ok` or
+`mask_user_address`, a `barrier_nospec` after that check, instrumentation
+around `raw_copy_from_user`, and `memset` of the uncopied tail. The user
+pointer is still not an ordinary kernel load.
+
+What survived is the caller's loop. The VFS does not fill the buffer. A
+pipe's `read_iter` is `pipe_read` (`fs/pipe.c` line 1234), and it can still
+return a short count, zero, or `-EAGAIN`.
+
+## 4. Why the call is allowed to stop early
+
+ToyOS is the small short read. [`vfs_read`](../../projects/toyos/src/vfs.c) copies `min(length, available)` from the inode array, advances `offset`, and returns that count. Zero means the inode is exhausted.
 
 A disk file, a pipe, a socket, and a device do not have the same notion
 of "the next bytes." A regular file has an `i_size` and a page cache.
@@ -99,7 +131,7 @@ does not fit, returning `-28`, so the toy does not yet have a short
 write. Linux uses one signed return for all three outcomes, on every
 kind of object that supplies `file_operations`.
 
-## 4. Three results, and the libc translation
+## 5. Three results, and the libc translation
 
 Inside the kernel the return is an `ssize_t`:
 
@@ -116,23 +148,23 @@ and `errno` is set to the positive code. A program that treats any
 return below the requested count as failure will retry a finished file
 forever, or abandon a transfer that had already moved bytes.
 
-Two zeros must stay apart. The header comment in `fs/pipe.c` lines 68–69
-says a read with `count = 0` should return 0. `generic_file_buffered_read`
+Two zeros must stay apart. The header comment in `fs/pipe.c` lines 69–70
+says a read with `count = 0` should return 0. `filemap_read`
 in `mm/filemap.c` does the same when `iov_iter_count(iter)` is 0 (lines
-2611–2612). That zero is "you asked for nothing." End-of-file is a zero
-returned for a nonzero request once `iocb->ki_pos >= isize` (lines
-2651–2652) and no bytes were copied. The caller's loop distinguishes
+2625–2626). That zero is "you asked for nothing." End-of-file is a zero
+returned for a nonzero request once `iocb->ki_pos` is past `i_size`
+(lines 2642–2643) and no bytes were copied. The caller's loop distinguishes
 them by the count it passed in.
 
 `include/uapi/asm-generic/errno.h` line 22 defines `EWOULDBLOCK` as
 `EAGAIN`. On this tree they are one code. A test for either name matches
 the same return.
 
-## 5. `ksys_read` looks up the index and moves `f_pos` only on progress
+## 6. `ksys_read` looks up the index and moves `f_pos` only on progress
 
 ```c
-/* fs/read_write.c :: file_ppos, ksys_read :: tree c9b2385d6793
- * lines 617–640
+/* fs/read_write.c :: file_ppos, ksys_read :: tree adc218676eef
+ * lines 695–718
  */
 /* file_ppos returns &file->f_pos or NULL if file is stream */
 static inline loff_t *file_ppos(struct file *file)
@@ -145,15 +177,15 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 	struct fd f = fdget_pos(fd);
 	ssize_t ret = -EBADF;
 
-	if (f.file) {
-		loff_t pos, *ppos = file_ppos(f.file);
+	if (fd_file(f)) {
+		loff_t pos, *ppos = file_ppos(fd_file(f));
 		if (ppos) {
 			pos = *ppos;
 			ppos = &pos;
 		}
-		ret = vfs_read(f.file, buf, count, ppos);
+		ret = vfs_read(fd_file(f), buf, count, ppos);
 		if (ret >= 0 && ppos)
-			f.file->f_pos = pos;
+			fd_file(f)->f_pos = pos;
 		fdput_pos(f);
 	}
 	return ret;
@@ -165,7 +197,7 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 one reference. `file_ppos` returns `NULL` for `FMODE_STREAM`, so a stream
 has no shared offset to update. Otherwise the current `f_pos` is copied
 to a local `pos`, and `vfs_read` receives a pointer to that local. The
-store back to `f.file->f_pos` happens only when `ret >= 0`. An error
+store back to `fd_file(f)->f_pos` happens only when `ret >= 0`. An error
 leaves the shared offset where it was. A short success moves it by
 however many bytes the method claimed, because the method updates `*ppos`
 and this function publishes that local back.
@@ -174,11 +206,11 @@ and this function publishes that local back.
 it was taken. The user's `buf` is still a `__user` pointer. Nothing in
 `ksys_read` dereferences it.
 
-## 6. `vfs_read` checks, caps, and calls the method once
+## 7. `vfs_read` checks, caps, and calls the method once
 
 ```c
-/* fs/read_write.c :: vfs_read :: tree c9b2385d6793
- * lines 476–505
+/* fs/read_write.c :: vfs_read :: tree adc218676eef
+ * lines 549–578
  */
 ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
@@ -219,7 +251,7 @@ user address this kernel is willing to copy. Failure is `-EFAULT`, and
 `f_pos` will not move because `ksys_read` stores it only for `ret >= 0`.
 
 `MAX_RW_COUNT` is `(INT_MAX & PAGE_MASK)` in `include/linux/fs.h` line
-2542. A request larger than that is shortened before the method runs, so
+2681. A request larger than that is shortened before the method runs, so
 a regular file can return a short count while `i_size` still has more
 bytes. That short count is progress. The next call continues at the
 updated `f_pos`.
@@ -230,69 +262,65 @@ socket, and a device node each install their own `read` or `read_iter`.
 one-element `iov_iter` and calls `read_iter`; it too is one attempt.
 
 For a regular file that attempt often lands in `generic_file_read_iter`.
-Its comment in `mm/filemap.c` lines 2719–2737 says the routine is for
+Its comment in `mm/filemap.c` lines 2770–2789 says the routine is for
 filesystems that use the page cache directly, that `IOCB_NOWAIT` means
-`-EAGAIN` when the read would wait, and that the return is the number of
-bytes copied, including partial reads. `generic_file_buffered_read`
-returns `written ? written : error` (line 2714). Bytes already copied
-win over a later fault: the positive count is what the caller must
+`-EAGAIN` when no data can be read without waiting, and that the return
+is the number of bytes copied, including partial reads. `filemap_read`
+returns `already_read ? already_read : error` (line 2715). Bytes already
+copied win over a later fault: the positive count is what the caller must
 account for, and the offset has already moved.
 
-## 7. `rw_verify_area` rejects a nonsense range
+## 8. `rw_verify_area` rejects a nonsense range
 
 ```c
-/* fs/read_write.c :: rw_verify_area :: tree c9b2385d6793
- * lines 371–401
+/* fs/read_write.c :: rw_verify_area :: tree adc218676eef
+ * lines 448–475
  */
-	inode = file_inode(file);
-	if (unlikely((ssize_t) count < 0))
-		return retval;
+int rw_verify_area(int read_write, struct file *file, const loff_t *ppos, size_t count)
+{
+	int mask = read_write == READ ? MAY_READ : MAY_WRITE;
+	int ret;
 
-	/*
-	 * ranged mandatory locking does not apply to streams - it makes sense
-	 * only for files where position has a meaning.
-	 */
+	if (unlikely((ssize_t) count < 0))
+		return -EINVAL;
+
 	if (ppos) {
 		loff_t pos = *ppos;
 
 		if (unlikely(pos < 0)) {
 			if (!unsigned_offsets(file))
-				return retval;
+				return -EINVAL;
 			if (count >= -pos) /* both values are in 0..LLONG_MAX */
 				return -EOVERFLOW;
 		} else if (unlikely((loff_t) (pos + count) < 0)) {
 			if (!unsigned_offsets(file))
-				return retval;
-		}
-
-		if (unlikely(inode->i_flctx && mandatory_lock(inode))) {
-			retval = locks_mandatory_area(inode, file, pos, pos + count - 1,
-					read_write == READ ? F_RDLCK : F_WRLCK);
-			if (retval < 0)
-				return retval;
+				return -EINVAL;
 		}
 	}
 
-	return security_file_permission(file,
-				read_write == READ ? MAY_READ : MAY_WRITE);
+	ret = security_file_permission(file, mask);
+	if (ret)
+		return ret;
+
+	return fsnotify_file_area_perm(file, mask, ppos, count);
+}
 ```
 
-`retval` was set to `-EINVAL` at the top of the function (line 369). A
-`count` that does not fit in `ssize_t` is rejected, which is why a huge
-request cannot look like a negative length later. A negative position
-is `-EINVAL` unless the file uses unsigned offsets, and a position plus
-count that wraps is the same class of rejection, or `-EOVERFLOW` when
-the unsigned case still cannot represent the range. Streams pass a
-`NULL` position from `file_ppos`, so the position checks are skipped, and
-the comment says mandatory locking applies only where a position means
-something. The last call is the LSM hook. None of this copies bytes.
+A `count` that does not fit in `ssize_t` returns `-EINVAL` immediately
+(lines 453–454), which is why a huge request cannot look like a negative
+length later. A negative position is `-EINVAL` unless the file uses
+unsigned offsets, and a position plus count that wraps is the same class
+of rejection, or `-EOVERFLOW` when the unsigned case still cannot
+represent the range. Streams pass a `NULL` position from `file_ppos`, so
+the position checks are skipped. The last calls are the LSM hook and
+`fsnotify_file_area_perm` (lines 470–474). None of this copies bytes.
 It decides whether the one attempt may start.
 
-## 8. `vfs_write` and `ksys_write` are the same contract in the other direction
+## 9. `vfs_write` and `ksys_write` are the same contract in the other direction
 
 ```c
-/* fs/read_write.c :: vfs_write :: tree c9b2385d6793
- * lines 585–615
+/* fs/read_write.c :: vfs_write :: tree adc218676eef
+ * lines 663–693
  */
 ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_t *pos)
 {
@@ -328,23 +356,23 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
 ```
 
 ```c
-/* fs/read_write.c :: ksys_write :: tree c9b2385d6793
- * lines 647–665
+/* fs/read_write.c :: ksys_write :: tree adc218676eef
+ * lines 725–743
  */
 ssize_t ksys_write(unsigned int fd, const char __user *buf, size_t count)
 {
 	struct fd f = fdget_pos(fd);
 	ssize_t ret = -EBADF;
 
-	if (f.file) {
-		loff_t pos, *ppos = file_ppos(f.file);
+	if (fd_file(f)) {
+		loff_t pos, *ppos = file_ppos(fd_file(f));
 		if (ppos) {
 			pos = *ppos;
 			ppos = &pos;
 		}
-		ret = vfs_write(f.file, buf, count, ppos);
+		ret = vfs_write(fd_file(f), buf, count, ppos);
 		if (ret >= 0 && ppos)
-			f.file->f_pos = pos;
+			fd_file(f)->f_pos = pos;
 		fdput_pos(f);
 	}
 
@@ -364,10 +392,10 @@ shows why a positive count is still not a durable store.
 on the `struct file`. `dup` shares them. A nonblocking duplicate and the
 original index wait, or refuse to wait, together.
 
-## 9. A pipe sleeps, returns `EAGAIN`, or returns what it has
+## 10. A pipe sleeps, returns `EAGAIN`, or returns what it has
 
 `pipe_read` in `fs/pipe.c` is one method `vfs_read` can land on. After
-it has copied whatever is already buffered, lines 340–347 decide among
+it has copied whatever is already buffered, lines 343–360 decide among
 end, short progress, and waiting. No writers breaks the loop: `ret` stays
 0 if nothing was copied, which is the end, or stays at the short count if
 something was. A nonzero `ret` breaks immediately, so a blocking pipe
@@ -378,14 +406,28 @@ does not sleep.
 The sleep is the rest of that path:
 
 ```c
-/* fs/pipe.c :: pipe_read :: tree c9b2385d6793
- * lines 344–378
+/* fs/pipe.c :: pipe_read :: tree adc218676eef
+ * lines 343–391
  */
-		if (filp->f_flags & O_NONBLOCK) {
+			if (!buf->len)
+				tail = pipe_update_tail(pipe, buf, tail);
+			total_len -= chars;
+			if (!total_len)
+				break;	/* common path: read succeeded */
+			if (!pipe_empty(head, tail))	/* More to do? */
+				continue;
+		}
+
+		if (!pipe->writers)
+			break;
+		if (ret)
+			break;
+		if ((filp->f_flags & O_NONBLOCK) ||
+		    (iocb->ki_flags & IOCB_NOWAIT)) {
 			ret = -EAGAIN;
 			break;
 		}
-		__pipe_unlock(pipe);
+		mutex_unlock(&pipe->mutex);
 
 		/*
 		 * We only get here if we didn't actually read anything.
@@ -426,7 +468,7 @@ comment says the wait returns `-ERESTARTSYS` when interrupted, and that
 this path has not copied bytes, so there is no partial progress to
 preserve.
 
-`pipe_write` (lines 547–556) is the mirror. A full pipe with
+`pipe_write` (lines 557–566) is the mirror. A full pipe with
 `O_NONBLOCK` sets `-EAGAIN` when `ret` is still 0. `signal_pending`
 sets `-ERESTARTSYS` on the same "nothing committed yet" rule.
 
@@ -434,11 +476,11 @@ The user-visible `EINTR` is what the signal path does with
 `-ERESTARTSYS`. On x86, `handle_signal` in `arch/x86/kernel/signal.c`:
 
 ```c
-/* arch/x86/kernel/signal.c :: handle_signal :: tree c9b2385d6793
- * lines 793–813
+/* arch/x86/kernel/signal.c :: handle_signal :: tree adc218676eef
+ * lines 263–283
  */
 	/* Are we from a system call? */
-	if (syscall_get_nr(current, regs) >= 0) {
+	if (syscall_get_nr(current, regs) != -1) {
 		/* If so, check system call restarting.. */
 		switch (syscall_get_error(current, regs)) {
 		case -ERESTART_RESTARTBLOCK:
@@ -469,11 +511,11 @@ never surfaces in user space. Either way the program must not treat
 `EINTR` as a permanent failure of the descriptor.
 
 `generic_perform_write` has a direct `-EINTR` as well, when
-`fatal_signal_pending(current)` is true (`mm/filemap.c` lines 3572–3574).
+`fatal_signal_pending(current)` is true (`mm/filemap.c` lines 4049–4051).
 That one is not `-ERESTARTSYS`. It is already the errno a write attempt
 returns if it has not copied anything yet.
 
-## 10. The bytes cross a checked boundary
+## 11. The bytes cross a checked boundary
 
 `access_ok` in `vfs_read` is the first gate. The copy itself is the
 second. Week 8's `copy_from_user` walked the user page tables one byte
@@ -481,42 +523,66 @@ at a time because a user register holds an address in that process's
 map. This tree's helper is the same rule with a wider copy.
 
 ```c
-/* include/linux/uaccess.h :: _copy_from_user :: tree c9b2385d6793
- * lines 152–164
+/* include/linux/uaccess.h :: _inline_copy_from_user :: tree adc218676eef
+ * lines 158–185
  */
 static inline __must_check unsigned long
-_copy_from_user(void *to, const void __user *from, unsigned long n)
+_inline_copy_from_user(void *to, const void __user *from, unsigned long n)
 {
 	unsigned long res = n;
 	might_fault();
-	if (!should_fail_usercopy() && likely(access_ok(from, n))) {
-		instrument_copy_from_user(to, from, n);
-		res = raw_copy_from_user(to, from, n);
+	if (should_fail_usercopy())
+		goto fail;
+	if (can_do_masked_user_access())
+		from = mask_user_address(from);
+	else {
+		if (!access_ok(from, n))
+			goto fail;
+		/*
+		 * Ensure that bad access_ok() speculation will not
+		 * lead to nasty side effects *after* the copy is
+		 * finished:
+		 */
+		barrier_nospec();
 	}
-	if (unlikely(res))
-		memset(to + (n - res), 0, res);
+	instrument_copy_from_user_before(to, from, n);
+	res = raw_copy_from_user(to, from, n);
+	instrument_copy_from_user_after(to, from, n, res);
+	if (likely(!res))
+		return 0;
+fail:
+	memset(to + (n - res), 0, res);
 	return res;
 }
 ```
 
 ```c
-/* include/linux/uaccess.h :: copy_from_user, copy_to_user :: tree c9b2385d6793
- * lines 188–202
+/* include/linux/uaccess.h :: copy_from_user, copy_to_user :: tree adc218676eef
+ * lines 204–227
  */
 static __always_inline unsigned long __must_check
 copy_from_user(void *to, const void __user *from, unsigned long n)
 {
-	if (likely(check_copy_size(to, n, false)))
-		n = _copy_from_user(to, from, n);
-	return n;
+	if (!check_copy_size(to, n, false))
+		return n;
+#ifdef INLINE_COPY_FROM_USER
+	return _inline_copy_from_user(to, from, n);
+#else
+	return _copy_from_user(to, from, n);
+#endif
 }
 
 static __always_inline unsigned long __must_check
 copy_to_user(void __user *to, const void *from, unsigned long n)
 {
-	if (likely(check_copy_size(from, n, true)))
-		n = _copy_to_user(to, from, n);
-	return n;
+	if (!check_copy_size(from, n, true))
+		return n;
+
+#ifdef INLINE_COPY_TO_USER
+	return _inline_copy_to_user(to, from, n);
+#else
+	return _copy_to_user(to, from, n);
+#endif
 }
 ```
 
@@ -525,8 +591,8 @@ moved. `might_fault` is the permission for this path to take a page
 fault: the user virtual address is translated through the calling task's
 page tables, the same walk Week 5 and Week 7 built. A hole in that map,
 or a permission the user is not allowed, stops the copy. The comment at
-line 89 says only `copy_from_user` zero-fills the uncopied tail of the
-kernel destination. The kernel does not leave leftover stack bytes from
+line 80 says only `copy_from_user` zero-pads the destination of a short
+copy. The kernel does not leave leftover stack bytes from
 a short copy visible as if they had been read from the user.
 
 `__user` on the pointer is the type-level reminder. A C pointer in kernel
@@ -536,9 +602,11 @@ the zero-fill. That is the bug Week 8's checked copy exists to prevent.
 
 A read's copy is usually `copy_to_user` or `copy_page_to_iter`: kernel
 bytes into the user map. A write's copy is the other way. In
-`generic_perform_write`, `iov_iter_fault_in_readable` brings the user
+`generic_perform_write`, `fault_in_iov_iter_readable` brings the user
 page in before `write_begin`, and a short `copied` count is progress or
-a fault, not a silent success. The VFS return is still one `ssize_t`.
+a fault, not a silent success. `copy_from_user` refuses the copy when
+`check_copy_size` fails, and `_inline_copy_from_user` uses `access_ok`
+or `mask_user_address` plus `barrier_nospec` before `raw_copy_from_user`. The VFS return is still one `ssize_t`.
 
 ```text
 user virtual address in rsi / x1 / a1
@@ -557,7 +625,7 @@ ssize_t in the return register
         negative  -> errno, f_pos unchanged when ksys_* saw ret < 0
 ```
 
-## 11. A loop that means what it says
+## 12. A loop that means what it says
 
 This is the caller side of the contract. `read` here is libc: `-1` and
 `errno`, not the kernel's negative `ssize_t`. The cursor `got` is the
@@ -605,7 +673,7 @@ The `fd` in this function is Day 1's index. If another thread shares the
 advance one `f_pos` under `f_pos_lock`. The cursor `got` is private to
 this call. `f_pos` is not.
 
-## 12. Execution trace: a short read, a sleep, a signal
+## 13. Execution trace: a short read, a sleep, a signal
 
 One task, descriptor 3 a blocking pipe, descriptor 4 a regular file
 positioned at the start of a 100-byte file. The user asks for 4096.
@@ -643,7 +711,7 @@ zero. The pipe pair is a sleep, then a short count, because data was
 available and the method returned it. The signal case copies nothing, so
 retrying does not skip a byte and does not double-count one.
 
-## 13. Architecture lens
+## 14. Architecture lens
 
 Day 1 named the registers. For `read` and `write` they hold the
 descriptor, the user address, and the count. On x86-64, `arch/x86/entry/entry_64.S`
@@ -670,7 +738,7 @@ pipe lock before `wait_event_interruptible_exclusive`, which is why a
 closer in another thread can proceed. The sleeper rechecks the pipe when
 it wakes.
 
-## 14. Mastery: Explain · Draw · Observe · Build
+## 15. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-002-stream-io.sh`](../challenges/day-002-stream-io.sh)
 after this explanation.

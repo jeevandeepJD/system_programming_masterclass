@@ -68,26 +68,46 @@ page 401), and `do_exit` does not return. In `sys_waitpid`, the
 the child's pid.
 
 What carries forward is the retained exit word and the wait that
-collects it. What changes in 5.10 is the life cycle around that word:
-`exit_notify`, `EXIT_ZOMBIE`, reparenting, subreapers, and `wait4`.
-Develop against those functions. The LDT bases and `iput` of a single
-executable inode are the 0.12 way of releasing the image.
+collects it. The LDT bases and `iput` of a single executable inode are
+the 0.12 way of releasing the image.
 
 ToyOS has one user image and an `iretq` back into it. It has no second
 task holding an `exit_code` for a parent. 0.12 is where that retained
 record shows up in a few assignments.
 
-Now move to the 5.10 implementation.
+## 3. Evolution: why the early design changed
 
-The excerpts below come from the local tree `c9b2385d6793`, a 5.10.134-based
-kernel. Record `uname -r` beside that id before you treat a line number as
-true of the machine you are running. Function names and call order move
-between releases. The POSIX wait contract is what a C program may rely on;
-these functions show one implementation of that contract.
+Linux 0.12 keeps a zombie slot and an exit word, and it reparents to
+`init` (task 1) when the parent is already gone. That is enough while
+every task is one thread in one global pid space and the only reaper is
+init.
+
+Threads broke the "one task, one process" picture. A thread group
+shares the exit word the parent waits for, and a non-leader thread can
+exit without ending the group. Pid namespaces made "init" a per-namespace
+`child_reaper`, not a single global task 1. Service managers needed a
+third choice: an ancestor that opts in as a child subreaper, so orphans
+do not jump all the way to the namespace init.
+
+Pidfds added a file-descriptor name for the same wait. A parent can
+wait on a pidfd as well as on a pid integer, including a thread-specific
+waiter when the group is still alive. The integer can be recycled. The
+descriptor refers to that task.
+
+What survived is the wait contract. The kernel keeps an exit word after
+the address space is gone, and some parent collects it. The 6.12/current
+path below is `exit_notify`, `wait4`, and the reaper walk.
+
+The excerpts below come from Linux 6.12, tag `v6.12`, commit
+`adc218676eef`. Record `uname -r` beside that id before you treat a line
+number as true of the machine you are running. Function names and call
+order move between releases. The POSIX wait contract is what a C program
+may rely on; these functions show one implementation of that contract.
+Develop against this 6.12/current path.
 
 ---
 
-## 3. Why the exit code has to outlive the program
+## 4. Why the exit code has to outlive the program
 
 A parent creates a child so that it can later learn what the child did. The
 interesting fact often arrives at the end: the child called `_exit(23)`, or
@@ -114,33 +134,31 @@ waiter collects it or the kernel sees that the waiter has declined it.
 
 ---
 
-## 4. Two syscalls put the word in, one family of syscalls takes it out
+## 5. Two syscalls put the word in, one family of syscalls takes it out
 
 The C library's `exit` and `_exit` are ordinary functions until they issue a
 system call. In this tree the two kernel entries sit together.
-`kernel/exit.c`, tree `c9b2385d6793`, lines 894–908:
+`kernel/exit.c`, tree `adc218676eef`, lines 1053–1056 and 1097–1102:
 
 ```c
 SYSCALL_DEFINE1(exit, int, error_code)
 {
 	do_exit((error_code&0xff)<<8);
 }
-
-/*
- * Take down every thread in the group.  This is called by fatal signals
- * as well as by sys_exit_group (below).
- */
-void
-do_group_exit(int exit_code)
-{
-	struct signal_struct *sig = current->signal;
-
-	BUG_ON(exit_code & 0x80); /* core dumps don't get here */
 ```
 
-`exit_group` (line 936) shifts the status the same way and calls
-`do_group_exit`. The shift keeps eight bits of user status in the high
-byte and leaves the low byte clear for a normal exit. `WEXITSTATUS`
+```c
+SYSCALL_DEFINE1(exit_group, int, error_code)
+{
+	do_group_exit((error_code & 0xff) << 8);
+	/* NOTREACHED */
+	return 0;
+}
+```
+
+`exit_group` shifts the status the same way and calls `do_group_exit`
+(line 1062), which is `__noreturn`. The shift keeps eight bits of user
+status in the high byte and leaves the low byte clear for a normal exit. `WEXITSTATUS`
 shifts that byte back down. `WIFEXITED` is the predicate that checks the
 low byte first.
 
@@ -153,7 +171,7 @@ group; Week 11 takes up the other threads.
 `do_exit` is marked `__noreturn`. The user instruction pointer that entered
 the syscall is a return address the kernel will not use to resume that
 program. The kernel stack of this task runs the teardown. When teardown
-finishes, `do_exit` calls `do_task_dead` (line 881). The task is off the
+finishes, `do_exit` calls `do_task_dead` (line 990). The task is off the
 path that fetches user instructions.
 
 Fatal signals arrive at the same function from the other direction.
@@ -177,7 +195,7 @@ exit word. `do_notify_parent` in `kernel/signal.c` reads the shape:
 	}
 ```
 
-`kernel/signal.c`, `do_notify_parent`, tree `c9b2385d6793`, lines 1956–1968.
+`kernel/signal.c`, `do_notify_parent`, tree `adc218676eef`, lines 2100–2112.
 A clear low seven bits means a normal exit, and the status is the high byte.
 A nonzero low seven bits means a signal. Bit 7 (`0x80`) marks a core dump.
 The userspace macros `WIFEXITED`, `WIFSIGNALED`, `WEXITSTATUS`, and
@@ -192,17 +210,14 @@ control, which Day 6 introduces; they are separate from the zombie word.
 
 ---
 
-## 5. `do_exit` releases the user program and keeps the task
+## 6. `do_exit` releases the user program and keeps the task
 
-`kernel/exit.c`, function `do_exit`, tree `c9b2385d6793`, lines 802–833:
+`kernel/exit.c`, function `do_exit`, tree `adc218676eef`, lines 923–951:
 
 ```c
 	tsk->exit_code = code;
 	taskstats_exit(tsk, group_dead);
 
-#ifdef CONFIG_TEXT_UNEVICTABLE
-	clean_task_unevict_size(tsk);
-#endif
 	exit_mm();
 
 	if (group_dead)
@@ -255,19 +270,20 @@ leader's exit changes the terminal's owner. The comment above
 the parent is woken by the child-exit notification.
 
 This excerpt stops before `exit_notify`. The same function calls
-`exit_notify(tsk, group_dead)` at line 841, after RCU and breakpoint
-cleanup. Notification is where the task becomes a zombie and where children
+`exit_notify(tsk, group_dead)` at line 959, after the breakpoint flush
+and `exit_tasks_rcu_start`. Notification is where the task becomes a zombie and where children
 of this task receive a new parent. Resource teardown and parent
 notification run in that order, as two steps of one `__noreturn` function.
-Earlier, lines 734–788, `do_exit` panics if it is entered from interrupt
-context, if `tsk->pid` is zero (the idle task), or if global init is the
-task exiting. The lab stays on ordinary children.
+`do_exit` panics if the last thread of global init is exiting (lines
+907–909). The interrupt-context and idle-task panics live in
+`make_task_dead` (lines 1007–1010), which then calls `do_exit`. The lab
+stays on ordinary children.
 
 ---
 
-## 6. `exit_notify` publishes the zombie
+## 7. `exit_notify` publishes the zombie
 
-`kernel/exit.c`, function `exit_notify`, tree `c9b2385d6793`, lines 654–683:
+`kernel/exit.c`, function `exit_notify`, tree `adc218676eef`, lines 731–767:
 
 ```c
 static void exit_notify(struct task_struct *tsk, int group_dead)
@@ -283,6 +299,13 @@ static void exit_notify(struct task_struct *tsk, int group_dead)
 		kill_orphaned_pgrp(tsk->group_leader, NULL);
 
 	tsk->exit_state = EXIT_ZOMBIE;
+	/*
+	 * sub-thread or delay_group_leader(), wake up the
+	 * PIDFD_THREAD waiters.
+	 */
+	if (!thread_group_empty(tsk))
+		do_notify_pidfd(tsk);
+
 	if (unlikely(tsk->ptrace)) {
 		int sig = thread_group_leader(tsk) &&
 				thread_group_empty(tsk) &&
@@ -306,9 +329,11 @@ Hold the order. First the dying task's children are reparented
 (`forget_original_parent`). Then, if the whole thread group is dead,
 `kill_orphaned_pgrp` may signal a process group that has lost its
 connection to the session. Day 6 explains that signal. Then the task's
-`exit_state` becomes `EXIT_ZOMBIE`.
+`exit_state` becomes `EXIT_ZOMBIE`. If the thread group is not empty,
+`do_notify_pidfd` wakes `PIDFD_THREAD` waiters before the parent is
+notified.
 
-`EXIT_ZOMBIE` is `0x0020` in `include/linux/sched.h` in this tree. The
+`EXIT_ZOMBIE` is `0x00000020` in `include/linux/sched.h` in this tree. The
 procfs state table in `fs/proc/array.c` prints that report bit as
 `Z (zombie)`. Day 7 reads that string. The letter `Z` is a projection of
 `exit_state`, produced when someone reads `/proc`. The authoritative
@@ -317,7 +342,7 @@ transition is this assignment under `tasklist_lock`.
 `do_notify_parent` wakes a parent blocked in `wait` and delivers `SIGCHLD`
 according to the parent's disposition. `autoreap` comes back true when the
 parent has arranged to discard the status: `SIGCHLD` ignored, or
-`SA_NOCLDWAIT`, as the comment in `do_notify_parent` (lines 1972–1979)
+`SA_NOCLDWAIT`, as the comment in `do_notify_parent` (lines 2119–2133)
 describes. In that case `exit_state` moves straight to `EXIT_DEAD` and the
 task is queued for `release_task`. The zombie is the state in which a
 parent who still wants the word can find it. A parent who has declined the
@@ -328,7 +353,7 @@ leader is the task `wait` reports for the process. Sub-threads fold their
 departure into the group. That is why a zombie you can `wait` for is a
 group leader whose exit state is still `EXIT_ZOMBIE`.
 
-`release_task` (line 186) is the later free: credentials, signal state, PID
+`release_task` (line 241) is the later free: credentials, signal state, PID
 links, and eventually the task structure. Until it runs, the PID still
 names this task. After it runs, the PID may be recycled. A number you
 wrote down earlier can then name a different task. The lab treats the PID
@@ -336,14 +361,14 @@ as valid only between the observation and the `waitpid` that consumes it.
 
 ---
 
-## 7. `wait4` copies the word into the parent's address space
+## 8. `wait4` copies the word into the parent's address space
 
 The parent learns the word through `wait4`. In this tree libc's
 `waitpid` is expected to call it: the comment above
 `SYSCALL_DEFINE3(waitpid)` says `sys_waitpid` remains for compatibility.
 
-`kernel/exit.c`, `SYSCALL_DEFINE4(wait4)`, tree `c9b2385d6793`, lines
-1659–1670:
+`kernel/exit.c`, `SYSCALL_DEFINE4(wait4)`, tree `adc218676eef`, lines
+1875–1886:
 
 ```c
 SYSCALL_DEFINE4(wait4, pid_t, upid, int __user *, stat_addr,
@@ -360,14 +385,14 @@ SYSCALL_DEFINE4(wait4, pid_t, upid, int __user *, stat_addr,
 }
 ```
 
-`kernel_wait4` (line 1600) turns the pid argument into a pid type. A
+`kernel_wait4` (line 1816) turns the pid argument into a pid type. A
 positive pid selects `PIDTYPE_PID`. Zero and a negative pid select a
 process group (`PIDTYPE_PGID`), which is how a shell waits for every
 member of a job. `-1` selects `PIDTYPE_MAX`, every eligible child.
 The function then fills a `wait_opts` and calls `do_wait`.
 
 The status crosses back to user memory inside `kernel_wait4`.
-`kernel/exit.c`, lines 1629–1640:
+`kernel/exit.c`, lines 1845–1856:
 
 ```c
 	wo.wo_type	= type;
@@ -385,11 +410,11 @@ The status crosses back to user memory inside `kernel_wait4`.
 ```
 
 `wo.wo_stat` was filled from the zombie in `wait_task_zombie` (lines
-1095–1097): the group exit code when `SIGNAL_GROUP_EXIT` is set, and
+1233–1235): the group exit code when `SIGNAL_GROUP_EXIT` is set, and
 `p->exit_code` otherwise. The same function, before that copy, does a
 `cmpxchg` of `exit_state` from `EXIT_ZOMBIE` to `EXIT_DEAD` (or
 `EXIT_TRACE` if a ptracer still needs the task). The comment at lines
-1022–1030 says the point: one thread owns the reap. After a successful
+1164–1172 says the point: one thread owns the reap. After a successful
 `cmpxchg`, the status word has been sampled and the task is on the way
 to `release_task` unless a tracer still holds it.
 
@@ -399,7 +424,7 @@ kernel checks it and writes one integer. A bad pointer yields `-EFAULT`.
 After a successful return, `status` is an ordinary C object whose
 representation is the ABI word from `exit_code`. The syscall return
 register carries the child's PID, or `-1` / `0` for the error and
-`WNOHANG` cases. Which register that is depends on the ISA; section 13
+`WNOHANG` cases. Which register that is depends on the ISA; section 14
 names them. The meaning of the PID and the status word is kernel policy.
 
 `waitpid` returning the PID is success. Returning `0` with `WNOHANG` means
@@ -411,7 +436,7 @@ for that retry.
 
 ---
 
-## 8. Execution trace: exit 23, the letter Z, then the reap
+## 9. Execution trace: exit 23, the letter Z, then the reap
 
 This is the zombie half of `challenges/day-004-wait-zombies-orphans.sh`.
 The wrapper builds the canonical project and runs the bounded child. PIDs
@@ -485,7 +510,7 @@ same word.
 
 ---
 
-## 9. Reparenting: the parent can disappear first
+## 10. Reparenting: the parent can disappear first
 
 A zombie is a task with an uncollected exit word. An orphan is a task
 whose `real_parent` has changed because the old parent exited while this
@@ -498,8 +523,8 @@ The kernel does this in `forget_original_parent`, called from
 must already have a live parent by the time this task becomes something a
 waiter might release.
 
-`kernel/exit.c`, function `forget_original_parent`, tree `c9b2385d6793`,
-lines 615–648:
+`kernel/exit.c`, function `forget_original_parent`, tree `adc218676eef`,
+lines 692–725:
 
 ```c
 static void forget_original_parent(struct task_struct *father,
@@ -543,17 +568,17 @@ this child in the ordinary case. `parent` can differ while a tracer is
 attached; Day 7's `ptrace` stops use that split. For an untraced task the
 two pointers name the same reaper after this loop.
 
-`reparent_leader` (line 586) forces `exit_signal` to `SIGCHLD` so the new
+`reparent_leader` (line 663) forces `exit_signal` to `SIGCHLD` so the new
 parent receives the usual death notification, and if the child is already
 a zombie it notifies the new parent immediately. A zombie whose original
 parent died is still a zombie. The wait obligation moved with
 `real_parent`. The comment at the top of `forget_original_parent` (lines
-607–614) states the two jobs together: make a reaper inherit the children,
+685–691) states the two jobs together: make a reaper inherit the children,
 and check whether any process group became orphaned.
 
-`find_child_reaper` (line 510) starts from the pid namespace's
+`find_child_reaper` (line 587) starts from the pid namespace's
 `child_reaper`, normally the namespace init. The comment above
-`find_new_reaper` (lines 541–547) states the preference: another live
+`find_new_reaper` (lines 618–624) states the preference: another live
 thread in the same thread group, then the nearest ancestor in this pid
 namespace that called `prctl` to become a child subreaper, then the init
 process of the namespace. The walk itself is:
@@ -591,7 +616,7 @@ static struct task_struct *find_new_reaper(struct task_struct *father,
 		}
 ```
 
-`kernel/exit.c`, `find_new_reaper`, tree `c9b2385d6793`, lines 548–577.
+`kernel/exit.c`, `find_new_reaper`, tree `adc218676eef`, lines 625–654.
 The quote stops at the end of the `for` loop. After that walk, the same
 function returns `child_reaper`.
 
@@ -604,10 +629,10 @@ program controls.
 
 ---
 
-## 10. The subreaper flag is a prctl on the signal struct
+## 11. The subreaper flag is a prctl on the signal struct
 
-`kernel/sys.c`, inside the `prctl` switch, tree `c9b2385d6793`, lines
-2445–2458:
+`kernel/sys.c`, inside the `prctl` switch, tree `adc218676eef`, lines
+2605–2618:
 
 ```c
 	case PR_GET_TID_ADDRESS:
@@ -628,8 +653,8 @@ program controls.
 
 `is_child_subreaper` marks this task as willing to adopt descendants.
 `has_child_subreaper` marks descendants so `find_new_reaper` knows a walk
-is worth doing. `fork.c` in this tree copies `has_child_subreaper` onto a
-new child from the parent's flag (lines 2376–2381). The propagate walk
+is worth doing. `fork.c` in this tree sets the child's `has_child_subreaper` from the
+parent's `has_child_subreaper` or `is_child_subreaper` (lines 2564–2570). The propagate walk
 updates existing descendants when the flag is turned on.
 
 The lab calls `prctl(PR_SET_CHILD_SUBREAPER, 1)` in the top process, then
@@ -668,7 +693,7 @@ to collect a future exit word. It is a parent-pointer update under
 
 ---
 
-## 11. Zombie and orphan side by side
+## 12. Zombie and orphan side by side
 
 ```text
 question                         zombie                         orphan
@@ -698,7 +723,7 @@ path inside `exit_notify` when the parent has declined `SIGCHLD`.
 
 ---
 
-## 12. How the earlier weeks sit inside this path
+## 13. How the earlier weeks sit inside this path
 
 [Week 1](../../01-foundations-to-cpu/sections/day-007-control-flow-exceptions-and-privilege.md)
 treats an exception as the CPU leaving the current instruction stream so
@@ -731,11 +756,11 @@ process, because a leftover write end withholds EOF. xv6 stores the
 status in the process-table slot, marks the slot a zombie, and has the
 parent's `wait` copy it out. An orphan's parent pointer moves to init.
 Read a chosen xv6 revision for the functions. Line numbers in this lesson
-belong to Linux `c9b2385d6793`.
+belong to Linux 6.12, commit `adc218676eef`.
 
 ---
 
-## 13. Architecture lens
+## 14. Architecture lens
 
 Zombies, reparenting, subreapers, and the exit-word layout are kernel
 policy shared by x86-64, AArch64, and RISC-V in this tree: `do_exit`,
@@ -747,7 +772,7 @@ user context and builds no such frame.
 
 ---
 
-## 14. What the wrapper is allowed to touch
+## 15. What the wrapper is allowed to touch
 
 Run the day from the Week 10 directory through
 [`../challenges/day-004-wait-zombies-orphans.sh`](../challenges/day-004-wait-zombies-orphans.sh).
@@ -769,7 +794,7 @@ invariants.
 
 ---
 
-## 15. Mastery: Explain · Draw · Observe · Build
+## 16. Mastery: Explain · Draw · Observe · Build
 
 The wrapper is
 [`../challenges/day-004-wait-zombies-orphans.sh`](../challenges/day-004-wait-zombies-orphans.sh).
@@ -790,7 +815,7 @@ below for you to produce. These notes do not record the day as mastered.
 
 ### Draw
 
-Draw the exit-23 trace from section 8 with your own PID numbers filled in
+Draw the exit-23 trace from section 9 with your own PID numbers filled in
 after a run. Mark the moment user virtual memory disappears, the moment
 `EXIT_ZOMBIE` is stored, and the moment `put_user` writes the parent's
 `status`. On a second diagram, draw the subreaper tree before and after
@@ -798,7 +823,7 @@ the middle process exits, with `real_parent` arrows.
 
 ### Observe
 
-Run the wrapper. Record `uname -r`, the tree id `c9b2385d6793` if you
+Run the wrapper. Record `uname -r`, the tree id `adc218676eef` if you
 checked the sources, the decoded statuses, the `Z` observation, and the
 before/after parent IDs. Then open `kernel/exit.c` at `do_exit`,
 `exit_notify`, `forget_original_parent`, and `wait4` in a tree you have

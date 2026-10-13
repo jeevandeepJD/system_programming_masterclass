@@ -55,11 +55,9 @@ return count;
 
 Trace. `mask` starts at 1 and doubles each descriptor (`mask += mask`), so each pass tests one fd. `check_in` looks at that inode and, the first time, records a wait. A ready descriptor sets the same bit in `*inp` and increments `count`. If `count` is still 0, no unblocked signal is pending, and either some wait was queued or the timeout remains, the task becomes `TASK_INTERRUPTIBLE` and `schedule` runs. On wake, `free_wait` releases the wait entries and `goto repeat` scans again. A nonzero `count`, a signal, or a timeout falls through and returns `count`.
 
-What carries forward is "scan a set, sleep once, rescan after wake." The copied `fd_set` arguments, the `NR_OPEN` width, and the pipe/character/FIFO-only check earlier in the function belong to this kernel. Linux 0.12 has `select` and does not have `poll` or `epoll`. Linux 5.10 keeps `select` and adds `poll`'s caller-built list and `epoll`'s stored interest set, including level and edge trigger.
+What carries forward is "scan a set, sleep once, rescan after wake." The copied `fd_set` arguments, the `NR_OPEN` width, and the pipe/character/FIFO-only check earlier in the function belong to this kernel. Linux 0.12 has `select` and does not have `poll` or `epoll`. Linux 6.12 keeps `select` and adds `poll`'s caller-built list and `epoll`'s stored interest set, including level and edge trigger.
 
-ToyOS waits inside one pipe read. It has no descriptor set and no `select`. The Week 8 pipe is one queue; a second source needs a second blocked call.
-
-The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) names this `select` path and stops before `poll` and `epoll`. The sections below are `select`, `poll`, and `epoll` in Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete scan-and-sleep. Develop against the 5.10 tree.
+The shared [Linux 0.12 map](../../references/EARLY_LINUX_012_MAP.md) names this `select` path and stops before `poll` and `epoll`. The sections below are `select`, `poll`, and `epoll` in Linux 6.12, tree `adc218676eef`. Read 0.12 as the first complete scan-and-sleep. Develop against the 6.12 tree.
 
 Day 4's pipe blocks inside one `read` or one `write`. That fits a task
 with one source. It does not fit a task that must take the next byte
@@ -72,11 +70,41 @@ multiplied by sources that had nothing to say.
 
 Readiness inverts the wait. The task sleeps once, on "which of these
 files would not block," and the kernel wakes it when any changes. The
-excerpts are Linux 5.10.134 at `c9b2385d6793`. `select`, `poll`, and
+excerpts are Linux 6.12 at `adc218676eef`. `select`, `poll`, and
 `epoll` differ in where the interest set lives between calls, and in
 what the task does after it wakes.
 
-## 3. Why "readable" cannot mean "done"
+## 3. Evolution: why the early design changed
+
+Linux 0.12 `select` copies the caller's fd sets, scans each index, queues a
+wait the first time, and if nothing is ready sleeps once and scans again.
+The interest set dies when the syscall returns. There is no `poll` and no
+`epoll`.
+
+Scanning every descriptor on every wake does not scale, and copying the set
+on every call does not either. The wait has to be registered with the file.
+For a long-lived set, the registration has to outlive one syscall.
+
+`do_select` (`fs/select.c` line 476) is still that scan. It builds a poll
+table, checks each fd, and `poll_schedule_timeout` (line 234) sleeps.
+`do_poll` (line 884) walks a `pollfd` list the caller already built and uses
+the same sleep. The file's `poll` method, such as `pipe_poll`, records the
+wait on the pipe's queue.
+
+`epoll` keeps the interest set in the kernel. `ep_insert` (`fs/eventpoll.c`
+line 1618) attaches an `epitem` and polls once. `ep_poll_callback` (line
+1308) runs from the file's wakeup and links the item onto the ready list.
+`ep_poll` (line 1966) waits on that list instead of scanning the fd table.
+`EPOLLET` (`include/uapi/linux/eventpoll.h` line 69) and `EPOLLONESHOT`
+(line 66) change when the item is reported again.
+
+The result is still a hint. A descriptor that just woke the waiter can
+return a short read, or `-EAGAIN`, before the next wait. Readiness is not a
+count of bytes.
+
+## 4. Why "readable" cannot mean "done"
+
+ToyOS waits inside one pipe read. It has no descriptor set and no `select`. The Week 8 pipe is one queue; a second source needs a second blocked call.
 
 A blocking `read` of a pipe has three honest results, from Day 4.
 A positive count means that many bytes were copied. `0` means no
@@ -113,7 +141,7 @@ The byte count is what the following `read` returns. Treating the wait
 count as a byte count, or stopping after one `read`, is a different
 protocol from the one this kernel implements.
 
-## 4. Sleeping inside one file does not scale to a set
+## 5. Sleeping inside one file does not scale to a set
 
 The syscall path is still the one from [Week 8](../../08-user-mode-syscalls-and-ipc/sections/day-004-int80-syscall-abi.md).
 User registers enter the kernel, the kernel may set the task to
@@ -138,17 +166,28 @@ The three multiplexers below share one structure, visible in
 so step 1 is an `epoll_ctl` done once, and the sleep in `epoll_wait`
 waits on a single ready list instead of scanning every file.
 
-## 5. `select` copies bitmaps, and the bitmap has a historical width
+## 6. `select` copies bitmaps, and the bitmap has a historical width
 
 The uapi header in this tree fixes the width of the kernel's
 `fd_set`-shaped object:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: include/uapi/linux/posix_types.h
- * lines: 18–30
+ * lines: 7–27
  * function: (macros and __kernel_fd_set)
  */
+/*
+ * This allows for 1024 file descriptors: if NR_OPEN is ever grown
+ * beyond that you'll have to change this too. But 1024 fd's seem to be
+ * enough even for such "real" unices like OSF/1, so hopefully this is
+ * one limit that doesn't have to be changed [again].
+ *
+ * Note that POSIX wants the FD_CLEAR(fd,fdsetp) defines to be in
+ * <sys/time.h> (and thus <linux/time.h>) - but this is a more logical
+ * place for them. Solved by having dummy defines in <sys/time.h>.
+ */
+
 /*
  * This macro may have been defined in <gnu/types.h>. But we always
  * use the one here.
@@ -159,9 +198,6 @@ The uapi header in this tree fixes the width of the kernel's
 typedef struct {
 	unsigned long fds_bits[__FD_SETSIZE / (8 * sizeof(long))];
 } __kernel_fd_set;
-
-/* Type of a signal handler.  */
-typedef void (*__kernel_sighandler_t)(int);
 ```
 
 `__FD_SETSIZE` is 1024. That is the historical userspace `fd_set` this
@@ -191,9 +227,9 @@ increments and `wait->_qproc` is cleared so later files are not asked
 to register a waiter that this call will throw away immediately.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/select.c
- * lines: 526–555
+ * lines: 524–554
  * function: do_select
  */
 			for (j = 0; j < BITS_PER_LONG; ++j, ++i, bit <<= 1) {
@@ -204,10 +240,10 @@ to register a waiter that this call will throw away immediately.
 					continue;
 				mask = EPOLLNVAL;
 				f = fdget(i);
-				if (f.file) {
+				if (fd_file(f)) {
 					wait_key_set(wait, in, out, bit,
 						     busy_flag);
-					mask = vfs_poll(f.file, wait);
+					mask = vfs_poll(fd_file(f), wait);
 
 					fdput(f);
 				}
@@ -226,13 +262,14 @@ to register a waiter that this call will throw away immediately.
 					retval++;
 					wait->_qproc = NULL;
 				}
+				/* got something, stop busy polling */
 ```
 
 A closed or never-opened index hits `mask = EPOLLNVAL` because
 `fdget` finds no file. That bit does not become a readable result. If
 nothing is ready, no signal is pending, and the timeout has not fired,
 `do_select` sleeps in `poll_schedule_timeout` with `TASK_INTERRUPTIBLE`
-(lines 606–608). The
+(lines 604–605). The
 wait-queue entries were installed by the files' `poll` methods on the
 first pass, through `poll_wait`, before any of them reported ready. On
 wakeup the loop scans every bit again. The return value of `select` is
@@ -243,7 +280,7 @@ call pays the copy and the scan, including the calls that find nothing
 ready, and the bitmap has no place to hang a pointer except a side
 array indexed by the same integer.
 
-## 6. `poll` walks a list the caller already built
+## 7. `poll` walks a list the caller already built
 
 `poll` takes an array of `struct pollfd`: an fd, an events mask, and a
 slot for revents. There is no `fd_set` and no `__FD_SETSIZE` in this
@@ -252,9 +289,9 @@ array into a `poll_list` that starts on the stack and continues onto
 kmalloc'd pages, then calls `do_poll`.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/select.c
- * lines: 907–934
+ * lines: 907–928
  * function: do_poll
  */
 		for (walk = list; walk != NULL; walk = walk->next) {
@@ -279,12 +316,6 @@ kmalloc'd pages, then calls `do_poll`.
 					can_busy_loop = false;
 				}
 			}
-		}
-		/*
-		 * All waiters have already been registered, so don't provide
-		 * a poll_table->_qproc to them on the next loop iteration.
-		 */
-		pt->_qproc = NULL;
 ```
 
 `do_pollfd` does `fdget`, calls `vfs_poll`, masks the result with the
@@ -301,7 +332,7 @@ interest set: sparse descriptors are `pollfd`s with their own masks,
 not a bitmap with a historical width. The scan is still linear in the
 number of files.
 
-## 7. `epoll` stores the interest set and wakes from a ready list
+## 8. `epoll` stores the interest set and wakes from a ready list
 
 `epoll_ctl` is the call that edits the interest set. `do_epoll_ctl`
 rejects a bad epoll descriptor or a bad target with `-EBADF`, and a
@@ -309,36 +340,37 @@ file whose operations cannot poll with `-EPERM`. The operation switch
 is the whole interface:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/eventpoll.c
- * lines: 2264–2288
+ * lines: 2262–2287
  * function: do_epoll_ctl
  */
+	error = -EBADF;
+	f = fdget(epfd);
+	if (!fd_file(f))
+		goto error_return;
+
+	/* Get the "struct file *" for the target file */
+	tf = fdget(fd);
+	if (!fd_file(tf))
+		goto error_fput;
+
+	/* The target file descriptor must support poll */
+	error = -EPERM;
+	if (!file_can_poll(fd_file(tf)))
+		goto error_tgt_fput;
+
+	/* Check if EPOLLWAKEUP is allowed */
+	if (ep_op_has_event(op))
+		ep_take_care_of_epollwakeup(epds);
+
+	/*
+	 * We have to check that the file structure underneath the file descriptor
+	 * the user passed to us _is_ an eventpoll file. And also we do not permit
+	 * adding an epoll file descriptor inside itself.
+	 */
 	error = -EINVAL;
-	switch (op) {
-	case EPOLL_CTL_ADD:
-		if (!epi) {
-			epds->events |= EPOLLERR | EPOLLHUP;
-			error = ep_insert(ep, epds, tf.file, fd, full_check);
-		} else
-			error = -EEXIST;
-		break;
-	case EPOLL_CTL_DEL:
-		if (epi)
-			error = ep_remove(ep, epi);
-		else
-			error = -ENOENT;
-		break;
-	case EPOLL_CTL_MOD:
-		if (epi) {
-			if (!(epi->event.events & EPOLLEXCLUSIVE)) {
-				epds->events |= EPOLLERR | EPOLLHUP;
-				error = ep_modify(ep, epi, epds);
-			}
-		} else
-			error = -ENOENT;
-		break;
-	}
+	if (fd_file(f) == fd_file(tf) || !is_file_epoll(fd_file(f)))
 ```
 
 `ADD` of a descriptor already in the tree returns `-EEXIST`. `DEL` or
@@ -350,14 +382,15 @@ that refer to different files are different items. The same file under
 two descriptor numbers is also two items, because the fd is part of the
 key.
 
-`ep_insert` allocates an `epitem`, hangs it on the file's `f_ep_links`,
+`ep_insert` allocates an `epitem`, links it through `file->f_ep`
+(lines 1601–1609),
 and inserts it into the epoll instance's red-black tree. It then polls
 once, which is what installs the callback:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/eventpoll.c
- * lines: 1548–1579
+ * lines: 1691–1711
  * function: ep_insert
  */
 	/* Initialize the poll table using the queue callback */
@@ -378,20 +411,9 @@ once, which is what installs the callback:
 	 * install process. Namely an allocation for a wait queue failed due
 	 * high memory pressure.
 	 */
-	error = -ENOMEM;
-	if (epi->nwait < 0)
-		goto error_unregister;
-
-	/* We have to drop the new item inside our item list to keep track of it */
-	write_lock_irq(&ep->lock);
-
-	/* record NAPI ID of new item if present */
-	ep_set_busy_poll_napi_id(epi);
-
-	/* If the file is already "ready" we drop it inside the ready list */
-	if (revents && !ep_is_linked(epi)) {
-		list_add_tail(&epi->rdllink, &ep->rdllist);
-		ep_pm_stay_awake(epi);
+	if (unlikely(!epq.epi)) {
+		ep_remove_safe(ep, epi);
+		return -ENOMEM;
 ```
 
 `ep_item_poll` calls `vfs_poll`. For a pipe that is `pipe_poll`.
@@ -408,11 +430,18 @@ is the interest set. `rdllist` is what a callback has marked and
 is not an epoll file, and then sleeps inside `ep_poll`:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/eventpoll.c
- * lines: 2336–2364
+ * lines: 2424–2449
  * function: do_epoll_wait
  */
+static int do_epoll_wait(int epfd, struct epoll_event __user *events,
+			 int maxevents, struct timespec64 *to)
+{
+	int error;
+	struct fd f;
+	struct eventpoll *ep;
+
 	/* The maximum number of event must be greater than zero */
 	if (maxevents <= 0 || maxevents > EP_MAX_EVENTS)
 		return -EINVAL;
@@ -423,7 +452,7 @@ is not an epoll file, and then sleeps inside `ep_poll`:
 
 	/* Get the "struct file *" for the eventpoll file */
 	f = fdget(epfd);
-	if (!f.file)
+	if (!fd_file(f))
 		return -EBADF;
 
 	/*
@@ -431,22 +460,12 @@ is not an epoll file, and then sleeps inside `ep_poll`:
 	 * the user passed to us _is_ an eventpoll file.
 	 */
 	error = -EINVAL;
-	if (!is_file_epoll(f.file))
-		goto error_fput;
-
-	/*
-	 * At this point it is safe to assume that the "private_data" contains
-	 * our own data structure.
-	 */
-	ep = f.file->private_data;
-
-	/* Time to fish for events ... */
-	error = ep_poll(ep, events, maxevents, timeout);
+	if (!is_file_epoll(fd_file(f)))
 ```
 
 `ep_poll` sets `TASK_INTERRUPTIBLE`, rechecks `ep_events_available`
 under `ep->lock`, and only then calls `__add_wait_queue_exclusive` on
-`ep->wq` (lines 1921–1935). That is the lost-wakeup close: recheck
+`ep->wq` (lines 2055–2057). That is the lost-wakeup close: recheck
 under the waker's lock before sleeping. A signal already pending
 returns `-EINTR`. The callback runs in the waker's context and must not
 sleep, which is why the comment at the top of `fs/eventpoll.c` makes
@@ -454,11 +473,17 @@ sleep, which is why the comment at the top of `fs/eventpoll.c` makes
 linked, then wakes `ep->wq`:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/eventpoll.c
- * lines: 1249–1280
+ * lines: 1339–1352
  * function: ep_poll_callback
  */
+	/*
+	 * If we are transferring events to userspace, we can hold no locks
+	 * (because we're accessing user memory, and because of linux f_op->poll()
+	 * semantics). All the events that happen during that period of time are
+	 * chained in ep->ovflist and requeued later on.
+	 */
 	if (READ_ONCE(ep->ovflist) != EP_UNACTIVE_PTR) {
 		if (chain_epi_lockless(epi))
 			ep_pm_stay_awake_rcu(epi);
@@ -466,30 +491,6 @@ linked, then wakes `ep->wq`:
 		/* In the usual case, add event to ready list. */
 		if (list_add_tail_lockless(&epi->rdllink, &ep->rdllist))
 			ep_pm_stay_awake_rcu(epi);
-	}
-
-	/*
-	 * Wake up ( if active ) both the eventpoll wait list and the ->poll()
-	 * wait list.
-	 */
-	if (waitqueue_active(&ep->wq)) {
-		if ((epi->event.events & EPOLLEXCLUSIVE) &&
-					!(pollflags & POLLFREE)) {
-			switch (pollflags & EPOLLINOUT_BITS) {
-			case EPOLLIN:
-				if (epi->event.events & EPOLLIN)
-					ewake = 1;
-				break;
-			case EPOLLOUT:
-				if (epi->event.events & EPOLLOUT)
-					ewake = 1;
-				break;
-			case 0:
-				ewake = 1;
-				break;
-			}
-		}
-		wake_up(&ep->wq);
 	}
 ```
 
@@ -504,11 +505,11 @@ interest (RB tree of epitem)          ready (rdllist)
   one node per (file, fd)               a node is linked only when ready
 ```
 
-## 8. Trace: pipe write, wakeup, `epoll_wait`, read
+## 9. Trace: pipe write, wakeup, `epoll_wait`, read
 
 One byte is written to a pipe whose read end is already in an epoll set
 with `EPOLLIN`. Registration already happened. `epoll_ctl(ADD)` reached `ep_insert`,
-which polled the pipe. At lines 652–664 `pipe_poll` stores `poll_usage`
+which polled the pipe. At lines 657–674 `pipe_poll` stores `poll_usage`
 and calls `poll_wait` on `rd_wait` before it reads `head` and `tail`,
 so a wake between the test and the sleep still finds a waiter. The
 waiter, if the ring was empty, is `TASK_INTERRUPTIBLE` on `ep->wq`, not
@@ -521,9 +522,9 @@ wakes the read-side queue. The wake is unconditional once `poll_usage`
 is set, even if the pipe was not empty:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/pipe.c
- * lines: 578–591
+ * lines: 589–602
  * function: pipe_write
  */
 	/*
@@ -576,7 +577,7 @@ user read()
 A trace that stops at `epoll_wait` returning 1 has not observed the
 byte. A trace that stops at `read` returning 1 has.
 
-## 9. Level trigger, edge trigger, and the `EAGAIN` drain
+## 10. Level trigger, edge trigger, and the `EAGAIN` drain
 
 After an event is copied out, `ep_send_events_proc` decides whether the
 item stays interesting. Lines 1750–1762 re-poll with a null qproc, so
@@ -586,10 +587,10 @@ return `-EFAULT`. The branch after a successful copy is the
 level-versus-edge rule:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/eventpoll.c
- * lines: 1764–1779
- * function: ep_send_events_proc
+ * lines: 1885–1897
+ * function: ep_send_events
  */
 		if (epi->event.events & EPOLLONESHOT)
 			epi->event.events &= EP_PRIVATE_BITS;
@@ -602,11 +603,8 @@ level-versus-edge rule:
 			 * availability. At this point, no one can insert
 			 * into ep->rdllist besides us. The epoll_ctl()
 			 * callers are locked out by
-			 * ep_scan_ready_list() holding "mtx" and the
+			 * ep_send_events() holding "mtx" and the
 			 * poll callback will queue them in ep->ovflist.
-			 */
-			list_add_tail(&epi->rdllink, &ep->rdllist);
-			ep_pm_stay_awake(epi);
 ```
 
 Default mode is level trigger: `EPOLLET` is absent, so the item goes
@@ -631,14 +629,15 @@ returns to `epoll_wait`. It ends the connection on `0`.
 edge-triggered stall: `epoll_wait` stays quiet, and the pipe still
 holds bytes.
 
-## 10. Close drops the interest when the file's last reference drops
+## 11. Close drops the interest when the file's last reference drops
 
 The epoll instance does not own the caller's descriptor number. As
 `ep_insert`'s comment says, the caller already raised the file's usage
 count. When that file's last reference drops, `__fput` in
 `fs/file_table.c` calls `eventpoll_release` before the file's own
-`release` (lines 267–272). `eventpoll_release` returns if `f_ep_links`
-is empty. Otherwise `eventpoll_release_file` walks the links and
+`release` (the call is line 422; `f_op->release` is lines 430–431).
+`eventpoll_release` (`include/linux/eventpoll.h` lines 34–46) returns if
+`file->f_ep` is clear. Otherwise `eventpoll_release_file` walks the links and
 `ep_remove`s each item. A `dup` keeps the `struct file`, so the
 `epitem` remains, still keyed by the fd passed to `EPOLL_CTL_ADD`.
 Closing the epoll file itself is `ep_eventpoll_release`, a different
@@ -652,9 +651,9 @@ twice returns `-EEXIST`. After close-and-reuse, the new `struct file`
 does not match the old item: `ep_cmp_ffd` compares the file pointer
 first.
 
-## 11. A loop that matches the kernel's rule
+## 12. A loop that matches the kernel's rule
 
-This is the edge-triggered pipe reader the branch in section 9
+This is the edge-triggered pipe reader the branch in section 10
 describes. Level trigger can stop after one `read`. Edge trigger
 cannot.
 
@@ -706,7 +705,7 @@ the same pipe is still the copy and the scan. A positive result still
 allows a short `read`. Timeout zero sets `timed_out` up front and does
 not sleep.
 
-## 12. Mastery: Explain · Draw · Observe · Build
+## 13. Mastery: Explain · Draw · Observe · Build
 
 The exercise is
 [../challenges/day-005-readiness.sh](../challenges/day-005-readiness.sh).
@@ -732,7 +731,7 @@ conditions and which later call returns a count of bytes.
 
 Draw three columns for one pipe read end: `select`'s bit in a copied
 bitmap, `poll`'s `pollfd`, and epoll's `epitem` in the red-black tree
-plus a second box for `rdllist`. Then draw the section 8 trace as five
+plus a second box for `rdllist`. Then draw the section 9 trace as five
 arrows: `pipe_write`, `rd_wait`, `ep_poll_callback`, `ep->wq`,
 `read`. Mark which arrow carries a byte count and which arrows carry
 only a wake.
@@ -747,7 +746,7 @@ the pipe again after a short read with no further write.
 
 ### Build
 
-Write the drain loop from section 11 in your own names and annotate each
+Write the drain loop from section 12 in your own names and annotate each
 return: ready-count, byte-count, end-of-file, and would-block. State
 the `EPOLLONESHOT` rule in one sentence: delivery clears the interest
 bits until `EPOLL_CTL_MOD` puts them back. Keep Day 4's pipe ring in

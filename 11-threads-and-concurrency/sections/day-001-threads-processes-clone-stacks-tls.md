@@ -6,10 +6,10 @@
 > the same process. Which objects did the kernel share, which did it allocate,
 > and which register now names this thread's private data?
 
-Linux 5.10 excerpts below are from tree `c9b2385d6793` (`Makefile` `VERSION` 5,
-`PATCHLEVEL` 10, `SUBLEVEL` 134). Each of those excerpts names its path and
-function. The listing in section 2 is Linux 0.12, from the annotated book,
-and is not that tree.
+Linux 6.12 excerpts below are from commit `adc218676eef25575469234709c2d87185ca223a`
+(`Makefile` `VERSION` 6, `PATCHLEVEL` 12, `SUBLEVEL` 0). Each of those
+excerpts names its path and function. The listing in section 2 is Linux 0.12,
+from the annotated book, and is not that commit.
 
 Week 10 built one task: an address space, a descriptor table, signal
 dispositions, and a single set of registers. Today a second task joins that
@@ -43,7 +43,7 @@ void publish(unsigned long flags)
 }
 ```
 
-The 5.10 excerpts later in this day are the same forms: `task_struct` and
+The 6.12 excerpts later in this day are the same forms: `task_struct` and
 `mm_struct` through pointers, and `kernel_clone_args` filled by member name
 (`.stack = newsp`, `.tls = tls`).
 
@@ -82,19 +82,71 @@ The 80386 writes the outgoing registers into the outgoing TSS and loads the
 incoming ones. Trace that path as: one task record, its register image, its
 own address-space base, then a switch that replaces the core's registers.
 
-What carries forward is that split. ToyOS already built it for two ring-0
-tasks: a saved context and a private stack in one kernel map. Section 4
-below is that reconstruction. The TSS `ljmp` and the fixed 64MB slot stay
+What carries forward is that split: one task record, its register image,
+and its own address-space base. The TSS `ljmp` and the fixed 64MB slot stay
 behind with 0.12.
 
 Linux 0.12 cannot teach a shared `mm`, `CLONE_VM`, a thread-group id, or a
 TLS base. `fork` here installs a new base. The shared
-[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
-(Week 11) is the index for that limit. The sections that follow leave this
-switch and read Linux 5.10 at tree `c9b2385d6793`: `kernel_clone`,
-`copy_mm` under `CLONE_VM`, private stacks, and the TLS register.
+[Linux 0.12 reading map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) is the index for that limit.
 
-## 3. Why a second instruction stream can share an address space
+## 3. Evolution: why the early design changed
+
+Linux 0.12 gives each task its own linear base. A second instruction stream
+that must see the same objects cannot use that rule. `kernel_clone`
+(`kernel/fork.c` lines 2745–2830, commit
+`adc218676eef25575469234709c2d87185ca223a`) takes one flag word and shares
+or copies each resource. `copy_process` refuses a thread group that does not
+share dispositions and the address space: `CLONE_THREAD` requires
+`CLONE_SIGHAND`, and `CLONE_SIGHAND` requires `CLONE_VM` (lines 2141–2154).
+
+The user-facing shape is a pthread. NPTL, the glibc pthread ABI, chooses
+those flags, passes a new user stack and a TLS pointer, and the task whose
+syscall returns 0 runs the start routine. The kernel object is a
+`task_struct` from `dup_task_struct` (line 1101), with its own kernel stack,
+its own registers, and its own `blocked` mask next to the shared `signal`
+and `sighand` pointers (`include/linux/sched.h` lines 1154–1156).
+`CLONE_SETTLS` installs the private thread pointer: the FS base on x86-64,
+`tpidr_el0` on arm64 (`arch/arm64/kernel/process.c` lines 398–400), and `tp`
+on RISC-V (`arch/riscv/kernel/process.c` lines 228–229).
+
+`CLONE_THREAD` keeps one `signal_struct`. `getpid` reports that group's
+`tgid`; `gettid` reports the task's own `pid` (`copy_process` lines
+2439–2447).
+
+What 0.12 could not express is this menu of sharing choices plus a per-task
+register file. ToyOS already built the piece that carries forward: two
+ring-0 tasks, private stacks, one kernel map. Section 4 is that
+reconstruction. The TSS far jump and the fixed 64MB slot stay with 0.12.
+
+## 4. Tasks you have already built
+
+[Week 7's kernel tasks](../../07-memory-processes-and-scheduling/sections/day-004-kernel-tasks-stacks-contexts.md)
+are two ring-0 streams in one address space. Each has a private kernel stack
+and a saved context. The page tables stay shared. The separation is the stack
+and the registers.
+
+[Week 8](../../08-user-mode-syscalls-and-ipc/sections/day-001-ring3-gdt-tss-iret.md)
+gives ToyOS one user address space: its own page-table root, a user stack,
+and a kernel stack for the privilege transition. That shape is a separate
+address space plus a kernel stack.
+
+[Week 10's `fork`](../../10-linux-processes-and-signals/sections/day-002-fork-cow-and-lineage.md)
+is the Linux form of a new address space. `SYSCALL_DEFINE0(fork)` calls
+`kernel_clone` with `exit_signal = SIGCHLD` and the rest of
+`kernel_clone_args` zeroed. The child gets its own `mm` (copy-on-write) and
+a copy of the parent's user `%rsp`: the same virtual address in a different
+address space.
+
+`pthread_create` is a libc wrapper around `clone` (or `clone3`, which reaches
+the same `kernel_clone`). The flags share the `mm`, the file table, the
+signal handlers, and the thread-group id, and the wrapper passes a new user
+stack and a TLS pointer.
+
+---
+
+## 5. Why a second instruction stream can share an address space
 
 A function call has one instruction pointer. The callee borrows `%rsp` and
 returns. A second thread needs its own instruction pointer at the same
@@ -140,43 +192,18 @@ number `getpid` returns, is shared as well.
 
 ---
 
-## 4. Tasks you have already built
-
-[Week 7's kernel tasks](../../07-memory-processes-and-scheduling/sections/day-004-kernel-tasks-stacks-contexts.md)
-are two ring-0 streams in one address space. Each has a private kernel stack
-and a saved context. The page tables stay shared. The separation is the stack
-and the registers.
-
-[Week 8](../../08-user-mode-syscalls-and-ipc/sections/day-001-ring3-gdt-tss-iret.md)
-gives ToyOS one user address space: its own page-table root, a user stack,
-and a kernel stack for the privilege transition. That shape is a separate
-address space plus a kernel stack.
-
-[Week 10's `fork`](../../10-linux-processes-and-signals/sections/day-002-fork-cow-and-lineage.md)
-is the Linux form of a new address space. `SYSCALL_DEFINE0(fork)` calls
-`kernel_clone` with `exit_signal = SIGCHLD` and the rest of
-`kernel_clone_args` zeroed. The child gets its own `mm` (copy-on-write) and
-a copy of the parent's user `%rsp`: the same virtual address in a different
-address space.
-
-`pthread_create` is a libc wrapper around `clone` (or `clone3`, which reaches
-the same `kernel_clone`). The flags share the `mm`, the file table, the
-signal handlers, and the thread-group id, and the wrapper passes a new user
-stack and a TLS pointer.
-
----
-
-## 5. How `clone` reaches `kernel_clone`
+## 6. How `clone` reaches `kernel_clone`
 
 On x86-64 this tree selects the parameter order in the `#else` branch of
-`kernel/fork.c`. `arch/x86/Kconfig` selects `CLONE_BACKWARDS` only for
-`X86_32`, so a 64-bit kernel compiles the signature below. The body that
+`kernel/fork.c`. `arch/x86/Kconfig` line 16 selects `CLONE_BACKWARDS` inside
+`config X86_32` only, so a 64-bit kernel compiles the signature below. The body that
 fills `struct kernel_clone_args` is shared with the other orders.
 
 ```c
-/* kernel/fork.c :: SYSCALL_DEFINE5(clone) :: tree c9b2385d6793
- * lines 2697–2714, the order x86-64 compiles
+/* kernel/fork.c :: SYSCALL_DEFINE5(clone), #else order :: adc218676eef25575469234709c2d87185ca223a
+ * lines 2912–2930
  */
+#else
 SYSCALL_DEFINE5(clone, unsigned long, clone_flags, unsigned long, newsp,
 		 int __user *, parent_tidptr,
 		 int __user *, child_tidptr,
@@ -208,8 +235,8 @@ rest of the word.
 `clone3`. The part that builds the task and lets it run is:
 
 ```c
-/* kernel/fork.c :: kernel_clone :: tree c9b2385d6793
- * lines 2589–2605
+/* kernel/fork.c :: kernel_clone :: adc218676eef25575469234709c2d87185ca223a
+ * lines 2786–2802
  */
 	p = copy_process(NULL, trace, NUMA_NO_NODE, args);
 	add_latent_entropy();
@@ -232,26 +259,28 @@ rest of the word.
 
 `copy_process` returns a task that is fully built and still off the run
 queue. After the vfork and LRU bookkeeping that follows this excerpt,
-line 2620 calls `wake_up_new_task`, which makes the child schedulable. The
+line 2817 calls `wake_up_new_task`, which makes the child schedulable. The
 parent syscall returns `nr` in `%rax`. The child's saved `%rax` is 0, so
 both tasks resume the libc wrapper and branch on `%rax`: the parent
 continues `pthread_create`, and the child enters the thread start routine.
 
 ---
 
-## 6. `copy_process` copies or shares one resource at a time
+## 7. `copy_process` copies or shares one resource at a time
 
 Before any of those helpers run, `dup_task_struct` (`kernel/fork.c` line
-907) allocates a new `task_struct` and a new kernel stack
-(`alloc_thread_stack_node` at line 920). `arch_dup_task_struct` copies the
+1101) allocates a new `task_struct` and a new kernel stack.
+`arch_dup_task_struct` (lines 1086–1090, called at line 1112) copies the
 parent with `*dst = *src`, so the child starts life with the parent's
-pointers. The copy helpers then either bump a reference count and keep the
-pointer, or allocate a replacement. The kernel stack pointer is rewritten
-after the copy (`tsk->stack = stack` at line 936), which is why the child
-has a private kernel stack even though the struct was memcpy'd.
+pointers. `alloc_thread_stack_node` (called at line 1116) then installs a
+new stack. This file has three definitions of that helper; the
+`CONFIG_VMAP_STACK` body (lines 278–336) assigns `tsk->stack` at lines 306
+and 335. The copy helpers then either bump a reference count and keep the
+pointer, or allocate a replacement. The child has a private kernel stack
+because that assignment overwrites the pointer the struct copy brought along.
 
 `include/linux/sched.h` places the process-wide pointers and the per-task
-mask side by side (lines 1129–1132): `signal`, `sighand`, and
+mask side by side (lines 1154–1156): `signal`, `sighand`, and
 `sigset_t blocked`. The blocked mask is a member of the task, so the
 struct copy gives the child its own mask, initialized to the parent's, and
 a later `pthread_sigmask` changes one task.
@@ -259,10 +288,10 @@ a later `pthread_sigmask` changes one task.
 The resource walk itself:
 
 ```c
-/* kernel/fork.c :: copy_process :: tree c9b2385d6793
- * lines 2176–2197
+/* kernel/fork.c :: copy_process :: adc218676eef25575469234709c2d87185ca223a
+ * lines 2362–2383
  */
-	retval = copy_files(clone_flags, p);
+	retval = copy_files(clone_flags, p, args->no_files);
 	if (retval)
 		goto bad_fork_cleanup_semundo;
 	retval = copy_fs(clone_flags, p);
@@ -283,11 +312,14 @@ The resource walk itself:
 	retval = copy_io(clone_flags, p);
 	if (retval)
 		goto bad_fork_cleanup_namespaces;
-	retval = copy_thread(clone_flags, args->stack, args->stack_size, p, args->tls);
+	retval = copy_thread(p, args);
 ```
 
-`args->stack` is the user `newsp` from the syscall. `args->tls` is the TLS
-argument. Both reach the architecture code only here. `copy_fs` is the same
+`copy_thread(p, args)` is the call that hands the clone arguments to
+architecture code. `copy_thread` reads `args->stack` and `args->tls`
+(`arch/x86/kernel/process.c` lines 162–163). `args->no_files` on the
+`copy_files` call is a `clone3` bit (`include/linux/sched/task.h` line 33);
+the `clone` path leaves it clear. `copy_fs` is the same share-or-copy
 pattern for the current directory and umask (`CLONE_FS`); pthread libc
 often shares it too. The four helpers the rest of this lesson reads are
 `copy_mm`, `copy_files`, `copy_sighand`, and `copy_signal`.
@@ -296,8 +328,8 @@ The kernel refuses a thread group that fails to share the address space.
 The check is earlier in `copy_process`:
 
 ```c
-/* kernel/fork.c :: copy_process :: tree c9b2385d6793
- * lines 1950–1963
+/* kernel/fork.c :: copy_process :: adc218676eef25575469234709c2d87185ca223a
+ * lines 2141–2154
  */
 	/*
 	 * Thread groups must share signals as well, and detached threads
@@ -321,14 +353,14 @@ space. The kernel enforces that before the new task runs.
 
 ---
 
-## 7. `copy_mm`: `CLONE_VM` shares the address space
+## 8. `copy_mm`: `CLONE_VM` shares the address space
 
-`copy_mm` starts at line 1456 by clearing fault counters and setting
+`copy_mm` starts at line 1697 by clearing fault counters and setting
 `tsk->mm` and `tsk->active_mm` to `NULL`. The decision is then:
 
 ```c
-/* kernel/fork.c :: copy_mm :: tree c9b2385d6793
- * lines 1471–1497
+/* kernel/fork.c :: copy_mm :: adc218676eef25575469234709c2d87185ca223a
+ * lines 1711–1732
  */
 	/*
 	 * Are we cloning a kernel thread?
@@ -339,23 +371,18 @@ space. The kernel enforces that before the new task runs.
 	if (!oldmm)
 		return 0;
 
-	/* initialize the new vmacache entries */
-	vmacache_flush(tsk);
-
 	if (clone_flags & CLONE_VM) {
 		mmget(oldmm);
 		mm = oldmm;
-		goto good_mm;
+	} else {
+		mm = dup_mm(tsk, current->mm);
+		if (!mm)
+			return -ENOMEM;
 	}
 
-	retval = -ENOMEM;
-	mm = dup_mm(tsk, current->mm);
-	if (!mm)
-		goto fail_nomem;
-
-good_mm:
 	tsk->mm = mm;
 	tsk->active_mm = mm;
+	sched_mm_cid_fork(tsk);
 	return 0;
 ```
 
@@ -380,37 +407,40 @@ shared `mm` before `clone`. `copy_mm` only publishes the `mm` pointer.
 
 ---
 
-## 8. `copy_files`: `CLONE_FILES` shares the descriptor table
+## 9. `copy_files`: `CLONE_FILES` shares the descriptor table
 
 ```c
-/* kernel/fork.c :: copy_files :: tree c9b2385d6793
- * lines 1523–1548
+/* kernel/fork.c :: copy_files :: adc218676eef25575469234709c2d87185ca223a
+ * lines 1756–1784
  */
-static int copy_files(unsigned long clone_flags, struct task_struct *tsk)
+static int copy_files(unsigned long clone_flags, struct task_struct *tsk,
+		      int no_files)
 {
 	struct files_struct *oldf, *newf;
-	int error = 0;
 
 	/*
 	 * A background process may not have any files ...
 	 */
 	oldf = current->files;
 	if (!oldf)
-		goto out;
+		return 0;
+
+	if (no_files) {
+		tsk->files = NULL;
+		return 0;
+	}
 
 	if (clone_flags & CLONE_FILES) {
 		atomic_inc(&oldf->count);
-		goto out;
+		return 0;
 	}
 
-	newf = dup_fd(oldf, NR_OPEN_MAX, &error);
-	if (!newf)
-		goto out;
+	newf = dup_fd(oldf, NULL);
+	if (IS_ERR(newf))
+		return PTR_ERR(newf);
 
 	tsk->files = newf;
-	error = 0;
-out:
-	return error;
+	return 0;
 }
 ```
 
@@ -428,14 +458,14 @@ tasks walk the same page tables.
 
 ---
 
-## 9. Dispositions are shared; the thread-group id is shared
+## 10. Dispositions are shared; the thread-group id is shared
 
 Signal dispositions live in `sighand->action[]` (`include/linux/sched/signal.h`,
 `struct sighand_struct`). `copy_sighand`:
 
 ```c
-/* kernel/fork.c :: copy_sighand :: tree c9b2385d6793
- * lines 1576–1592
+/* kernel/fork.c :: copy_sighand :: adc218676eef25575469234709c2d87185ca223a
+ * lines 1786–1802
  */
 static int copy_sighand(unsigned long clone_flags, struct task_struct *tsk)
 {
@@ -467,8 +497,8 @@ The thread group itself is `struct signal_struct`, pointed to by
 `task->signal`. `copy_signal`:
 
 ```c
-/* kernel/fork.c :: copy_signal :: tree c9b2385d6793
- * lines 1625–1647
+/* kernel/fork.c :: copy_signal :: adc218676eef25575469234709c2d87185ca223a
+ * lines 1835–1858
  */
 static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 {
@@ -483,6 +513,7 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 		return -ENOMEM;
 
 	sig->nr_threads = 1;
+	sig->quick_threads = 1;
 	atomic_set(&sig->live, 1);
 	refcount_set(&sig->sigcnt, 1);
 
@@ -496,15 +527,15 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 ```
 
 `CLONE_THREAD` returns immediately. The child's `signal` pointer stays the
-one copied from the parent, `nr_threads` is not reset to 1, and the child
+one copied from the parent, `nr_threads` and `quick_threads` are not reset to 1, and the child
 joins the existing group. The other branch allocates a fresh group whose
 thread list contains only the new task. That is `fork`.
 
 The id userspace calls the pid is assigned a few hundred lines later:
 
 ```c
-/* kernel/fork.c :: copy_process :: tree c9b2385d6793
- * lines 2260–2272
+/* kernel/fork.c :: copy_process :: adc218676eef25575469234709c2d87185ca223a
+ * lines 2439–2451
  */
 	/* ok, now we should be set up.. */
 	p->pid = pid_nr(pid);
@@ -540,25 +571,24 @@ task's `blocked`.
 
 ---
 
-## 10. Private registers, two stacks, and a TLS base
+## 11. Private registers, two stacks, and a TLS base
 
 The architecture half of creation is `arch/x86/kernel/process.c`,
 `copy_thread`. The new kernel stack is framed so the first time the
-scheduler switches to this task it resumes at `ret_from_fork`:
+scheduler switches to this task it resumes at `ret_from_fork_asm`:
 
 ```c
-/* arch/x86/kernel/process.c :: copy_thread :: tree c9b2385d6793
- * lines 146–163
+/* arch/x86/kernel/process.c :: copy_thread :: adc218676eef25575469234709c2d87185ca223a
+ * lines 170–186
  */
 	childregs = task_pt_regs(p);
 	fork_frame = container_of(childregs, struct fork_frame, regs);
 	frame = &fork_frame->frame;
 
 	frame->bp = encode_frame_pointer(childregs);
-	frame->ret_addr = (unsigned long) ret_from_fork;
+	frame->ret_addr = (unsigned long) ret_from_fork_asm;
 	p->thread.sp = (unsigned long) fork_frame;
 	p->thread.io_bitmap = NULL;
-	clear_tsk_thread_flag(p, TIF_IO_BITMAP);
 	p->thread.iopl_warn = 0;
 	memset(p->thread.ptrace_bps, 0, sizeof(p->thread.ptrace_bps));
 
@@ -571,7 +601,9 @@ scheduler switches to this task it resumes at `ret_from_fork`:
 ```
 
 `p->thread.sp` points at a frame on the new kernel stack, and
-`ret_from_fork` is the address that frame returns to. `childregs` is the
+`ret_from_fork_asm` is the address that frame returns to.
+`arch/x86/entry/entry_64.S` lines 227–244 call `ret_from_fork`
+(`arch/x86/kernel/process.c` lines 140–157) from that stub. `childregs` is the
 saved user register block on that stack. The parent's `thread.sp` stays
 where it was. On x86-64 the same function snapshots the parent's FS and GS
 bases; FS is the System V AMD64 TLS base, and `CLONE_SETTLS` replaces it
@@ -581,8 +613,8 @@ The user register block is then a copy of the parent's syscall frame, with
 `%rax` and `%rsp` edited:
 
 ```c
-/* arch/x86/kernel/process.c :: copy_thread :: tree c9b2385d6793
- * lines 194–223
+/* arch/x86/kernel/process.c :: copy_thread :: adc218676eef25575469234709c2d87185ca223a
+ * lines 230–255
  */
 	frame->bx = 0;
 	*childregs = *current_pt_regs();
@@ -590,14 +622,10 @@ The user register block is then a copy of the parent's syscall frame, with
 	if (sp)
 		childregs->sp = sp;
 
-#ifdef CONFIG_X86_32
-	task_user_gs(p) = get_user_gs(current_pt_regs());
-#endif
-
-	if (unlikely(p->flags & PF_IO_WORKER)) {
+	if (unlikely(args->fn)) {
 		/*
-		 * An IO thread is a user space thread, but it doesn't
-		 * return to ret_after_fork().
+		 * A user space thread, but it doesn't return to
+		 * ret_after_fork().
 		 *
 		 * In order to indicate that to tools like gdb,
 		 * we reset the stack and instruction pointers.
@@ -607,7 +635,7 @@ The user register block is then a copy of the parent's syscall frame, with
 		 */
 		childregs->sp = 0;
 		childregs->ip = 0;
-		kthread_frame_init(frame, sp, arg);
+		kthread_frame_init(frame, args->fn, args->fn_arg);
 		return 0;
 	}
 
@@ -619,19 +647,19 @@ The user register block is then a copy of the parent's syscall frame, with
 `childregs->ax = 0` is the child's `%rax`. Non-zero `sp` (the syscall's
 `newsp`) becomes the child's user `%rsp`, so the child resumes on the stack
 libc prepared. Zero `sp`, as in `fork`, keeps the copied user `%rsp` inside
-the child's new `mm`. `PF_IO_WORKER` is a kernel-internal user task that
-returns through `kthread_frame_init`; a pthread falls through to
-`CLONE_SETTLS`.
+the child's new `mm`. A non-NULL `args->fn` is a user task that returns
+through `kthread_frame_init` instead of the ordinary fork return; a pthread
+leaves `args->fn` null and falls through to `CLONE_SETTLS`.
 
-`set_new_tls` (lines 129–136) calls `do_set_thread_area_64(p, ARCH_SET_FS, tls)`,
-which the header macro (`arch/x86/include/asm/ptrace.h` line 386) turns into
+`set_new_tls` (lines 130–138) calls `do_set_thread_area_64(p, ARCH_SET_FS, tls)`,
+which the header macro (`arch/x86/include/asm/ptrace.h` line 467) turns into
 `do_arch_prctl_64`. Libc has already written a startup frame on `newsp`.
-After `ret_from_fork` the child is in that stub, sees `%rax == 0`, and calls
-`return_id` or `consume_owned`.
+After `ret_from_fork_asm` calls `ret_from_fork`, the child is in that stub,
+sees `%rax == 0`, and calls `return_id` or `consume_owned`.
 
 ---
 
-## 11. Architecture lens: which register holds the thread pointer
+## 12. Architecture lens: which register holds the thread pointer
 
 The TLS block is ordinary memory in the shared `mm`. The pointer to it has
 to be a value context-switch saves with the task, because the thread must
@@ -639,8 +667,8 @@ be able to find its own block before it has loaded any other address. On
 x86-64 that value is the FS base:
 
 ```c
-/* arch/x86/kernel/process_64.c :: do_arch_prctl_64 :: tree c9b2385d6793
- * lines 785–813, case ARCH_SET_FS
+/* arch/x86/kernel/process_64.c :: do_arch_prctl_64 :: adc218676eef25575469234709c2d87185ca223a
+ * lines 898–926
  */
 	case ARCH_SET_FS: {
 		/*
@@ -686,9 +714,9 @@ the x86 path that writes the FS base. The arm64 and riscv `copy_thread`
 functions install their own registers under the same `CLONE_SETTLS` flag.
 
 ```text
-x86-64    FS base, accessed as %fs:offset     quoted above
-AArch64   TPIDR_EL0                           ABI register, setup not quoted
-RISC-V    tp (x4), accessed as offset(tp)     ABI register, setup not quoted
+x86-64    FS base, accessed as %fs:offset     quoted above, do_arch_prctl_64
+AArch64   tpidr_el0                           copy_thread lines 398–400, not quoted
+RISC-V    tp                                  copy_thread lines 228–229, not quoted
 ```
 
 The compiler emits those accesses for `_Thread_local`. The block lives as
@@ -698,7 +726,7 @@ still owns the block.
 
 ---
 
-## 12. Execution trace: `thread_lab basic`
+## 13. Execution trace: `thread_lab basic`
 
 One successful `pthread_create` / `pthread_join` of `return_id(&token)` in
 [`mode_basic`](../../projects/linux-system-programming/src/thread_lab.c).
@@ -724,7 +752,7 @@ kernel, creator's kernel stack
   copy_sighand: CLONE_SIGHAND, same dispositions
   copy_signal:  CLONE_THREAD, same signal_struct, same tgid
   copy_mm:      CLONE_VM, mmget, same mm
-  copy_thread:  kernel frame → ret_from_fork
+  copy_thread:  kernel frame → ret_from_fork_asm → ret_from_fork
                 childregs->ax = 0
                 childregs->sp = newsp
                 CLONE_SETTLS → ARCH_SET_FS on the child task
@@ -752,7 +780,7 @@ non-atomic object in between.
 
 ---
 
-## 13. Mastery: Explain · Draw · Observe · Build
+## 14. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-001-thread-model.sh`](../challenges/day-001-thread-model.sh).
 It builds `thread_lab`, runs `basic` and `ownership`, and prints the
@@ -776,7 +804,7 @@ TLS base. AArch64 uses `TPIDR_EL0`. RISC-V uses `tp`.
 1. One `mm_struct` containing two user stacks and two TLS blocks, and two
    `task_struct`s under it with private kernel stacks.
 2. The `copy_process` order: files, sighand, signal, mm, then
-   `copy_thread(stack, tls)`.
+   `copy_thread(p, args)`.
 3. The `basic` trace from `token = 42` through `clone` to the joined
    pointer comparison. Mark which edge is `pthread_create` and which is
    `pthread_join`.
@@ -821,7 +849,7 @@ column: `CLONE_VM`, `CLONE_FILES`, `CLONE_SIGHAND`, `CLONE_THREAD`.
 
 ## References used selectively
 
-Linux tree `c9b2385d6793`, paths named on each excerpt above.
+Linux 6.12 commit `adc218676eef25575469234709c2d87185ca223a`, paths named on each excerpt above.
 
 **Next:** the shared `mm` makes both threads' loads and stores hit one object.
 Day 2 asks when the C abstract machine still assigns that program a meaning.

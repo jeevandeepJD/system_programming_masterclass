@@ -76,8 +76,10 @@ the mapping comparison and is not an assertion.
 
 - Linux is required for `/proc/self/fd`, `epoll`, and `F_SETPIPE_SZ`.
 - `dup` sharing an offset is POSIX. The kernel file names in the Week 12
-  overview were read from tree `c9b2385d6793` (Makefile version 5.10.134)
-  and are not a description of every running kernel.
+  overview were read from Linux 6.12, commit
+  `adc218676eef25575469234709c2d87185ca223a` (Makefile `VERSION = 6`,
+  `PATCHLEVEL = 12`, `SUBLEVEL = 0`), and are not a description of every
+  running kernel.
 - A matching readback before `fsync`, and a successful `fsync` or `msync`,
   are not crash-durability evidence. The programs print `durability_claim=none`
   and `msync_is_not_crash_proof=yes`.

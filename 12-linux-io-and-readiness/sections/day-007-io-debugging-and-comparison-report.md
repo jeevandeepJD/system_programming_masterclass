@@ -41,11 +41,9 @@ int printk(const char *fmt, ...)
 
 Trace. `va_start` walks the arguments after `fmt`. `vsprintf` writes the formatted text into the file-scope `buf[1024]` and returns the length. `console_print` displays that kernel buffer. A `printk` you add beside `sys_read` or `read_pipe` shows the fd, the count, or `f_pos` on the console because those objects are in the same address space as the call. Chapter 17.5 (printed page 1065) runs that kernel under Bochs: `bochsdbg -q -f bochsrc-0.12-hd.bxrc` stops with the CPU at the reset vector, and `vbreak` / `lbreak` / `pbreak` plant instruction breakpoints. Chapter 17.11 (printed page 1094) rebuilds Bochs with `gdbstub` and the kernel with `-g`, then attaches GDB to port 1234 so the same stop is a C stack rather than a segment:offset.
 
-What carries forward is "name the layer, then stop the machine on that layer." The static `buf`, `console_print`, the 80386 debugger commands, and a kernel you recompile for one `printk` belong to this tree. Linux 5.10 is too large, and the kernel you boot is often one you cannot rebuild for a question. The same facts come out through `/proc/self/fd` and `/proc/self/fdinfo`, and through `strace` recording the syscall and its return. GDB still stops the task; it attaches to the process, not to a Bochs stub.
+What carries forward is "name the layer, then stop the machine on that layer." The static `buf`, `console_print`, the 80386 debugger commands, and a kernel you recompile for one `printk` belong to this tree. Linux 6.12 is too large, and the kernel you boot is often one you cannot rebuild for a question. The same facts come out through `/proc/self/fd` and `/proc/self/fdinfo`, and through `strace` recording the syscall and its return. GDB still stops the task; it attaches to the process, not to a Bochs stub.
 
-ToyOS is the small source you can still read outright. [`vfs.c`](../../projects/toyos/src/vfs.c) and the Week 8 serial line show a descriptor and a pipe. They do not show `/proc`, `strace`, or a page cache.
-
-The shared [Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md) is the early control flow those prints would confirm. The sections below are `/proc`, `strace`, and GDB on Linux 5.10.134, tree `c9b2385d6793`. Read 0.12 as the first complete kernel you can print and stop. Develop against the 5.10 tree.
+The shared [Linux 0.12 map](../../references/EARLY_LINUX_012_MAP.md) is the early control flow those prints would confirm. The sections below are `/proc`, `strace`, and GDB on Linux 6.12, tree `adc218676eef`. Read 0.12 as the first complete kernel you can print and stop. Develop against the 6.12 tree.
 
 Days 4–6 put a byte queue behind two descriptors, a readiness wait in
 front of those descriptors, and a page-cache page behind a virtual
@@ -55,13 +53,46 @@ describe them. Each answer stops at a different layer. A transcript
 with no kernel identity and no binary identity is a story about a
 different machine.
 
-The line-level claims below are from tree `c9b2385d6793`, a 5.10.134-based
+The line-level claims below are from tree `adc218676eef`, a 6.12
 kernel. Before you repeat a line number, record `uname -r` and the tree
 id you actually opened. [Week 10's report](../../10-linux-processes-and-signals/sections/day-007-proc-strace-gdb-comparison-report.md)
 used the same rule for `task_struct`. It applies here to `struct file`,
 the pipe ring, and the VMA.
 
-## 3. Why the descriptor table has to be asked for
+## 3. Evolution: why the early design changed
+
+Linux 0.12 answers "what is this descriptor doing" by a `printk` you compile
+in, or by stopping the 80386 image in Bochs or GDB. The kernel, the console,
+and the debugger share one machine. A `printk` beside `sys_read` can name
+the fd because the object is in the same address space as the call.
+
+That does not survive a kernel you do not rebuild, or a question about one
+task on a running system. The evidence has to be exported in a form a
+process can read, and a failure has to come back as a structured errno
+rather than a line on the console.
+
+`/proc/<pid>/fdinfo` is generated when it is read. `seq_show` in
+`fs/proc/fd.c` (lines 23–72) locks the task, looks the index up with
+`files_lookup_fd_locked`, and prints `f_pos`, the flags, the mount id, and
+the inode number. `close_on_exec` (now taking `files_struct`, lines 99–102
+of `include/linux/fdtable.h`) folds `O_CLOEXEC` into that flags word. The
+symlink `/proc/<pid>/fd/N` is `proc_fd_link` (lines 175–196), which copies
+`f_path`. A pipe renders through `pipefs_dname` (`fs/pipe.c` lines 870–873)
+as `pipe:[inode]`.
+
+`strace` records the syscall and the return because ptrace stops on entry
+and exit. The kernel side of that class of hook is `trace_sys_enter`
+(`kernel/entry/common.c` line 61), which ftrace, perf, and eBPF can attach
+to without a private `printk`. GDB still stops the task. It attaches to the
+process.
+
+The return value stayed an errno-shaped `ssize_t`. `EBADF`, `EPIPE`, and
+`EAGAIN` are evidence about which layer refused the call. A console line is
+not a substitute for that code.
+
+## 4. Why the descriptor table has to be asked for
+
+ToyOS is the small source you can still read outright. [`vfs.c`](../../projects/toyos/src/vfs.c) and the Week 8 serial line show a descriptor and a pipe. They do not show `/proc`, `strace`, or a page cache.
 
 The integer a program stores in `int fd` is an index. The `struct file`,
 the pipe's `head` and `tail`, and the VMA's file offset live in kernel
@@ -75,9 +106,9 @@ are two generations. A task can `close` and `dup` between them.
 looks the descriptor up, and copies out the position and the flags.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/proc/fd.c
- * lines: 31–58
+ * lines: 34–60
  * function: seq_show
  */
 	task_lock(task);
@@ -88,10 +119,8 @@ looks the descriptor up, and copies out the position and the flags.
 		spin_lock(&files->file_lock);
 		file = files_lookup_fd_locked(files, fd);
 		if (file) {
-			struct fdtable *fdt = files_fdtable(files);
-
 			f_flags = file->f_flags;
-			if (close_on_exec(fd, fdt))
+			if (close_on_exec(fd, files))
 				f_flags |= O_CLOEXEC;
 
 			get_file(file);
@@ -105,9 +134,10 @@ looks the descriptor up, and copies out the position and the flags.
 	if (ret)
 		return ret;
 
-	seq_printf(m, "pos:\t%lli\nflags:\t0%o\nmnt_id:\t%i\n",
+	seq_printf(m, "pos:\t%lli\nflags:\t0%o\nmnt_id:\t%i\nino:\t%lu\n",
 		   (long long)file->f_pos, f_flags,
-		   real_mount(file->f_path.mnt)->mnt_id);
+		   real_mount(file->f_path.mnt)->mnt_id,
+		   file_inode(file)->i_ino);
 ```
 
 `O_NONBLOCK` and `O_CLOEXEC` are visible here because they live in
@@ -116,19 +146,21 @@ nonblocking, and whose fdinfo flags do not include the nonblocking bit,
 will block inside `pipe_read` on an edge-triggered drain. That is a
 Day 5 bug you can see without guessing.
 
-After the position line, the same function optionally calls the file's
-own `show_fdinfo`. Pipes in this tree do not set that operation.
-`pipefifo_fops` has `read_iter`, `write_iter`, `poll`, and `release`,
-and no `show_fdinfo`. The `if` is false, and fdinfo for a pipe stops at
-position, flags, mount id, and whatever `show_fd_locks` printed.
+After the position line, the same function prints the inode number and
+optionally calls the file's own `show_fdinfo`. Pipes in this tree do not
+set that operation. `pipefifo_fops` (`fs/pipe.c` lines 1232–1241) has
+`read_iter`, `write_iter`, `poll`, `release`, and `splice_write`, and no
+`show_fdinfo`. The `if` is false, and fdinfo for a pipe stops at
+position, flags, mount id, inode number, and whatever `show_fd_locks`
+printed.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/proc/fd.c
- * lines: 60–71
+ * lines: 62–72
  * function: seq_show
  */
-	/* show_fd_locks() never deferences files so a stale value is safe */
+	/* show_fd_locks() never dereferences files, so a stale value is safe */
 	show_fd_locks(m, file, files);
 	if (seq_has_overflowed(m))
 		goto out;
@@ -139,7 +171,6 @@ position, flags, mount id, and whatever `show_fd_locks` printed.
 out:
 	fput(file);
 	return 0;
-}
 ```
 
 The symlink at `/proc/PID/fd/N` is not a stored path. `proc_fd_link`
@@ -151,24 +182,29 @@ prove two descriptors are the two ends, or that a child inherited the
 end you thought you had closed.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/proc/fd.c
- * lines: 143–159
+ * lines: 175–196
  * function: proc_fd_link
  */
-static int proc_fd_link(struct dentry *dentry, struct path *path,
-			struct task_struct *task)
+static int proc_fd_link(struct dentry *dentry, struct path *path)
 {
+	struct task_struct *task;
 	int ret = -ENOENT;
-	unsigned int fd = proc_fd(d_inode(dentry));
-	struct file *fd_file;
 
-	fd_file = fget_task(task, fd);
-	if (fd_file) {
-		*path = fd_file->f_path;
-		path_get(&fd_file->f_path);
-		ret = 0;
-		fput(fd_file);
+	task = get_proc_task(d_inode(dentry));
+	if (task) {
+		unsigned int fd = proc_fd(d_inode(dentry));
+		struct file *fd_file;
+
+		fd_file = fget_task(task, fd);
+		if (fd_file) {
+			*path = fd_file->f_path;
+			path_get(&fd_file->f_path);
+			ret = 0;
+			fput(fd_file);
+		}
+		put_task_struct(task);
 	}
 
 	return ret;
@@ -176,9 +212,9 @@ static int proc_fd_link(struct dentry *dentry, struct path *path,
 ```
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: fs/pipe.c
- * lines: 855–866
+ * lines: 867–874
  * function: pipefs_dname
  */
 /*
@@ -186,13 +222,9 @@ static int proc_fd_link(struct dentry *dentry, struct path *path,
  */
 static char *pipefs_dname(struct dentry *dentry, char *buffer, int buflen)
 {
-	return dynamic_dname(dentry, buffer, buflen, "pipe:[%lu]",
+	return dynamic_dname(buffer, buflen, "pipe:[%lu]",
 				d_inode(dentry)->i_ino);
 }
-
-static const struct dentry_operations pipefs_dentry_operations = {
-	.d_dname	= pipefs_dname,
-};
 ```
 
 `readlink` of the symlink is a syscall, like the status file in the
@@ -205,7 +237,7 @@ need a trace, or `FIONREAD` on the pipe, which `pipe_ioctl` in
 `stream_open` gave the pipe no shared file position that a seek could
 use.
 
-## 4. strace sees the syscall, not the ring
+## 5. strace sees the syscall, not the ring
 
 strace stops the task at syscall entry and exit through ptrace. The
 line it prints is the architecture's registers at that boundary: the
@@ -239,7 +271,7 @@ a kernel target. For this week's userspace labs, GDB answers "which
 instruction faulted and at which address." The source answers "why
 that address is past the file."
 
-## 5. Five results that get swapped
+## 6. Five results that get swapped
 
 These are the failures the labs actually produce. Each one has a
 generator in the tree from Days 4–6.
@@ -247,31 +279,31 @@ generator in the tree from Days 4–6.
 **`EBADF`.** The descriptor index does not name a `struct file` in
 this task. `do_pipe2` never installed it, or `close` already released
 it, or the index was never returned. `ksys_mmap_pgoff` returns
-`-EBADF` when `fget` fails (`mm/mmap.c` lines 1699–1701). `do_epoll_wait`
+`-EBADF` when `fget` fails (`mm/mmap.c` line 515). `do_epoll_wait`
 returns `-EBADF` when `fdget` on the epoll descriptor fails
-(`fs/eventpoll.c` lines 2345–2347). `do_epoll_ctl` does the same for
-the epoll fd and the target fd (lines 2159–2167), and returns `-EPERM`
-when the target file has no poll operation (lines 2169–2172). A trace
+(`fs/eventpoll.c` lines 2440–2442). `do_epoll_ctl` does the same for
+the epoll fd and the target fd (lines 2262–2270), and returns `-EPERM`
+when the target file has no poll operation (lines 2273–2275). A trace
 that shows `epoll_ctl` failing with `EPERM` is a file that cannot be
 waited on, not a readiness bug. A trace that shows `EBADF` is a
 lifetime bug in the index: use after close, or the wrong integer.
 
 **`EPIPE` and `SIGPIPE`.** Day 4's `pipe_write` posts both when
 `readers` is zero: `send_sig(SIGPIPE, current, 0)` and `-EPIPE`
-(`fs/pipe.c` lines 432–435). The default disposition kills the writer
+(`fs/pipe.c` lines 457–460). The default disposition kills the writer
 on the way back to user mode, so the C statement after `write` does not
 run and strace shows the signal rather than a handled errno. Ignoring
 or blocking `SIGPIPE` lets `write` return `-1` with `EPIPE`. A partial
 copy that then discovers the last reader has gone still posts the
 signal, and it keeps the positive count when some bytes were already
-written (lines 477–482). The report has to say which of those two
+written (lines 498–502). The report has to say which of those two
 returns it observed. "Broken pipe" as a shell phrase is not yet either
 of them.
 
 **`EAGAIN`.** A nonblocking `pipe_read` or `pipe_write` returns
 `-EAGAIN` when the ring is empty or full and the other side still
-exists (Day 4, `pipe_read` lines 344–346 and `pipe_write` lines
-547–550). `epoll_wait` timing out returns 0, not `EAGAIN`. `EAGAIN`
+exists (Day 4, `pipe_read` lines 356–360 and `pipe_write` lines
+557–561). `epoll_wait` timing out returns 0, not `EAGAIN`. `EAGAIN`
 from a nonblocking `read` during an `EPOLLET` drain means "the level
 is gone; go back to `epoll_wait`." Treating it as a fatal error drops
 the connection. Treating `epoll_wait`'s 0-timeout 0 as `EAGAIN` is the
@@ -279,8 +311,8 @@ same confusion in the other direction.
 
 **epoll misuse.** `EPOLL_CTL_ADD` of a key that is already present
 returns `-EEXIST`. `DEL` or `MOD` of a missing key returns `-ENOENT`
-(`do_epoll_ctl` lines 2266–2286). `EPOLLET` does not put the item back
-on `rdllist` (`ep_send_events_proc` lines 1764–1778), so a short read
+(`do_epoll_ctl` lines 2358–2383). `EPOLLET` does not put the item back
+on `rdllist` (`ep_send_events` lines 1885–1897), so a short read
 with no later wakeup leaves bytes in the pipe and the waiter asleep.
 `EPOLLONESHOT` clears the interest bits until `EPOLL_CTL_MOD`. Closing
 the last reference to a watched file runs `eventpoll_release` from
@@ -292,18 +324,23 @@ drain that blocked inside `read` instead of returning `EAGAIN`.
 
 **`SIGBUS` on a mapped file.** This is not an errno. Day 6's
 `filemap_fault` returns `VM_FAULT_SIGBUS` when the page index is past
-`i_size` (`mm/filemap.c` lines 2959–2961, and again under the page lock
-at lines 3022–3026). x86 turns that code into a signal:
+`i_size` (`mm/filemap.c` lines 3313–3315, and again under the folio lock
+at lines 3417–3421). x86 turns that code into a signal:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
+/* tree adc218676eef (Linux 6.12)
  * path: arch/x86/mm/fault.c
- * lines: 928–961
+ * lines: 910–949
  * function: do_sigbus
  */
+static void
+do_sigbus(struct pt_regs *regs, unsigned long error_code, unsigned long address,
+	  vm_fault_t fault)
+{
 	/* Kernel mode? Handle exceptions or die: */
-	if (!(error_code & X86_PF_USER)) {
-		no_context(regs, error_code, address, SIGBUS, BUS_ADRERR);
+	if (!user_mode(regs)) {
+		kernelmode_fixup_or_oops(regs, error_code, address,
+					 SIGBUS, BUS_ADRERR, ARCH_DEFAULT_PKEY);
 		return;
 	}
 
@@ -335,10 +372,11 @@ at lines 3022–3026). x86 turns that code into a signal:
 	}
 #endif
 	force_sig_fault(SIGBUS, BUS_ADRERR, (void __user *)address);
+}
 ```
 
-`mm_fault_error` calls `do_sigbus` when the fault code includes
-`VM_FAULT_SIGBUS` (lines 987–990). For a user-mode fault that is not a
+`do_user_addr_fault` calls `do_sigbus` when the fault code includes
+`VM_FAULT_SIGBUS` (lines 1444–1446). For a user-mode fault that is not a
 hardware-poison case, the signal is `SIGBUS` with `BUS_ADRERR` and the
 fault address. The default disposition terminates the process. A
 handler that returns resumes the faulting instruction, because a page
@@ -355,7 +393,7 @@ an address that `munmap` already removed is a different signal: there
 is no VMA, and `do_user_addr_fault` takes `bad_area_nosemaphore` before
 `filemap_fault`.
 
-## 6. One failure, all the way through
+## 7. One failure, all the way through
 
 The shape is fixed. Symptom, hypothesis, evidence, root cause, fix,
 regression. The evidence column names its layer: source, API, trace,
@@ -386,8 +424,8 @@ disposition never let user code see the errno.
   matching the producer's write end, or the consumer has already
   exited and its `/proc` directory is gone. `ENOENT` on that directory
   is evidence the task is gone, not evidence about the pipe.
-- Source: `fs/pipe.c` `pipe_write`, lines 432–435, tree
-  `c9b2385d6793`. `send_sig(SIGPIPE, current, 0)` and `ret = -EPIPE`.
+- Source: `fs/pipe.c` `pipe_write`, lines 457–460, tree
+  `adc218676eef`. `send_sig(SIGPIPE, current, 0)` and `ret = -EPIPE`.
 - GDB, optional: a breakpoint on `write` is too late to see the kernel
   check, and a catch of `SIGPIPE` shows the user instruction pointer
   still inside the libc `write` wrapper. That confirms the signal
@@ -398,7 +436,7 @@ disposition never let user code see the errno.
 dropped before this `write`. `pipe_release` decremented `readers`. The
 producer's `write` is behaving as specified. The bug is the close order
 in the pipeline, the same missing `dup2`/`close` protocol as Day 4's
-section 6.
+section 7.
 
 **Fix.** The parent keeps the read end open only until the child has
 inherited it, then closes the parent's copy. The child maps the read
@@ -416,7 +454,7 @@ path. The second guards the error path Day 4 separated from end-of-file.
 A test that only checks "the process exited" passes for both the bug
 and the fix.
 
-## 7. The same shape for a readiness stall
+## 8. The same shape for a readiness stall
 
 **Symptom.** An edge-triggered epoll loop stops calling `read` while a
 writer has already pushed more bytes than one `read` accepted. The
@@ -438,9 +476,9 @@ bytes. No new `pipe_write` wakeup has run `ep_poll_callback`.
   absent from `flags`, a different bug is also available: the next
   `read` can sleep inside the kernel instead of returning `EAGAIN`.
   The symlink still says `pipe:[inode]`.
-- Source: `ep_send_events_proc` requeues only when `EPOLLET` is clear
-  (`fs/eventpoll.c` lines 1764–1778). `pipe_read` returns `-EAGAIN` for
-  a nonblocking empty ring (lines 344–346).
+- Source: `ep_send_events` requeues only when `EPOLLET` is clear
+  (`fs/eventpoll.c` lines 1885–1897). `pipe_read` returns `-EAGAIN` for
+  a nonblocking empty ring (lines 356–360).
 - API: `epoll_wait` returning 1 did not mean the pipe was empty
   afterwards. The following `read` is the byte count.
 
@@ -460,7 +498,7 @@ a single short `read` and before the drain, must be allowed to return
 fix, that second wait is not reached until `EAGAIN`, and the byte
 count matches the write.
 
-## 8. The same shape for `SIGBUS`
+## 9. The same shape for `SIGBUS`
 
 **Symptom.** A process that mapped a file dies with `SIGBUS`. strace
 shows `mmap` and `ftruncate` and then the signal. It does not show a
@@ -475,9 +513,9 @@ failing `read`.
   No `read` syscall on the faulting thread.
 - GDB: the instruction is a load or a store, and the fault address
   lies inside the mapping and at or beyond the new end of the file.
-- Source: `filemap_fault` lines 2959–2961, and `do_sigbus` line 961,
+- Source: `filemap_fault` lines 3313–3315, and `do_sigbus` line 948,
   `force_sig_fault(SIGBUS, BUS_ADRERR, address)`, tree
-  `c9b2385d6793`.
+  `adc218676eef`.
 - API: there is no errno, because the faulting access was not a
   syscall. `msync` and `munmap` are the syscalls that could have been
   used before the load.
@@ -497,12 +535,12 @@ the mapping intact, is the expected `SIGBUS` and is not reported as a
 passing read. A load after `munmap` is a segmentation fault instead,
 which shows the two faults stayed distinct.
 
-## 9. What each layer is allowed to prove
+## 10. What each layer is allowed to prove
 
 ```text
 layer      answers                                      does not answer
 source     which function returns -EPIPE, SIGBUS,       what this run did
-           EAGAIN on tree c9b2385d6793
+           EAGAIN on tree adc218676eef
 API        what this call returned, or which signal     why the ring was empty
            arrived, in this process
 strace     the syscalls and the signal, with arguments  a load that never entered
@@ -528,7 +566,7 @@ and [Week 11](../../11-threads-and-concurrency/sections/day-007-debuggers-saniti
 already treat a missing sanitizer. The refusal is not evidence that
 the pipe was empty. The source and the API checks still stand.
 
-## 10. ToyOS, this tree, and version discipline
+## 11. ToyOS, this tree, and version discipline
 
 [Week 8's pipe](../../08-user-mode-syscalls-and-ipc/sections/day-006-process-fd-ipc.md)
 is a 64-byte linear buffer, descriptors 3 and 4, and a read that
@@ -558,8 +596,8 @@ file bytes in user loads?       not implemented             mmap + filemap_fault
 how do you observe it?          serial, QEMU GDB            proc, strace, GDB, source
 ```
 
-Version discipline is part of the report, not a footer. `c9b2385d6793`
-is the tree these lessons quote. It is 5.10.134-based. The lab machine's
+Version discipline is part of the report, not a footer. `adc218676eef`
+is the tree these lessons quote. It is 6.12. The lab machine's
 `uname -r` may be a different release. `pipe_read`, `ep_send_events_proc`,
 `filemap_fault`, and `seq_show` move, split, and gain arguments. A line
 number copied from this lesson into a report about a different tree is
@@ -574,7 +612,7 @@ image is evidence about that image. It is not evidence about
 citation in the other direction: that image returns 0 on an empty
 buffer and has no `EPIPE`.
 
-## 11. A report you can reread in a month
+## 12. A report you can reread in a month
 
 Record, in this order, before any interpretation:
 
@@ -582,7 +620,7 @@ Record, in this order, before any interpretation:
 uname -r
 date
 compiler and the lab binary's hash, if the wrapper prints one
-tree id, if you opened sources (c9b2385d6793 for these notes)
+tree id, if you opened sources (adc218676eef for these notes)
 
 for the failing run:
   the argv
@@ -610,7 +648,7 @@ without tracing unrelated processes. A passing wrapper is not the
 report. The report is the six headings in your own words, tied to a
 tree id when you cite a function.
 
-## 12. Mastery: Explain · Draw · Observe · Build
+## 13. Mastery: Explain · Draw · Observe · Build
 
 The exercise is
 [../challenges/day-007-io-debug-report.sh](../challenges/day-007-io-debug-report.sh).

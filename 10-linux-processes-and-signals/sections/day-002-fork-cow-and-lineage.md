@@ -92,30 +92,49 @@ Trace: read the parent's segment base, place the child at
 page tables name the same frames until a write.
 
 What carries forward is a second task whose page tables start shared,
-with a private copy on the first store. What changes in 5.10 is the
-machinery around that idea: `kernel_clone`, `copy_process`, `copy_mm`,
-and a write-protect fault, with no LDT slot and no fixed `TASK_SIZE`
-window. Those 5.10 functions are the ones to develop against. The
-segment selectors `0x0f` and `0x17` belong to this 80386 kernel.
+with a private copy on the first store. The segment selectors `0x0f`
+and `0x17` belong to this 80386 kernel.
 
 ToyOS Week 7 switches tasks by copying saved registers and sharing one
 set of page tables. Week 8's `struct process` is still one user image
 ([`process.c`](../../projects/toyos/src/process.c)). `copy_mem` is the
 early Linux step that adds the second view.
 
-Now move to the 5.10 implementation.
+## 3. Evolution: why the early design changed
 
-The excerpts are from the local tree
-`5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`), a 5.10-based
-tree. Later mainline code moves these functions. The lines below are this
-revision.
+Linux 0.12 copy-on-write is an 80386 fact: each task occupies a
+segmented `TASK_SIZE` window, and `copy_mem` copies page-table entries
+into the child's window. A store fault then copies the frame. That
+window does not exist on other ISAs, and it does not survive once many
+tasks share one virtual-address layout.
+
+The address space became an architecture-neutral `mm_struct`: a
+page-table root plus the mappings, not an LDT slot. `fork` turned into
+`clone` with sharing flags. `CLONE_VM` keeps one `mm`. A clear flag
+duplicates it and write-protects private mappings, which is the old COW
+rule without the segment base.
+
+A later step added `clone3` and pidfds so creation can name the child
+with a file descriptor and pass a sized argument structure, instead of
+only a register-packed flag word. The sharing decision is still the
+flag. The first store still faults and copies.
+
+What survived is copy-on-write itself: two page tables can name one
+frame until a write. The 6.12/current path below is that fault, reached
+through `kernel_clone` rather than an 80386 slot.
+
+The excerpts below are from Linux 6.12, tag `v6.12`, commit
+`adc218676eef`. Later mainline code moves these functions. The lines
+below are this revision. Develop against this 6.12/current path:
+`kernel_clone`, `copy_process`, `copy_mm`, and the write-protect fault.
 
 ---
 
-## 3. `fork` is a thin entry into `kernel_clone`
+## 4. `fork` is a thin entry into `kernel_clone`
 
-In `kernel/fork.c`, `SYSCALL_DEFINE0(fork)`, same tree. x86-64 and arm64 in
-this tree define `__ARCH_WANT_SYS_FORK`, so the syscall exists there:
+In `kernel/fork.c`, `SYSCALL_DEFINE0(fork)`, same tree, lines 2867–2881.
+x86-64 and arm64 in this tree define `__ARCH_WANT_SYS_FORK`, so the syscall
+exists there:
 
 ```c
 #ifdef __ARCH_WANT_SYS_FORK
@@ -142,7 +161,7 @@ its parent when it exits. That is the lineage contract, stored later on the
 child as `exit_signal`.
 
 `kernel_clone` is the common body. In `kernel/fork.c`, `kernel_clone`, same
-tree, after it has chosen whether a ptracer wants an event:
+tree, lines 2786–2817, after it has chosen whether a ptracer wants an event:
 
 ```c
 	p = copy_process(NULL, trace, NUMA_NO_NODE, args);
@@ -169,7 +188,7 @@ tree, after it has chosen whether a ptracer wants an event:
 		get_task_struct(p);
 	}
 
-	if (IS_ENABLED(CONFIG_LRU_GEN) && !(clone_flags & CLONE_VM)) {
+	if (IS_ENABLED(CONFIG_LRU_GEN_WALKS_MMU) && !(clone_flags & CLONE_VM)) {
 		/* lock the task to synchronize with memcg migration */
 		task_lock(p);
 		lru_gen_add_mm(p->mm);
@@ -197,15 +216,15 @@ and the pid are other objects, referenced from it, which is the Day 1 graph
 being duplicated under flags.
 
 On x86-64, `copy_thread` in `arch/x86/kernel/process.c` builds that resume
-frame. For an ordinary user task it copies the parent's `pt_regs` and then
-sets the child's syscall return register to zero:
+frame. Lines 216–234, for an ordinary user task, copy the parent's
+`pt_regs` and then set the child's syscall return register to zero:
 
 ```c
 	/* Kernel thread ? */
 	if (unlikely(p->flags & PF_KTHREAD)) {
 		p->thread.pkru = pkru_get_init_value();
 		memset(childregs, 0, sizeof(struct pt_regs));
-		kthread_frame_init(frame, sp, arg);
+		kthread_frame_init(frame, args->fn, args->fn_arg);
 		return 0;
 	}
 
@@ -222,10 +241,10 @@ sets the child's syscall return register to zero:
 		childregs->sp = sp;
 ```
 
-Earlier in the same function, `frame->ret_addr` is `ret_from_fork` and
-`p->thread.sp` points at that frame. When the child is scheduled, the
-kernel resume path pops into `ret_from_fork`, which returns to user mode
-with `RAX` already 0. The parent's `RAX` is whatever `kernel_clone`
+Earlier in the same function, `frame->ret_addr` is `ret_from_fork_asm`
+(line 175) and `p->thread.sp` points at that frame. When the child is
+scheduled, that assembly path enters `ret_from_fork` (lines 140–157),
+which returns to user mode with `RAX` already 0. The parent's `RAX` is whatever `kernel_clone`
 returned, the child's pid. Both tasks continue at the user instruction
 after the syscall. They have different register files because they have
 different `pt_regs`. They have the same virtual address for that
@@ -237,10 +256,10 @@ syscall leaves it clear.
 
 ---
 
-## 4. `copy_mm` shares the address space only under `CLONE_VM`
+## 5. `copy_mm` shares the address space only under `CLONE_VM`
 
-In `kernel/fork.c`, `copy_mm`, same tree. The function first clears the
-child's fault and switch counters, then decides:
+In `kernel/fork.c`, `copy_mm`, same tree, lines 1708–1732. After the
+child's fault and switch counters are cleared, the function decides:
 
 ```c
 	tsk->mm = NULL;
@@ -255,23 +274,18 @@ child's fault and switch counters, then decides:
 	if (!oldmm)
 		return 0;
 
-	/* initialize the new vmacache entries */
-	vmacache_flush(tsk);
-
 	if (clone_flags & CLONE_VM) {
 		mmget(oldmm);
 		mm = oldmm;
-		goto good_mm;
+	} else {
+		mm = dup_mm(tsk, current->mm);
+		if (!mm)
+			return -ENOMEM;
 	}
 
-	retval = -ENOMEM;
-	mm = dup_mm(tsk, current->mm);
-	if (!mm)
-		goto fail_nomem;
-
-good_mm:
 	tsk->mm = mm;
 	tsk->active_mm = mm;
+	sched_mm_cid_fork(tsk);
 	return 0;
 ```
 
@@ -280,7 +294,7 @@ A kernel thread has `current->mm == NULL`. The child then also has a null
 thread case and the Week 7 shared-page-table case.
 
 `CLONE_VM` takes another reference (`mmget`) and stores the parent's `mm`
-into the child. One `mm` means one `pgd`, one list of VMAs, one set of
+into the child. One `mm` means one `pgd`, one VMA tree, one set of
 page tables. A store by either task walks the same tables. Threads that
 share an address space pass this flag. `vfork` passes it so the child can
 run in the parent's address space until it `exec`s or exits; the parent
@@ -294,7 +308,7 @@ starts at the child's `pgd` once the scheduler installs it.
 
 ---
 
-## 5. Duplicating a page table write-protects a COW mapping
+## 6. Duplicating a page table write-protects a COW mapping
 
 A shared mapping (`VM_SHARED`) is supposed to make one task's store visible
 to the other. A private mapping keeps the store inside the storing address
@@ -302,25 +316,35 @@ space. Copy-on-write still starts from one frame: it removes write
 permission from both PTEs, the hardware faults the first store, and the
 fault handler allocates a private frame.
 
-`is_cow_mapping` in `include/linux/mm.h`, same tree, is the predicate.
-`page_needs_cow_for_dma` uses it when a pin means the frame must be copied
-during `fork` itself:
+`is_cow_mapping` in `include/linux/mm.h`, same tree, lines 1595–1598, is
+the predicate. `folio_needs_cow_for_dma`, lines 1950–1965, is what the
+rmap dup asks when a pin means the folio must be copied during `fork`
+itself:
 
 ```c
 static inline bool is_cow_mapping(vm_flags_t flags)
 {
 	return (flags & (VM_SHARED | VM_MAYWRITE)) == VM_MAYWRITE;
 }
+```
 
+```c
 /*
  * This should most likely only be called during fork() to see whether we
- * should break the cow immediately for a page on the src mm.
+ * should break the cow immediately for an anon page on the src mm.
+ *
+ * The caller has to hold the PT lock and the vma->vm_mm->->write_protect_seq.
  */
-static inline bool page_needs_cow_for_dma(struct vm_area_struct *vma,
-					  struct page *page)
+static inline bool folio_needs_cow_for_dma(struct vm_area_struct *vma,
+					  struct folio *folio)
 {
-	if (!is_cow_mapping(vma->vm_flags))
+	VM_BUG_ON(!(raw_read_seqcount(&vma->vm_mm->write_protect_seq) & 1));
+
+	if (!test_bit(MMF_HAS_PINNED, &vma->vm_mm->flags))
 		return false;
+
+	return folio_maybe_dma_pinned(folio);
+}
 ```
 
 A mapping is copy-on-write when it may be written and it is private.
@@ -329,48 +353,50 @@ even after the PTE write bit is cleared. The fault handler uses it later to
 decide that the faulting task is allowed to become writable again after the
 copy.
 
-In `mm/memory.c`, `copy_present_pte`, same tree, after the page's map count
-has been duplicated:
+In `mm/memory.c`, `__copy_present_ptes`, same tree, lines 949–970, after
+`copy_present_ptes` has duplicated the folio's map count:
 
 ```c
-	/*
-	 * If it's a COW mapping, write protect it both
-	 * in the parent and the child
-	 */
-	if (is_cow_mapping(vm_flags) && pte_write(pte)) {
-		ptep_set_wrprotect(src_mm, addr, src_pte);
+static __always_inline void __copy_present_ptes(struct vm_area_struct *dst_vma,
+		struct vm_area_struct *src_vma, pte_t *dst_pte, pte_t *src_pte,
+		pte_t pte, unsigned long addr, int nr)
+{
+	struct mm_struct *src_mm = src_vma->vm_mm;
+
+	/* If it's a COW mapping, write protect it both processes. */
+	if (is_cow_mapping(src_vma->vm_flags) && pte_write(pte)) {
+		wrprotect_ptes(src_mm, addr, src_pte, nr);
 		pte = pte_wrprotect(pte);
 	}
 
-	/*
-	 * If it's a shared mapping, mark it clean in
-	 * the child
-	 */
-	if (vm_flags & VM_SHARED)
+	/* If it's a shared mapping, mark it clean in the child. */
+	if (src_vma->vm_flags & VM_SHARED)
 		pte = pte_mkclean(pte);
 	pte = pte_mkold(pte);
 
 	if (!userfaultfd_wp(dst_vma))
 		pte = pte_clear_uffd_wp(pte);
 
-	set_pte_at(dst_vma->vm_mm, addr, dst_pte, pte);
-	return 0;
+	set_ptes(dst_vma->vm_mm, addr, dst_pte, pte, nr);
+}
 ```
 
-`ptep_set_wrprotect` clears the writable bit in the parent's live PTE.
-`pte_wrprotect` clears it in the value that `set_pte_at` installs in the
-child. Both PTEs still contain the same page-frame number. Above this
-block, when the leaf names an ordinary page, the function has already
-called `get_page` and `page_dup_rmap`, so the frame's reference count and
-map count include the child. The child's page-table pages themselves are
-new. The data frame is shared.
+`wrprotect_ptes` clears the writable bit in the parent's live PTEs by
+calling `ptep_set_wrprotect` on each one. `pte_wrprotect` clears it in
+the value that `set_ptes` installs in the child. Both PTEs still contain
+the same page-frame number. Above this block, when the leaf names an
+ordinary page, `copy_present_ptes` has already called `folio_get` and
+either `folio_try_dup_anon_rmap_pte` or `folio_dup_file_rmap_pte`, so the
+frame's reference count and map count include the child. The child's
+page-table pages themselves are new. The data frame is shared.
 
-A page that is pinned for DMA is handled just before this path, in
-`copy_present_page`. If `page_needs_cow_for_dma` says the parent has pinned
-this anonymous page, the kernel copies the frame during `fork` and installs
-the copy in the child immediately. The pin must keep seeing the parent's
-frame. The common case, an ordinary anonymous or private file page with no
-such pin, takes the write-protect path.
+A page that is pinned for DMA is handled on the failure of that anon rmap
+dup. `folio_try_dup_anon_rmap_pte` uses `folio_needs_cow_for_dma`. If the
+parent has pinned this anonymous folio, the dup fails and
+`copy_present_page` copies the frame during `fork` and installs the copy
+in the child immediately. The pin must keep seeing the parent's frame.
+The common case, an ordinary anonymous or private file page with no such
+pin, takes the write-protect path.
 
 Read-only PTEs stay read-only. There is nothing to unshare until something
 makes the mapping writable. Executable text that is mapped read-only can
@@ -388,101 +414,121 @@ one mapcount                        mapcount includes both tasks
 
 ---
 
-## 6. The first store faults and copies; the last reference may reuse
+## 7. The first store faults and copies; the last reference may reuse
 
 A store to a present PTE whose writable bit is clear enters the fault
 handler with the address, the VMA, and the original PTE. In `mm/memory.c`,
-`do_wp_page`, same tree, the anonymous decision is:
+`do_wp_page`, same tree, lines 3699–3745, the shared and private decisions
+are:
 
 ```c
-	if (PageAnon(vmf->page)) {
-		struct page *page = vmf->page;
-
-		/* PageKsm() doesn't necessarily raise the page refcount */
-		if (PageKsm(page) || page_count(page) != 1)
-			goto copy;
-		if (!trylock_page(page))
-			goto copy;
-		if (PageKsm(page) || page_mapcount(page) != 1 || page_count(page) != 1) {
-			unlock_page(page);
-			goto copy;
-		}
+	/*
+	 * Shared mapping: we are guaranteed to have VM_WRITE and
+	 * FAULT_FLAG_WRITE set at this point.
+	 */
+	if (vma->vm_flags & (VM_SHARED | VM_MAYSHARE)) {
 		/*
-		 * Ok, we've got the only map reference, and the only
-		 * page count reference, and the page is locked,
-		 * it's dark out, and we're wearing sunglasses. Hit it.
+		 * VM_MIXEDMAP !pfn_valid() case, or VM_SOFTDIRTY clear on a
+		 * VM_PFNMAP VMA.
+		 *
+		 * We should not cow pages in a shared writeable mapping.
+		 * Just mark the pages writable and/or call ops->pfn_mkwrite.
 		 */
-		unlock_page(page);
-		wp_page_reuse(vmf);
-		return VM_FAULT_WRITE;
-	} else if (unlikely((vma->vm_flags & (VM_WRITE|VM_SHARED)) ==
-					(VM_WRITE|VM_SHARED))) {
-		return wp_page_shared(vmf);
+		if (!vmf->page)
+			return wp_pfn_shared(vmf);
+		return wp_page_shared(vmf, folio);
 	}
-copy:
+
+	/*
+	 * Private mapping: create an exclusive anonymous page copy if reuse
+	 * is impossible. We might miss VM_WRITE for FOLL_FORCE handling.
+	 *
+	 * If we encounter a page that is marked exclusive, we must reuse
+	 * the page without further checks.
+	 */
+	if (folio && folio_test_anon(folio) &&
+	    (PageAnonExclusive(vmf->page) || wp_can_reuse_anon_folio(folio, vma))) {
+		if (!PageAnonExclusive(vmf->page))
+			SetPageAnonExclusive(vmf->page);
+		if (unlikely(unshare)) {
+			pte_unmap_unlock(vmf->pte, vmf->ptl);
+			return 0;
+		}
+		wp_page_reuse(vmf, folio);
+		return 0;
+	}
 	/*
 	 * Ok, we need to copy. Oh, well..
 	 */
-	get_page(vmf->page);
+	if (folio)
+		folio_get(folio);
 
 	pte_unmap_unlock(vmf->pte, vmf->ptl);
+#ifdef CONFIG_KSM
+	if (folio && folio_test_ksm(folio))
+		count_vm_event(COW_KSM);
+#endif
 	return wp_page_copy(vmf);
 ```
 
-Right after `fork`, the frame is mapped by parent and child, so
-`page_count` and `page_mapcount` are above one. The faulting task falls
-through to `wp_page_copy`. `wp_page_reuse` is the other exit: the faulting
-task holds the only map and the only page reference, so the handler marks
-the existing PTE writable and dirty. That happens for the second task once
-the first task has dropped its map of this frame, and it also happens for
-a page that was already private. The write bit is still clear until this
-fault, because `copy_present_pte` cleared it. Reuse avoids a second
+Right after `fork`, the frame is mapped by parent and child, so it is not
+`PageAnonExclusive` and `wp_can_reuse_anon_folio` fails. The faulting task
+falls through to `wp_page_copy`. `wp_page_reuse` is the other exit: the
+faulting task holds the exclusive map, so the handler marks the existing
+PTE writable and dirty. That happens for the second task once the first
+task has dropped its map of this frame, and it also happens for a page
+that was already private. The write bit is still clear until this fault,
+because `__copy_present_ptes` cleared it. Reuse avoids a second
 allocation. It still is a write fault.
 
-The copy itself is `wp_page_copy`. In `mm/memory.c`, same tree, the
-allocation and the byte copy:
+The copy itself is `wp_page_copy`. In `mm/memory.c`, same tree, lines
+3331–3376, the allocation and the byte copy:
 
 ```c
 static vm_fault_t wp_page_copy(struct vm_fault *vmf)
 {
+	const bool unshare = vmf->flags & FAULT_FLAG_UNSHARE;
 	struct vm_area_struct *vma = vmf->vma;
 	struct mm_struct *mm = vma->vm_mm;
-	struct page *old_page = vmf->page;
-	struct page *new_page = NULL;
+	struct folio *old_folio = NULL;
+	struct folio *new_folio = NULL;
 	pte_t entry;
 	int page_copied = 0;
 	struct mmu_notifier_range range;
-	int ret;
+	vm_fault_t ret;
+	bool pfn_is_zero;
 
-	if (unlikely(anon_vma_prepare(vma)))
+	delayacct_wpcopy_start();
+
+	if (vmf->page)
+		old_folio = page_folio(vmf->page);
+	ret = vmf_anon_prepare(vmf);
+	if (unlikely(ret))
+		goto out;
+
+	pfn_is_zero = is_zero_pfn(pte_pfn(vmf->orig_pte));
+	new_folio = folio_prealloc(mm, vma, vmf->address, pfn_is_zero);
+	if (!new_folio)
 		goto oom;
 
-	if (is_zero_pfn(pte_pfn(vmf->orig_pte))) {
-		new_page = alloc_zeroed_user_highpage_movable(vma,
-							      vmf->address);
-		if (!new_page)
-			goto oom;
-	} else {
-		new_page = alloc_page_vma(GFP_HIGHUSER_MOVABLE, vma,
-				vmf->address);
-		if (!new_page)
-			goto oom;
+	if (!pfn_is_zero) {
+		int err;
 
-		ret = cow_user_page(new_page, old_page, vmf);
+		err = __wp_page_copy_user(&new_folio->page, vmf->page, vmf);
 ```
 
-A zero page becomes a fresh zeroed frame. Any other page is allocated and
-filled by `cow_user_page`, which copies the source frame's bytes. The
-function then charges the new page, locks the PTE again, and checks that
-the PTE still matches `orig_pte` (another fault might have won the race).
-On a match it builds a PTE from `mk_pte(new_page, vma->vm_page_prot)`,
-marks it young, and `maybe_mkwrite(pte_mkdirty(entry), vma)` sets the
-writable bit because the VMA has `VM_WRITE`. It clears the old PTE, flushes
-that translation, adds the new page as an anonymous rmap, and
-`set_pte_at_notify` installs the new PTE in the faulting `mm` only. Then
-`page_remove_rmap` drops the faulting task's map of the old page. The other
-task's PTE is untouched: same virtual address, old frame, write bit still
-clear.
+A zero page becomes a fresh zeroed folio from `folio_prealloc`. Any other
+page is allocated there and filled by `__wp_page_copy_user`, which copies
+the source frame's bytes. The function then locks the PTE again, and
+checks that the PTE still matches `orig_pte` (another fault might have
+won the race). On a match it builds a PTE from
+`mk_pte(&new_folio->page, vma->vm_page_prot)`, marks it young, and
+`maybe_mkwrite(pte_mkdirty(entry), vma)` sets the writable bit because
+the VMA has `VM_WRITE`. It clears the old PTE, flushes that translation,
+adds the new folio as an anonymous rmap, and `set_pte_at` installs the
+new PTE in the faulting `mm` only. Then `folio_remove_rmap_pte` drops the
+faulting task's map of the old page. The other task's PTE is untouched:
+same virtual address, old frame, write bit still clear.
 
 The fault returns, the store instruction is restarted, and the writable PTE
 lets the store complete into the new frame. `min_flt` on that task counts
@@ -490,7 +536,7 @@ the fault. The other task's registers and its PTE stay as they were.
 
 ---
 
-## 7. Execution trace: one virtual address, two stores
+## 8. Execution trace: one virtual address, two stores
 
 Illustrated values, one anonymous private page, for a single-threaded
 parent. The lab prints pids and the pipe payload. This trace is the path the
@@ -506,26 +552,27 @@ parent, before fork:
 1. The parent executes the `fork` syscall. `SYSCALL_DEFINE0(fork)` calls
    `kernel_clone` with `exit_signal = SIGCHLD` and empty flags.
    `copy_process` duplicates the task. `copy_mm` calls `dup_mm`.
-   `copy_present_pte` write-protects V in both page tables. Both roots now
+   `__copy_present_ptes` write-protects V in both page tables. Both roots now
    translate V to PFN `0x12000` with the writable bit clear. Map count is
    two.
 
 2. `copy_thread` on x86-64 copies `pt_regs` and sets `childregs->ax = 0`.
    `alloc_pid` assigns a pid in the namespace. `wake_up_new_task` queues
    the child. `kernel_clone` returns `pid_vnr` to the parent. The parent's
-   libc wrapper returns that positive pid. The child resumes at
-   `ret_from_fork` and returns to user mode with `RAX == 0`. Both user
+   libc wrapper returns that positive pid. The child resumes through
+   `ret_from_fork_asm` into `ret_from_fork` and returns to user mode with
+   `RAX == 0`. Both user
    `RIP` values name the instruction after the syscall. That instruction
    page can still be the shared read-only frame. The data page at V is
    shared and write-protected.
 
 3. The parent stores `2` through V. The parent's walk uses `mm_p->pgd`.
    The leaf is present and the writable bit is clear, so the core raises a
-   page fault. `do_wp_page` sees an anonymous page with `page_count != 1`
+   page fault. `do_wp_page` sees an anonymous folio that cannot be reused
    and calls `wp_page_copy`. The handler allocates PFN `0x13000`,
-   `cow_user_page` copies the integer `1` into it, and the parent's PTE
+   `__wp_page_copy_user` copies the integer `1` into it, and the parent's PTE
    for V becomes present, writable, and pointing at `0x13000`.
-   `page_remove_rmap` drops the parent's map of `0x12000`. The restarted
+   `folio_remove_rmap_pte` drops the parent's map of `0x12000`. The restarted
    store writes `2` into `0x13000`.
 
 4. The child's PTE for V still names `0x12000` and is still write-protected.
@@ -534,10 +581,10 @@ parent, before fork:
    root installed for `current`, so one virtual address can name two frames.
 
 5. The child stores `3` through V. The child's walk faults. `do_wp_page`
-   runs on the child's `mm`. If the child is now the only mapper and the
-   only reference, the handler calls `wp_page_reuse` and marks the existing
-   PTE writable; the store writes `3` into PFN `0x12000`. If a reference
-   remains — the count checks in `do_wp_page` are the authority — the
+   runs on the child's `mm`. If the child is now the exclusive mapper,
+   `PageAnonExclusive` or `wp_can_reuse_anon_folio` succeeds and the
+   handler calls `wp_page_reuse`; the store writes `3` into PFN `0x12000`.
+   If reuse fails — those checks in `do_wp_page` are the authority — the
    handler calls `wp_page_copy` again and the child gets a third frame.
    Either way the parent's frame `0x13000` still holds `2`. The two stores
    used one virtual address and two `mm` objects.
@@ -557,37 +604,40 @@ region stays one frame.
 
 ---
 
-## 8. The file table is private; the open-file description is shared
+## 9. The file table is private; the open-file description is shared
 
 Memory and descriptors answer different sharing questions. In
-`kernel/fork.c`, `copy_files`, same tree:
+`kernel/fork.c`, `copy_files`, same tree, lines 1756–1784:
 
 ```c
-static int copy_files(unsigned long clone_flags, struct task_struct *tsk)
+static int copy_files(unsigned long clone_flags, struct task_struct *tsk,
+		      int no_files)
 {
 	struct files_struct *oldf, *newf;
-	int error = 0;
 
 	/*
 	 * A background process may not have any files ...
 	 */
 	oldf = current->files;
 	if (!oldf)
-		goto out;
+		return 0;
+
+	if (no_files) {
+		tsk->files = NULL;
+		return 0;
+	}
 
 	if (clone_flags & CLONE_FILES) {
 		atomic_inc(&oldf->count);
-		goto out;
+		return 0;
 	}
 
-	newf = dup_fd(oldf, NR_OPEN_MAX, &error);
-	if (!newf)
-		goto out;
+	newf = dup_fd(oldf, NULL);
+	if (IS_ERR(newf))
+		return PTR_ERR(newf);
 
 	tsk->files = newf;
-	error = 0;
-out:
-	return error;
+	return 0;
 }
 ```
 
@@ -636,7 +686,7 @@ in the child updates the child's `fs`, and the parent's cwd stays.
 
 ---
 
-## 9. The child is a new task in the parent's lineage
+## 10. The child is a new task in the parent's lineage
 
 `exit_signal = SIGCHLD` from the `fork` syscall is stored on the child.
 When the child exits, the parent is the `SIGCHLD` recipient Day 1 named as
@@ -660,12 +710,12 @@ edge between them.
 
 ---
 
-## 10. Architecture lens — x86-64, AArch64, and RISC-V
+## 11. Architecture lens — x86-64, AArch64, and RISC-V
 
 Copy-on-write is a page-table permission fact plus a fault handler in
 generic `mm/`. `copy_mm`, `is_cow_mapping`, `do_wp_page`, and
 `wp_page_copy` are that C. The ISA supplies the PTE encoding inside
-`pte_wrprotect` / `ptep_set_wrprotect`, and it supplies the store fault
+`pte_wrprotect` / `wrprotect_ptes`, and it supplies the store fault
 that enters the handler.
 
 ```text
@@ -687,7 +737,7 @@ for a C `fork()`. Both enter `kernel_clone`. The flag word is what
 
 The child's zero return is written by architecture code. The x86-64
 `copy_thread` quoted above stores it in `childregs->ax` and resumes through
-`ret_from_fork`. AArch64 and RISC-V do the analogous store in their own
+`ret_from_fork_asm` into `ret_from_fork`. AArch64 and RISC-V do the analogous store in their own
 `copy_thread`, into the ABI return register of that ISA. The generic
 function returns the pid only to the task that called `kernel_clone`,
 which is the parent.
@@ -698,7 +748,7 @@ allocates a frame only for that `mm`.
 
 ---
 
-## 11. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 The mechanism above is the lesson. The wrapper is the evidence you can
 check on this host. From the week directory, run
@@ -712,7 +762,7 @@ It builds the canonical project and runs `process_lab tree`.
   `pid_vnr`. On x86-64 the child receives `childregs->ax = 0`.
 - `copy_mm` shares `mm` when `CLONE_VM` is set and calls `dup_mm`
   otherwise. Plain `fork` duplicates the address space.
-- `copy_present_pte` write-protects both PTEs of a COW mapping
+- `__copy_present_ptes` write-protects both PTEs of a COW mapping
   (`is_cow_mapping`: private and `VM_MAYWRITE`) and keeps the same frame.
   The first store faults into `do_wp_page` and `wp_page_copy`, which
   installs a new frame in the faulting `mm` only.
@@ -740,7 +790,7 @@ root, and an unspecified order. If `strace` exists, the wrapper keeps
 `clone`, `fork`, `wait`, and `exit` lines. A `clone` line is the libc
 entry into `kernel_clone`. The wrapper's LIMIT line records the boundary
 of the run: lineage and the pipe. Page-fault counts and `/proc/pid/pagemap`
-stay in the source trace of section 7. The pipe lines are the runtime
+stay in the source trace of section 8. The pipe lines are the runtime
 evidence for lineage and for a shared open-file description.
 
 ### Build

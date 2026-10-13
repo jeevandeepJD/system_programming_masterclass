@@ -8,8 +8,8 @@
 
 Run the day's experiment before the kernel excerpts, and keep the two layers
 apart. The lab speaks POSIX through glibc. The excerpts later in this lesson
-are Linux 5.10.134 at tree `c9b2385d6793`, and they show how the kernel waits.
-Section 2 quotes the Linux 0.12 pipe sleep, which is not that tree.
+are Linux 6.12 at commit `adc218676eef25575469234709c2d87185ca223a`, and they show how the kernel waits.
+Section 2 quotes the Linux 0.12 pipe sleep, which is not that commit.
 glibc's `pthread_cond_t` is a userspace object. This lesson quotes kernel
 code only.
 
@@ -54,22 +54,40 @@ store "the pipe is now non-empty."
 What carries forward is that split: the sleep decision is the predicate,
 the wakeup makes a task runnable, and the waiter looks at the predicate
 again. The same file's writer uses the opposite wait (no free space, sleep
-on `PIPE_WRITE_WAIT`, wake readers). ToyOS at Week 7 has no wait channel
-and no pipe predicate. The teaching-OS `sleep`/`wakeup` on
-[Day 7](day-007-debuggers-sanitizers-and-system-comparison.md) is the place
-to reconstruct this shape, after you pin a revision.
+on `PIPE_WRITE_WAIT`, wake readers).
 
 Linux 0.12 cannot teach `pthread_cond_wait`, the POSIX rule that the wait
 releases the mutex and joins the wait set as one step, or the condvar's
 spurious-wakeup contract. `__sleep_on` is the kernel queue from Day 3, and
 the annotated listing already calls that queue immature. The shared
-[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
+[Linux 0.12 reading map](../../references/EARLY_LINUX_012_MAP.md)
 (Week 11, and the pipe note under Week 12) stops at this control-flow
-picture. The following sections are the POSIX condition variable in the
-lab, then `wait_event`, `set_current_state`, and `futex_wait` from Linux
-5.10 at tree `c9b2385d6793`.
+picture.
 
-## 3. Why exclusion is the wrong tool for waiting
+## 3. Evolution: why the early design changed
+
+The 0.12 pipe already separates the predicate from the wake: `PIPE_SIZE` is
+the test, `interruptible_sleep_on` is the sleep, and the loop looks again.
+The sleep itself is the ad-hoc queue from Day 3. A later kernel wait queue
+publishes the waiter under the queue lock and rechecks a C expression.
+`wait_event` (`include/linux/wait.h` lines 327–345, commit
+`adc218676eef25575469234709c2d87185ca223a`) is that shape: test, then
+`__wait_event`, which prepares, tests again, and only then calls `schedule`.
+
+A pthread condition variable keeps the predicate in the program. glibc
+implements `pthread_cond_t` in userspace and blocks with a futex when the
+waiter must leave the CPU. The kernel evaluates the user word the library
+publishes, under the hash-bucket lock in `futex_wait_setup`
+(`kernel/futex/waitwake.c` lines 592–645). Empty and full stay in the lab's
+`while` loops. The predicate remains userspace; the futex is the slow path
+that makes the sleep race-safe.
+
+ToyOS at Week 7 has no wait channel and no pipe predicate. The teaching-OS
+`sleep`/`wakeup` on [Day
+7](day-007-debuggers-sanitizers-and-system-comparison.md) is the place to
+reconstruct this shape, after you pin a revision.
+
+## 4. Why exclusion is the wrong tool for waiting
 
 [Day 3](day-003-mutexes-ownership-lock-order-futex.md) gave a mutex a job:
 name an invariant, and hold the mutex across every read and write that must
@@ -122,7 +140,7 @@ The three answers stay separate. A signal is a hint that the predicate might
 now hold. The bytes of `count` are the predicate. The mutex is what makes a
 read of those bytes agree with the writer that last updated them.
 
-## 4. Where the queue lives, in the machine
+## 5. Where the queue lives, in the machine
 
 The lab queue is one object in the process address space. Both producers and
 both consumers use the same virtual addresses for `items`, `head`, `tail`,
@@ -157,7 +175,7 @@ task with a futex operation. Either way, the POSIX rule the lab relies on is
 the same: `pthread_cond_wait` returns with the mutex owned by the caller, and
 the predicate is examined again under that ownership.
 
-## 5. The wait protocol
+## 6. The wait protocol
 
 Write the protocol as four steps that share one mutex. The names below match
 `put` and `get` in the lab.
@@ -206,7 +224,7 @@ waiter increments a count that a later `wait` consumes. Treating a condvar
 as a semaphore is how notifications get lost. The queue does not need a
 stored permit. `count` itself is the memory of how many items are present.
 
-## 6. Execution trace: signal before anybody waits
+## 7. Execution trace: signal before anybody waits
 
 This is the lost-wakeup trace. The mutex is free, `count` is 0, and the
 condition variable's waiter list is empty. Thread S signals without holding
@@ -276,7 +294,7 @@ program still updates the predicate under the mutex and every waiter rechecks
 in a loop. The trace above is the case that loses: the signal is early, the
 predicate is not true at the eventual check, and nobody signals again.
 
-## 7. Spurious wakeups and stolen wakeups
+## 8. Spurious wakeups and stolen wakeups
 
 A wait can also return when a signal did happen, and the waiter must still
 recheck.
@@ -322,7 +340,7 @@ the right. Broadcast would also be correct here. It would schedule more
 threads back onto the mutex, most of which would observe a false predicate
 and sleep again.
 
-## 8. Empty and full are the two predicates
+## 9. Empty and full are the two predicates
 
 The lab ring has `CAPACITY` 8. Two producers each insert 1000 positive
 values. Two consumers remove values until they see a sentinel. The fields
@@ -389,7 +407,7 @@ that decrements `count` from 8 to 7 makes `can_put` true, so it signals
 still false; the loop would send it back to sleep, and the thread that could
 make progress would stay on the other wait list until some later signal.
 
-## 9. Shutdown and who owns the result
+## 10. Shutdown and who owns the result
 
 After both producers have been joined, the parent calls `put(-1)` twice, once
 per consumer. The joins matter. They are a happens-before edge from each
@@ -413,14 +431,14 @@ finished: a sentinel occupying a slot cannot be overtaken by a later positive
 `put` from a producer that is still running, because those producers have
 already been joined.
 
-## 10. What this kernel tree does when a task waits
+## 11. What this kernel tree does when a task waits
 
 glibc implements `pthread_cond_wait`, `pthread_cond_signal`, and the mutex
 operations. On Linux the blocking path is a `futex` system call. The call
 crosses the privilege boundary: userspace `RIP` enters the kernel through the
 architecture's syscall instruction, the kernel sees a task that wants to
 sleep on a userspace word, and `schedule` runs something else on that core.
-The excerpts below are that kernel mechanism at tree `c9b2385d6793`. They are
+The excerpts below are that kernel mechanism at commit `adc218676eef25575469234709c2d87185ca223a`. They are
 not a line-by-line listing of glibc, and this lesson does not pretend to have
 read the nptl sources.
 
@@ -431,10 +449,8 @@ above this excerpt) is a loop: prepare to wait, test the condition, and only
 then call `schedule()`.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
- * path: include/linux/wait.h
- * lines: 318–336
- * function: wait_event
+/* include/linux/wait.h :: wait_event :: adc218676eef25575469234709c2d87185ca223a
+ * lines 327–345
  */
 /**
  * wait_event - sleep until a condition gets true
@@ -464,21 +480,18 @@ path can block; it is not a userspace condvar.
 
 The order between "I am about to sleep" and "I looked at the condition" is
 the subject of the comment on `set_current_state` in `include/linux/sched.h`.
-`prepare_to_wait_event` in `kernel/sched/wait.c` calls `set_current_state`
-while holding the wait-queue lock, before the waiter returns to the loop and
-evaluates the condition. The comment explains why that state store carries a
+`prepare_to_wait_event` in `kernel/sched/wait.c` (lines 270–303) calls
+`set_current_state` at line 298 while holding the wait-queue lock, before
+the waiter returns to the loop and evaluates the condition. The comment explains why that state store carries a
 memory barrier, and why a colliding wakeup store is repaired by going around
 the loop again.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
- * path: include/linux/sched.h
- * lines: 160–193
- * function: set_current_state
- * The comment continues briefly after this excerpt and closes at line 196.
+/* include/linux/sched.h :: set_current_state :: adc218676eef25575469234709c2d87185ca223a
+ * lines 189–225
  */
 /*
- * set_current_state() includes a barrier so that the write of current->state
+ * set_current_state() includes a barrier so that the write of current->__state
  * is correctly serialised wrt the caller's subsequent test of whether to
  * actually sleep:
  *
@@ -501,9 +514,9 @@ the loop again.
  *   wake_up_state(p, TASK_UNINTERRUPTIBLE);
  *
  * where wake_up_state()/try_to_wake_up() executes a full memory barrier before
- * accessing p->state.
+ * accessing p->__state.
  *
- * Wakeup will do: if (@state & p->state) p->state = TASK_RUNNING, that is,
+ * Wakeup will do: if (@state & p->__state) p->__state = TASK_RUNNING, that is,
  * once it observes the TASK_UNINTERRUPTIBLE store the waking CPU can issue a
  * TASK_RUNNING store which can collide with __set_current_state(TASK_RUNNING).
  *
@@ -511,6 +524,9 @@ the loop again.
  * also collide with the TASK_UNINTERRUPTIBLE store. Losing that store is not
  * a problem either because that will result in one extra go around the loop
  * and our @cond test will save the day.
+ *
+ * Also see the comments of try_to_wake_up().
+ */
 ```
 
 Read the parenthetical in the middle with the lab in mind. When the predicate
@@ -525,15 +541,14 @@ is what decides whether to sleep again. [Day 5](day-005-c11-atomics-and-memory-o
 names the barriers this comment is pointing at.
 
 The futex syscall documents the same race at the userspace boundary.
-`futex_wait_setup` in `kernel/futex.c` locks the hash bucket, then reads the
+`futex_wait_setup` in `kernel/futex/waitwake.c` locks the hash bucket, then reads the
 userspace word, and only then is the waiter eligible to be queued.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
- * path: kernel/futex.c
- * lines: 2635–2652
- * function: futex_wait_setup
+/* kernel/futex/waitwake.c :: futex_wait_setup :: adc218676eef25575469234709c2d87185ca223a
+ * lines 597–615
  */
+
 	/*
 	 * Access the page AFTER the hash-bucket is locked.
 	 * Order is important:
@@ -563,26 +578,23 @@ still matches is the kernel closing the gap that `pthread_cond_wait` closes
 for the mutex. The userspace sketches in the comment are the contract a
 library uses. They are still kernel commentary, not glibc source.
 
-After `futex_wait_queue_me` returns, `futex_wait` may observe a wakeup that
-was not the event the caller asked for. The function retries.
+After `futex_wait_queue` returns, `__futex_wait` may observe a wakeup that
+was not the event the caller asked for. The function retries. `futex_wait`
+(line 688) builds the timer and calls `__futex_wait`.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
- * path: kernel/futex.c
- * lines: 2708–2725
- * function: futex_wait
+/* kernel/futex/waitwake.c :: __futex_wait :: adc218676eef25575469234709c2d87185ca223a
+ * lines 668–683
  */
-	/* queue_me and wait for wakeup, timeout, or a signal. */
-	futex_wait_queue_me(hb, &q, to);
+	/* futex_queue and wait for wakeup, timeout, or a signal. */
+	futex_wait_queue(hb, &q, to);
 
 	/* If we were woken (and unqueued), we succeeded, whatever. */
-	ret = 0;
-	/* unqueue_me() drops q.key ref */
-	if (!unqueue_me(&q))
-		goto out;
-	ret = -ETIMEDOUT;
+	if (!futex_unqueue(&q))
+		return 0;
+
 	if (to && !to->task)
-		goto out;
+		return -ETIMEDOUT;
 
 	/*
 	 * We expect signal_pending(current), but we might be the
@@ -607,7 +619,7 @@ has shown that those calls blocked or woke. [Day 3](day-003-mutexes-ownership-lo
 already treats syscall traces as evidence of the slow path, with a scope
 limited to the calls that happened.
 
-## 11. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 The exercise is
 [challenges/day-004-condition-queue.sh](../challenges/day-004-condition-queue.sh).
@@ -623,7 +635,7 @@ unspecified.
   the store that would make the predicate true.
 - What `pthread_cond_wait` does with the mutex on entry and on return, and
   why the publication of the waiter has to be in the same step as the unlock.
-- Why the lost-wakeup trace in section 6 stays asleep, and which fact would
+- Why the lost-wakeup trace in section 7 stays asleep, and which fact would
   have to change (a later signal, or a predicate that is already true at the
   check) for the consumer to proceed.
 - Why a stolen wakeup still has a correct signal in its past, and why the

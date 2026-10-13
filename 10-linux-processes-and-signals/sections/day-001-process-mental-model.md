@@ -49,7 +49,7 @@ return fd;
 
 ## 2. Linux 0.12 first: the fixed task array and `current->filp`
 
-Read the small task table before the 5.10 graph. Linux 0.12 keeps at
+Read the small task table before the 6.12 graph. Linux 0.12 keeps at
 most 64 tasks. Each is a `task_struct` in `include/linux/sched.h`
 (printed pages 203–204): `state`, `pid`, `pgrp`, `session`, `signal`,
 `exit_code`, `filp[NR_OPEN]` (32 `struct file *`), `ldt[3]`, and a
@@ -89,26 +89,47 @@ task and bump the count. On printed page 825 the same function sets
 `f_inode` and `f_pos` and `return (fd)`.
 
 What carries forward is the task record, the pid, and a small integer
-that names an open-file object. What changes in 5.10 is the storage:
-allocated tasks, a separate fd table, and a richer `struct file`.
-Develop against that 5.10 shape. The fixed `task[64]` and embedded
-`filp[]` are the 0.12 picture of the same idea.
+that names an open-file object. The fixed `task[64]` and embedded
+`filp[]` are the 0.12 picture of that idea.
 
 ToyOS already has one `struct process` with a page-table root, an
 entry, a kernel stack, and a pid, entered by `iretq`
 ([`process.c`](../../projects/toyos/src/process.c)). 0.12 is that
 record repeated in `task[]`.
 
-Now move to the 5.10 implementation.
+## 3. Evolution: why the early design changed
 
-The source excerpts below are from the local tree
-`5.10.134-15_rc1-10333-gc9b2385d6793` (commit `c9b2385d6793`). That tree is
-5.10-based. Field layout in a later mainline release can move. The names
-quoted here are what this revision actually contains.
+The fixed `task[64]` and the embedded `filp[]` fit a uniprocessor with a
+small process limit. SMP and larger machines made a global array the
+bottleneck: every lookup walked the same slots, and a task could not
+outlive a slot that the next `fork` needed to reuse.
+
+The pressure split the record. A task became a dynamically allocated,
+reference-counted object. The open-file array moved into its own
+`files_struct`, so threads can share a table or copy one. Credentials,
+the memory descriptor, and signal state became objects the task points
+at, with their own reference counts, instead of fields baked into one
+slot.
+
+Pid namespaces then made the integer a view. One task can show a
+different number in a container than on the host, so the kernel keeps a
+`struct pid` and looks the number up in the caller's namespace. The
+tables that find a task by that number grew hash links and RCU-protected
+walks, because a global lock around `task[]` does not scale.
+
+What survived is the idea from section 2: a task record, a pid, and a
+small integer that names an open-file object. ToyOS still has the small
+form, one `struct process`. The 6.12/current path below is the same
+graph, allocated and shared instead of slotted.
+
+The source excerpts below are from Linux 6.12, tag `v6.12`, commit
+`adc218676eef`. Field layout in a later mainline release can move. The
+names quoted here are what this revision actually contains. Develop
+against this 6.12/current shape.
 
 ---
 
-## 3. The hardware already has registers and a page-table root
+## 4. The hardware already has registers and a page-table root
 
 A core can execute one instruction stream at a time. `RIP` (or the program
 counter on another ISA) selects the instruction. The page-table root selects
@@ -148,7 +169,7 @@ their user mappings long enough for a parent to observe them.
 
 ---
 
-## 4. A program is an ELF file
+## 5. A program is an ELF file
 
 An ELF file is a sequence of bytes with a header. Week 3 separated two views
 of those bytes. Section headers describe how the linker grouped `.text`,
@@ -189,10 +210,10 @@ no descriptors                           files, fs
 
 ---
 
-## 5. `task_struct` is the schedulable object
+## 6. `task_struct` is the schedulable object
 
-In `include/linux/sched.h`, `struct task_struct`, tree
-`5.10.134-15_rc1-10333-gc9b2385d6793`:
+In `include/linux/sched.h`, `struct task_struct`, Linux 6.12 commit
+`adc218676eef`, lines 778–801:
 
 ```c
 struct task_struct {
@@ -203,8 +224,10 @@ struct task_struct {
 	 */
 	struct thread_info		thread_info;
 #endif
-	/* -1 unrunnable, 0 runnable, >0 stopped: */
-	volatile long			state;
+	unsigned int			__state;
+
+	/* saved state for "spinlock sleepers" */
+	unsigned int			saved_state;
 
 	/*
 	 * This begins the randomizable portion of task_struct. Only
@@ -217,18 +240,12 @@ struct task_struct {
 	/* Per task flags (PF_*), defined further below: */
 	unsigned int			flags;
 	unsigned int			ptrace;
-
-#ifdef CONFIG_SMP
-	int				on_cpu;
-	struct __call_single_node	wake_entry;
-#ifdef CONFIG_THREAD_INFO_IN_TASK
-	/* Current CPU: */
-	unsigned int			cpu;
-#endif
 ```
 
-`state` is the scheduler's classification of this task: runnable, stopped, or
-unrunnable. `stack` is the kernel stack. That is the stack Week 8's syscall
+`__state` is the scheduler's classification of this task. The comment
+above the `TASK_*` macros says `task->__state` is about runnability,
+separate from `exit_state`. `TASK_RUNNING` is zero. `saved_state` holds
+a state to restore for some sleepers. `stack` is the kernel stack. That is the stack Week 8's syscall
 frame lived on. Entry from user mode saves the user registers there; the C
 syscall handler sees a frame; the return path restores them. `usage` is a
 reference count on the task object itself, so the object can remain reachable
@@ -258,21 +275,16 @@ task_struct
 
 ---
 
-## 6. Memory, exit, identity, credentials, files, signals
+## 7. Memory, exit, identity, credentials, files, signals
 
-Still in `include/linux/sched.h`, `struct task_struct`, same tree. The memory
-and exit fields:
+Still in `include/linux/sched.h`, `struct task_struct`, same tree, lines
+921–929. The memory and exit fields:
 
 ```c
 	struct mm_struct		*mm;
 	struct mm_struct		*active_mm;
+	struct address_space		*faults_disabled_mapping;
 
-	/* Per-thread vma caching: */
-	struct vmacache			vmacache;
-
-#ifdef SPLIT_RSS_COUNTING
-	struct task_rss_stat		rss_stat;
-#endif
 	int				exit_state;
 	int				exit_code;
 	int				exit_signal;
@@ -295,7 +307,7 @@ holds a status for the parent. Day 4 follows that handoff. The field is
 already visible here so the process model includes death as data on the
 task object.
 
-Identity and lineage, same struct:
+Identity and lineage, same struct, lines 1018–1042:
 
 ```c
 	pid_t				pid;
@@ -333,7 +345,7 @@ the creator. `children` and `sibling` are the lists that make "lineage" a
 walk of kernel pointers. `group_leader` points at the task that represents
 the thread group. A single-threaded program is its own leader.
 
-Credentials, same struct. The comments are the kernel's own names for the two
+Credentials, same struct, lines 1094–1114. The comments are the kernel's own names for the two
 pointers:
 
 ```c
@@ -371,7 +383,7 @@ that `iretq` had entered. Linux records authority as data so that `exec` can
 change it (Day 3 calls `commit_creds`) and so that two tasks can carry
 different authority in the same kernel.
 
-Files, namespaces, and signals, same struct:
+Files, namespaces, and signals, same struct, lines 1140–1160:
 
 ```c
 	/* Filesystem information: */
@@ -406,7 +418,8 @@ task. The split is the reason a later lesson can say "the mask is per task"
 and "the disposition is per thread group" by pointing at two different
 fields.
 
-The architecture-specific tail must stay last. Same struct, same tree:
+The architecture-specific tail must stay last. Same struct, same tree,
+lines 1595–1610:
 
 ```c
 	/*
@@ -437,35 +450,43 @@ the task.
 
 ---
 
-## 7. Page tables live in `mm`, registers live on the task
+## 8. Page tables live in `mm`, registers live on the task
 
-In `include/linux/mm_types.h`, `struct mm_struct`, same tree, the root sits
-with the virtual-memory areas:
+In `include/linux/mm_types.h`, `struct mm_struct`, same tree, lines
+790–817, the root sits with the virtual-memory areas:
 
 ```c
 struct mm_struct {
 	struct {
-		struct vm_area_struct *mmap;		/* list of VMAs */
-		struct rb_root mm_rb;
-		u64 vmacache_seqnum;                   /* per-thread vmacache */
-#ifdef CONFIG_MMU
-		unsigned long (*get_unmapped_area) (struct file *filp,
-				unsigned long addr, unsigned long len,
-				unsigned long pgoff, unsigned long flags);
-#endif
+		/*
+		 * Fields which are often written to are placed in a separate
+		 * cache line.
+		 */
+		struct {
+			/**
+			 * @mm_count: The number of references to &struct
+			 * mm_struct (@mm_users count as 1).
+			 *
+			 * Use mmgrab()/mmdrop() to modify. When this drops to
+			 * 0, the &struct mm_struct is freed.
+			 */
+			atomic_t mm_count;
+		} ____cacheline_aligned_in_smp;
+
+		struct maple_tree mm_mt;
+
 		unsigned long mmap_base;	/* base of mmap area */
 		unsigned long mmap_legacy_base;	/* base of mmap area in bottom-up allocations */
 #ifdef CONFIG_HAVE_ARCH_COMPAT_MMAP_BASES
-		/* Base adresses for compatible mmap() */
+		/* Base addresses for compatible mmap() */
 		unsigned long mmap_compat_base;
 		unsigned long mmap_compat_legacy_base;
 #endif
 		unsigned long task_size;	/* size of task vm space */
-		unsigned long highest_vm_end;	/* highest vma end address */
 		pgd_t * pgd;
 ```
 
-`mmap` is the list of virtual-memory areas. `pgd` is the page-directory
+`mm_mt` is the maple tree of virtual-memory areas. `pgd` is the page-directory
 root, a `pgd_t *`. Week 5's walk starts there: each index selects the next
 table, and the leaf names a frame and permission bits. ToyOS stores the same
 idea in `process->root` and loads it when `address_space_activate` runs.
@@ -501,10 +522,10 @@ roots can still point at the same physical frame until one of them writes.
 
 ---
 
-## 8. `getpid` returns the thread-group id in a namespace
+## 9. `getpid` returns the thread-group id in a namespace
 
 In `kernel/sys.c`, `SYSCALL_DEFINE0(getpid)` and `SYSCALL_DEFINE0(gettid)`,
-same tree:
+same tree, lines 958–976:
 
 ```c
 /**
@@ -528,7 +549,7 @@ SYSCALL_DEFINE0(gettid)
 }
 ```
 
-`task_tgid_vnr` in `include/linux/sched.h` calls
+`task_tgid_vnr` in `include/linux/pid.h` (lines 292–294) calls
 `__task_pid_nr_ns(tsk, PIDTYPE_TGID, NULL)`. The `NULL` namespace argument
 means the caller's current PID namespace. The number is a view of a
 `struct pid` as seen from the caller's namespace. `gettid` uses `PIDTYPE_PID` and returns
@@ -551,7 +572,7 @@ resolves the reader.
 
 ---
 
-## 9. Descriptors, credentials, and lifetime are referenced objects
+## 10. Descriptors, credentials, and lifetime are referenced objects
 
 A descriptor number is an index in the `fdtable` hung off `files_struct`.
 In `include/linux/fdtable.h` the table has a reference count, a pointer to
@@ -589,7 +610,7 @@ that many such objects can name.
 
 ---
 
-## 10. Execution trace: `proc_lab` reads its own task
+## 11. Execution trace: `proc_lab` reads its own task
 
 The program in
 [`projects/linux-system-programming/src/proc_lab.c`](../../projects/linux-system-programming/src/proc_lab.c)
@@ -661,7 +682,7 @@ path are observations of one task on one host.
 
 ---
 
-## 11. Architecture lens — x86-64, AArch64, and RISC-V
+## 12. Architecture lens — x86-64, AArch64, and RISC-V
 
 The graph in `task_struct` is C. `mm`, `files`, `fs`, `real_cred`,
 `signal`, `pid`, and `tgid` are the same members on every architecture this
@@ -693,7 +714,7 @@ task.
 
 ---
 
-## 12. Mastery: Explain · Draw · Observe · Build
+## 13. Mastery: Explain · Draw · Observe · Build
 
 The lab is evidence after this model. From the week directory, run
 [`challenges/day-001-process-model.sh`](../challenges/day-001-process-model.sh).
@@ -721,7 +742,7 @@ and runs `proc_lab` on itself.
 
 ### Draw
 
-1. The `task_struct` graph from section 5, with an arrow from `mm` to
+1. The `task_struct` graph from section 6, with an arrow from `mm` to
    `pgd` and an arrow from `files` to `struct file`.
 2. One core, with `RIP` and the page-table root register, and the two
    kernel objects those registers are loaded from.

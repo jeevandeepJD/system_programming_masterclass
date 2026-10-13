@@ -13,9 +13,10 @@ The lab is the canonical
 [Linux system-programming project](../projects/linux-system-programming/).
 This week does not copy or patch it. Each day's wrapper resolves that
 project, builds through its Makefile, and prints what the run is allowed to
-mean. The Linux 5.10 excerpts in Days 4–6 were read from tree
-`c9b2385d6793`, whose `Makefile` says Linux 5.10.134. The host that runs
-the lab may be a different kernel; `uname` in the reports is that host.
+mean. The kernel excerpts in the day sections were read from Linux 6.12
+commit `adc218676eef25575469234709c2d87185ca223a`, whose `Makefile` says
+`VERSION` 6, `PATCHLEVEL` 12, `SUBLEVEL` 0. The host that runs the lab may
+be a different kernel; `uname` in the reports is that host.
 
 ## Where Linux 0.12 helps—and where it stops
 
@@ -24,25 +25,29 @@ Read every day in this order, and do not skip ahead to the modern mechanism:
 ```text
 syntax the source actually uses
     → Linux 0.12, one small mechanism
+    → why that early design changed
     → ToyOS (or the teaching OS whose revision you pin)
-    → Linux 5.10 / C11 / POSIX
+    → Linux 6.12 / C11 / POSIX
 ```
 
 The syntax step is only the pointer, struct, bitmask, function pointer,
 atomic expression, or control flow that day's source uses. The 0.12 step is
 the small mechanism in the shared
-[Linux 0.12 → Linux 5.10 reference](../references/EARLY_LINUX_012_MAP.md)
+[Linux 0.12 reading map](../references/EARLY_LINUX_012_MAP.md)
 (Week 11: one task and its registers, sleep/wakeup, and the task switch).
-The ToyOS step is the reconstruction already built in this course: two
-ring-0 tasks with private stacks, and `sleep`/`wakeup` only where a pinned
-teaching OS actually has them. Linux 5.10 at tree `c9b2385d6793`, together
-with the C11 and POSIX contracts, is the engineering reference.
+The evolution step is why that small mechanism changed: sharing flags,
+a formal race model, race-safe wait, a futex slow path, SMP barriers,
+cache-line placement, and layered evidence. The ToyOS step is the
+reconstruction already built in this course: two ring-0 tasks with private
+stacks, and `sleep`/`wakeup` only where a pinned teaching OS actually has
+them. Linux 6.12 at commit `adc218676eef25575469234709c2d87185ca223a`,
+together with the C11 and POSIX contracts, is the engineering reference.
 
 That early kernel makes the reason for task state, sleeping, wakeup, and
 scheduling visible in one small source tree. Linux 0.12 has no modern
 pthread/`clone` sharing model, futex subsystem, SMP memory ordering, C11
 atomics, RCU, or per-CPU runqueues. Those mechanisms stay grounded in this
-week's 5.10 excerpts and the C/POSIX contracts. Replacing the modern source
+week's 6.12 excerpts and the C/POSIX contracts. Replacing the modern source
 with 0.12 would remove the mechanism being studied.
 
 ## Why these seven days belong together
@@ -88,8 +93,9 @@ tools and three systems
 ## Daily roadmap
 
 Each day below follows the order above: the syntax that source needs, the
-Linux 0.12 mechanism, the ToyOS connection, then the 5.10/C11/POSIX
-material. The 5.10 excerpts already in those days stay in place.
+Linux 0.12 mechanism, why that early design changed, the ToyOS connection,
+then the 6.12/C11/POSIX material. The kernel excerpts in those days are
+from the commit named above.
 
 ### Day 1 — Threads, processes, `clone`, stacks, and TLS
 
@@ -127,7 +133,7 @@ wait list stores nothing. Spurious returns and stolen wakeups are why the
 lab's `put` and `get` use `while`. Empty and full are the two predicates of
 an eight-slot ring. glibc implements `pthread_cond_t` in userspace and
 blocks with `futex`; the lesson quotes `wait_event`, `set_current_state`,
-and `futex_wait` from tree `c9b2385d6793` only. Wrapper:
+and `__futex_wait` from that 6.12 commit only. Wrapper:
 [challenges/day-004-condition-queue.sh](challenges/day-004-condition-queue.sh).
 
 ### Day 5 — C11 atomics and memory ordering
@@ -152,8 +158,9 @@ detector forces the cycle, waits with `pthread_mutex_timedlock`, and exits;
 the process does not hang. False sharing is Week 2's cache line: two cores
 writing different atomic objects on one line bounce that line through the
 coherence protocol (the MESI picture of exclusive ownership). The kernel
-header `include/linux/cache.h` in the excerpt tree defines
-`____cacheline_aligned_in_smp` for the same reason. Adding cores helps
+header `include/linux/cache.h` in the excerpt commit defines
+`____cacheline_aligned_in_smp` for the same reason, and
+`DEFINE_PER_CPU_SHARED_ALIGNED` gives a CPU its own padded copy. Adding cores helps
 private lines and adds contenders on a shared written line. The three timing
 samples are one machine, one compiler, one layout. Wrapper:
 [challenges/day-006-liveness-scalability.sh](challenges/day-006-liveness-scalability.sh).

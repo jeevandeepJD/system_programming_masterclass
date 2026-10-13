@@ -63,20 +63,39 @@ graph to draw.
 
 False sharing does not carry. Linux 0.12 is a uniprocessor kernel. One core
 does not bounce a line through a coherence protocol against a second core,
-and this tree has no cache-line alignment macro for SMP. ToyOS is the same
-kind of machine: Week 7's two tasks share one core, and its `schedule`
-walks a two-slot array without a lock because the interrupt behavior is
-constrained. That is not an SMP scalability result.
-[Day 7](day-007-debuggers-sanitizers-and-system-comparison.md) keeps ToyOS
-on that single-core reading.
+and this tree has no cache-line alignment macro for SMP.
 
 The shared
-[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
+[Linux 0.12 reading map](../../references/EARLY_LINUX_012_MAP.md)
 (Week 11) stops this kernel short of SMP. The following sections stay with
-the wait-for cycle in the lab, then with false sharing: Week 2's cache
-line, and `include/linux/cache.h` in Linux 5.10 at tree `c9b2385d6793`.
+the wait-for cycle in the lab, then with false sharing on one coherence line.
 
-## 3. Safety and liveness answer different questions
+## 3. Evolution: why the early design changed
+
+The wait-cycle reasoning survives the later kernel. A task that is not
+runnable is not selected, and two tasks that each wait for the other's wake
+make no progress. A mutex deadlock is that cycle drawn on lock ownership.
+Day 3's global lock order is one way to refuse the cycle. A second CPU does
+not remove it.
+
+SMP adds a different failure of progress. Two cores can write different
+objects that share one cache line, and the coherence protocol bounces that
+line. False sharing is that bounce. The kernel separates hot data with
+`____cacheline_aligned_in_smp` (`include/linux/cache.h` lines 70–76, commit
+`adc218676eef25575469234709c2d87185ca223a`): under `CONFIG_SMP` the object
+is aligned to `SMP_CACHE_BYTES`, and on a uniprocessor build the macro is
+empty. A per-CPU object goes further. `DEFINE_PER_CPU_SHARED_ALIGNED`
+(`include/linux/percpu-defs.h` lines 142–144) gives each CPU its own copy
+and applies that alignment so one CPU's data does not share a line with
+another's. The comment at lines 127–137 says why.
+
+ToyOS matches the 0.12 machine on this point: Week 7's two tasks share one
+core, and its `schedule` walks a two-slot array. That is not an SMP
+scalability result. [Day
+7](day-007-debuggers-sanitizers-and-system-comparison.md) keeps ToyOS on
+that single-core reading.
+
+## 4. Safety and liveness answer different questions
 
 Safety for the mutex counter on [Day 3](day-003-mutexes-ownership-lock-order-futex.md)
 is a statement about states: every time a thread reads or writes
@@ -104,7 +123,7 @@ lab uses the second. Mixing them up produces the wrong repair: adding a
 timeout does not separate two counters onto two lines, and padding a struct
 does not break a lock cycle.
 
-## 4. Deadlock is a wait-for cycle
+## 5. Deadlock is a wait-for cycle
 
 Draw the waits. The order of the source lines only suggests which edges can appear.
 
@@ -145,7 +164,7 @@ threads and exits. `test_hung=no` is the claim the program is willing to
 print: this run ended. It is not a claim that a non-timed version of the
 same lock order would have ended.
 
-## 5. Execution trace: the timed cycle
+## 6. Execution trace: the timed cycle
 
 `deadlock_lab detect` creates two threads with `struct attempt` values
 `{first: 0}` and `{first: 1}`. Each thread locks `locks[first]`, meets the
@@ -215,7 +234,7 @@ that had already published a field under the first mutex would return with
 that field still published. The timeout ends the wait. Repair of partial
 work is a separate protocol, and this source does not have one.
 
-## 6. One global order removes the cycle
+## 7. One global order removes the cycle
 
 `deadlock_lab ordered` starts two threads that both run the same sequence:
 lock `locks[0]`, lock `locks[1]`, unlock `locks[1]`, unlock `locks[0]`. There
@@ -254,7 +273,7 @@ update happened would break the invariant the two locks were protecting.
 The detector unlocks and exits, which matches a sensor and would be incomplete
 as a transaction.
 
-## 7. Starvation is a different graph
+## 8. Starvation is a different graph
 
 Starvation is a thread that stays runnable, or stays blocked on a lock that
 other threads keep acquiring, for as long as you care to watch, while the
@@ -281,7 +300,7 @@ Fairness, priority inheritance, and robust mutexes after a dead owner are
 real pthread features and they are outside this wrapper. The wrapper's limit
 line says so: no fairness proof, no starvation proof.
 
-## 8. False sharing starts from the cache line
+## 9. False sharing starts from the cache line
 
 Week 2's [cache organization](../../02-assembly-memory-and-c/sections/day-005-cache-organization.md)
 fixed the unit the memory hierarchy actually moves. A core that needs one
@@ -349,7 +368,7 @@ The unused bytes in the adjacent line are the expensive part. The hardware
 has no field in the line that says "thread 0 promised to touch only the
 first eight bytes." Coherence grants and revokes the line.
 
-## 9. The MESI picture Week 2 already implied
+## 10. The MESI picture Week 2 already implied
 
 Week 2's lesson did not need the four state names to make the traffic real.
 The names are the compact picture of what it did say: a writable copy is
@@ -412,20 +431,18 @@ costs. The three samples remain a comparison of two layouts under one
 harness, not a decomposition into "cycles of `lock add`" versus "cycles of
 snoop."
 
-## 10. How this kernel asks for a private line
+## 11. How this kernel asks for a private line
 
 The kernel fights the same placement problem with alignment attributes.
-Tree `c9b2385d6793`, `include/linux/cache.h`, states the intent for read-mostly
+Commit `adc218676eef25575469234709c2d87185ca223a`, `include/linux/cache.h`, states the intent for read-mostly
 data and then defines the SMP alignment macros. `____cacheline_aligned_in_smp`
 is the one to remember: under `CONFIG_SMP` it is an alignment to
 `SMP_CACHE_BYTES`; on a uniprocessor build the macro is empty, because there
 is no second cache to bounce a line with.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
- * path: include/linux/cache.h
- * lines: 16–50
- * macros: __read_mostly, ____cacheline_aligned_in_smp
+/* include/linux/cache.h :: __read_mostly, ____cacheline_aligned_in_smp :: adc218676eef25575469234709c2d87185ca223a
+ * lines 42–76
  */
 /*
  * __read_mostly is used to keep rarely changing variables out of frequently
@@ -464,8 +481,8 @@ is no second cache to bounce a line with.
 #endif
 ```
 
-`SMP_CACHE_BYTES` defaults in the same header to `L1_CACHE_BYTES` when an
-architecture has not overridden it. That is a compile-time constant of the
+`SMP_CACHE_BYTES` defaults in the same header (lines 12–14) to
+`L1_CACHE_BYTES` when an architecture has not overridden it. That is a compile-time constant of the
 kernel build, not a value the userspace lab queries. The comment on
 `__read_mostly` is the dual of false sharing: pack variables that are read
 together onto as few lines as possible, and keep them off the lines that
@@ -481,7 +498,35 @@ consulted from `SMP_CACHE_BYTES`. If you compare them, compare the idea —
 put independently written objects on different coherence granules — and keep
 the two source texts in their own projects.
 
-## 11. Adding cores helps independent work
+Per-CPU data is the other placement tool in this tree. The comment in
+`include/linux/percpu-defs.h` says a CPU's own copy should not share a line
+with another CPU's copy, and the macro applies `____cacheline_aligned_in_smp`:
+
+```c
+/* include/linux/percpu-defs.h :: DEFINE_PER_CPU_SHARED_ALIGNED :: adc218676eef25575469234709c2d87185ca223a
+ * lines 127–144
+ */
+/*
+ * Declaration/definition used for per-CPU variables that must be cacheline
+ * aligned under SMP conditions so that, whilst a particular instance of the
+ * data corresponds to a particular CPU, inefficiencies due to direct access by
+ * other CPUs are reduced by preventing the data from unnecessarily spanning
+ * cachelines.
+ *
+ * An example of this would be statistical data, where each CPU's set of data
+ * is updated by that CPU alone, but the data from across all CPUs is collated
+ * by a CPU processing a read from a proc file.
+ */
+#define DECLARE_PER_CPU_SHARED_ALIGNED(type, name)			\
+	DECLARE_PER_CPU_SECTION(type, name, PER_CPU_SHARED_ALIGNED_SECTION) \
+	____cacheline_aligned_in_smp
+
+#define DEFINE_PER_CPU_SHARED_ALIGNED(type, name)			\
+	DEFINE_PER_CPU_SECTION(type, name, PER_CPU_SHARED_ALIGNED_SECTION) \
+	____cacheline_aligned_in_smp
+```
+
+## 12. Adding cores helps independent work
 
 Scalability is the shape of the work, drawn against the number of cores that
 can run it.
@@ -538,7 +583,7 @@ line is uncontended. Week 2's hierarchy — TLB, private caches, shared last
 level, memory controller — is the path each fetch-add walks. Today's lab
 times the whole path plus thread lifetime, and it stops there.
 
-## 12. Mastery: Explain · Draw · Observe · Build
+## 13. Mastery: Explain · Draw · Observe · Build
 
 ### Explain
 
@@ -580,5 +625,5 @@ the graph of `ordered` when one thread holds both locks. The second is a
 statement of what the three samples are allowed to decide: one host, one
 compiler, one layout, timers that include create and join, no affinity, no
 hardware counters, no required winner. End with the scale picture from
-section 11: private lines gain from more cores; a shared written line spends
+section 12: private lines gain from more cores; a shared written line spends
 those cores on coherence.

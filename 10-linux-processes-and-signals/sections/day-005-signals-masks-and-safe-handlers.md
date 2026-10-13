@@ -72,28 +72,44 @@ and, for a caught signal, arranges the saved `eip` so the return enters
 the handler.
 
 What carries forward is a pending set, a blocked set, and a user
-function entered without the program having called it. What changes in
-5.10 is the representation and the return path: `__send_signal`,
-per-thread masks, `siginfo` queues, `get_signal`, and an architecture
-`rt_sigframe` plus `rt_sigreturn`. Develop against that path. One
-global `long` and a direct edit of the 80386 frame are the 0.12
-mechanism.
+function entered without the program having called it. One global
+`long` and a direct edit of the 80386 frame are the 0.12 mechanism.
 
 ToyOS already leaves a fault by building a frame and returning with
 `iretq`
 ([Week 6](../../06-toyos-bootstrap-and-exceptions/sections/day-006-tss-ist-page-fault-and-gdb.md)).
 0.12 aims that return at a user handler address.
 
-Now move to the 5.10 implementation.
+## 3. Evolution: why the early design changed
 
-The excerpts are from local tree `c9b2385d6793`, a 5.10.134-based kernel.
-Record `uname -r` next to that id. Names and line numbers move. The
-application contract is `sigaction(2)` and the async-signal-safe list, and
-these functions are one kernel's implementation of it.
+Linux 0.12 stores pending signals in one machine word. On the way back
+to user mode, `do_signal` rewrites the 80386 frame so the next return
+enters the handler. That is enough for one thread and a small standard
+set.
+
+The set outgrew one word. `sigset_t` is a wider bitmap. Real-time
+signals queue a `siginfo` for each posting, while standard signals still
+coalesce into one bit. Threads split the pending state: a private mask
+and pending set per task, and one shared pending set plus one
+disposition table for the thread group. Delivery is still a return to
+user mode, but each architecture builds its own `rt_sigframe` and
+returns through `rt_sigreturn`. `signalfd` lets a thread read the same
+pending events as a file descriptor.
+
+What survived is the asynchronous contract. The kernel records an event
+the program did not call, holds it while the mask blocks it, and enters
+a user function only at a safe return. The 6.12/current path below is
+`__send_signal_locked`, `get_signal`, and the per-ISA frame.
+
+The excerpts below come from Linux 6.12, tag `v6.12`, commit
+`adc218676eef`. Record `uname -r` next to that id. Names and line
+numbers move. The application contract is `sigaction(2)` and the
+async-signal-safe list, and these functions are one kernel's
+implementation of it. Develop against this 6.12/current path.
 
 ---
 
-## 3. Why the mechanism exists
+## 4. Why the mechanism exists
 
 A process spends almost all of its time in user code or in a syscall the
 user code asked for. The scheduler, a terminal driver, a parent calling
@@ -133,7 +149,7 @@ path into Day 4's `do_group_exit`. Default action for a stop signal is
 the job-control stop Day 6 depends on.
 
 Traditional signals below `SIGRTMIN` coalesce. `legacy_queue` is true
-when the number is already in the pending bitmap, and `__send_signal`
+when the number is already in the pending bitmap, and `__send_signal_locked`
 then leaves the existing entry in place. One pending `SIGUSR1` stands
 for "at least one `SIGUSR1`." A `sig_atomic_t` flag written by the
 handler means the same thing: the event happened. Real-time signals,
@@ -146,20 +162,20 @@ that `sigaction` of a `SIGKILL` handler fails with `EINVAL`.
 
 ---
 
-## 4. Posting the signal: `__send_signal`
+## 5. Posting the signal: `__send_signal_locked`
 
-`kernel/signal.c`, `__send_signal`, tree `c9b2385d6793`, lines 1072–1094:
+`kernel/signal.c`, `__send_signal_locked`, tree `adc218676eef`, lines 1073–1095:
 
 ```c
-static int __send_signal(int sig, struct kernel_siginfo *info, struct task_struct *t,
-			enum pid_type type, bool force)
+static int __send_signal_locked(int sig, struct kernel_siginfo *info,
+				struct task_struct *t, enum pid_type type, bool force)
 {
 	struct sigpending *pending;
 	struct sigqueue *q;
 	int override_rlimit;
 	int ret = 0, result;
 
-	assert_spin_locked(&t->sighand->siglock);
+	lockdep_assert_held(&t->sighand->siglock);
 
 	result = TRACE_SIGNAL_IGNORED;
 	if (!prepare_signal(sig, t, force))
@@ -184,13 +200,13 @@ the target thread's private pending set. Any wider type posts to the
 thread group's shared pending set, which is how a signal aimed at the
 process can be taken by whichever thread is eligible.
 
-`legacy_queue` (lines 1067–1069) is `(sig < SIGRTMIN) && sigismember(...)`.
+`legacy_queue` (lines 1068–1071) is `(sig < SIGRTMIN) && sigismember(...)`.
 A second non-realtime signal, while one is already pending, returns
 before a new queue entry is allocated. That is the coalesce.
 
 When the signal is new, the function allocates a `sigqueue` for the
 `siginfo` details, or skips that allocation for `SIGKILL` and for kernel
-threads. It then sets the bitmap bit and wakes a thread. Lines 1164–1186:
+threads. It then sets the bitmap bit and wakes a thread. Lines 1166–1188:
 
 ```c
 out_set:
@@ -228,9 +244,9 @@ is the observation.
 
 ---
 
-## 5. Choosing a thread: `complete_signal`
+## 6. Choosing a thread: `complete_signal`
 
-`kernel/signal.c`, `complete_signal`, tree `c9b2385d6793`, lines 991–1025:
+`kernel/signal.c`, `complete_signal`, tree `adc218676eef`, lines 994–1027:
 
 ```c
 static void complete_signal(int sig, struct task_struct *p, enum pid_type type)
@@ -241,8 +257,7 @@ static void complete_signal(int sig, struct task_struct *p, enum pid_type type)
 	/*
 	 * Now find a thread we can wake up to take the signal off the queue.
 	 *
-	 * If the main thread wants the signal, it gets first crack.
-	 * Probably the least surprising to the average bear.
+	 * Try the suggested task first (may or may not be the main thread).
 	 */
 	if (wants_signal(sig, p))
 		t = p;
@@ -270,7 +285,7 @@ static void complete_signal(int sig, struct task_struct *p, enum pid_type type)
 		signal->curr_target = t;
 ```
 
-`wants_signal` (lines 974–988) rejects a thread that has the signal
+`wants_signal` (lines 977–992) rejects a thread that has the signal
 blocked, a thread with `PF_EXITING`, and — except for `SIGKILL` — a
 thread that is stopped or traced or already has a pending signal and is
 not current. The lab is single-threaded, so the group is empty and the
@@ -280,33 +295,34 @@ mode with the mask clear. That is the pending-mode experiment. `raise`
 posts `SIGUSR1` while the mask blocks it. `sigpending` shows membership.
 The handler's flag is still clear, because delivery has not run.
 
-When a thread is chosen, the rest of `complete_signal` (lines 1028–1063)
+When a thread is chosen, the rest of `complete_signal` (lines 1030–1065)
 either starts a fatal group exit, for a signal whose default action kills
 the group, or calls `signal_wake_up` so the chosen thread notices
 `TIF_SIGPENDING` and leaves its sleep. `SIGKILL` wakes even a thread in
-an uninterruptible section of the wake path. The comment at line 1060
+an uninterruptible section of the wake path. The comment at lines 1060–1063
 states the ordinary case: the signal is already queued, and the wake
 tells the thread to dequeue it.
 
 ---
 
-## 6. Delivery: `get_signal` on the way back to user mode
+## 7. Delivery: `get_signal` on the way back to user mode
 
 Waking a thread runs the kernel. Entering the handler happens when the
 architecture's return-to-user path calls `get_signal`. In this tree those
 callers are:
 
 ```text
-arch/x86/kernel/signal.c      arch_do_signal_or_restart   line 863
-arch/arm64/kernel/signal.c    do_signal                    line 847
-arch/riscv/kernel/signal.c    do_signal                    line 313
+arch/x86/kernel/signal.c      arch_do_signal_or_restart   line 333
+arch/arm64/kernel/signal.c    do_signal                    line 1395
+arch/riscv/kernel/signal.c    arch_do_signal_or_restart   line 402
 ```
 
-Each calls `get_signal(&ksig)` and, when it returns true, `handle_signal`.
-The shared function starts at `kernel/signal.c` line 2526. It freezes if
-the system is freezing, runs task work, notifies parents of continued or
-stopped children, and honors `SIGNAL_GROUP_EXIT` by forcing `SIGKILL`.
-The dequeue that matters for a caught signal is here, lines 2651–2685:
+Each calls `get_signal(&ksig)` — x86-64 at line 337, AArch64 at line
+1434, RISC-V at line 437 — and, when it returns true, `handle_signal`.
+The shared function starts at `kernel/signal.c` line 2683. It runs task
+work, notifies parents of continued or stopped children, and honors
+`SIGNAL_GROUP_EXIT` by forcing `SIGKILL`. The dequeue that matters for
+a caught signal is here, lines 2789–2824:
 
 ```c
 		/*
@@ -315,15 +331,17 @@ The dequeue that matters for a caught signal is here, lines 2651–2685:
 		 * so that the instruction pointer in the signal stack
 		 * frame points to the faulting instruction.
 		 */
+		type = PIDTYPE_PID;
 		signr = dequeue_synchronous_signal(&ksig->info);
 		if (!signr)
-			signr = dequeue_signal(current, &current->blocked, &ksig->info);
+			signr = dequeue_signal(&current->blocked, &ksig->info, &type);
 
 		if (!signr)
 			break; /* will return 0 */
 
-		if (unlikely(current->ptrace) && signr != SIGKILL) {
-			signr = ptrace_signal(signr, &ksig->info);
+		if (unlikely(current->ptrace) && (signr != SIGKILL) &&
+		    !(sighand->action[signr -1].sa.sa_flags & SA_IMMUTABLE)) {
+			signr = ptrace_signal(signr, &ksig->info, type);
 			if (!signr)
 				continue;
 		}
@@ -343,7 +361,6 @@ The dequeue that matters for a caught signal is here, lines 2651–2685:
 				ka->sa.sa_handler = SIG_DFL;
 
 			break; /* will return non-zero "signr" value */
-		}
 ```
 
 `dequeue_signal` skips members of `current->blocked`. A pending, blocked
@@ -360,15 +377,16 @@ instruction. `SIGUSR1` from `raise` is asynchronous relative to the
 surrounding C, and it takes the ordinary `dequeue_signal` path.
 
 `ptrace_signal` is the hook Day 7's debugger uses: a traced task can
-stop here and let the tracer rewrite or swallow the number. The lab
-runs untraced, so the installed `sigaction` is the disposition that
-wins.
+stop here and let the tracer rewrite or swallow the number, unless the
+disposition has `SA_IMMUTABLE`. The lab runs untraced, so the installed
+`sigaction` is the disposition that wins.
 
 After this excerpt, a default-action signal falls through to ignore,
 stop, or `do_group_exit` (the fatal path at the `fatal:` label, line
-2741). A caught signal breaks out of the loop. `get_signal` then stores
-`ksig->sig` and returns true (lines 2791–2793). `signal_delivered`,
-whose comment begins at line 2796, blocks the delivered signal and the
+2881, which calls `do_group_exit` at line 2918). A caught signal breaks
+out of the loop. `get_signal` then stores `ksig->sig` (line 2923) and
+returns `signr > 0` (line 2928). `signal_delivered`, whose comment
+begins at line 2931, blocks the delivered signal and the
 extra set in `sa_mask` unless `SA_NODEFER` is set. Nested delivery of
 the same number waits until the handler returns. That is a kernel mask
 update, and it is why a handler that re-raises its own signal usually
@@ -376,13 +394,13 @@ sees the second instance after it returns.
 
 ---
 
-## 7. Sleeping until a signal is pending: `pause`
+## 8. Sleeping until a signal is pending: `pause`
 
 A thread that has nothing to do until a signal arrives has to sleep in
 the kernel, in a state the signal wake can leave. This tree still
 provides the old call.
 
-`kernel/signal.c`, tree `c9b2385d6793`, lines 4504–4528:
+`kernel/signal.c`, tree `adc218676eef`, lines 4684–4708:
 
 ```c
 #ifdef __ARCH_WANT_SYS_PAUSE
@@ -422,11 +440,11 @@ post, observe `sigpending`, then unblock.
 
 ---
 
-## 8. The handler is ordinary user code, entered asynchronously
+## 9. The handler is ordinary user code, entered asynchronously
 
 Once the frame is in place, exception return enters the handler with
 the user stack pointer aimed at that frame. The handler is a C function
-compiled with the platform calling convention. Section 9 names the
+compiled with the platform calling convention. Section 10 names the
 register that carries the signal number. The compiler's abstract machine
 assumes one control path through a function except where the program
 names a call. A handler is a second entry the compiler did not see at
@@ -459,7 +477,7 @@ single-threaded lab raises, finishes the one delivery, then closes.
 
 ---
 
-## 9. Architecture lens: the frame and `rt_sigreturn`
+## 10. Architecture lens: the frame and `rt_sigreturn`
 
 This is the week's architectural section for signals. Process groups on
 Day 6 will not need one. Here the kernel has to materialize a user-mode
@@ -471,16 +489,16 @@ restarted syscall are properties of the ISA.
 
 `struct rt_sigframe` in `arch/x86/include/asm/sigframe.h` (lines 59–64)
 holds `pretcode`, a `ucontext uc`, and a `siginfo info`, with floating
-point state after the struct. `__setup_rt_frame` for the 64-bit
-configuration writes that frame. Tree `c9b2385d6793`,
-`arch/x86/kernel/signal.c`, lines 466–486:
+point state after the struct. `x64_setup_rt_frame` in
+`arch/x86/kernel/signal_64.c` writes that frame. Tree `adc218676eef`,
+lines 171–191:
 
 ```c
 	/* x86-64 should always use SA_RESTORER. */
 	if (!(ksig->ka.sa.sa_flags & SA_RESTORER))
 		return -EFAULT;
 
-	frame = get_sigframe(&ksig->ka, regs, sizeof(struct rt_sigframe), &fp);
+	frame = get_sigframe(ksig, regs, sizeof(struct rt_sigframe), &fp);
 	uc_flags = frame_uc_flags(regs);
 
 	if (!user_access_begin(frame, sizeof(*frame)))
@@ -506,11 +524,12 @@ handler will return to. On x86-64 the kernel requires `SA_RESTORER`:
 the C library supplies a small user stub, usually in the vDSO, whose
 job is to invoke `rt_sigreturn`.
 
-Lines 493–504 then aim the live `pt_regs` at the handler:
+`setup_signal_shadow_stack` runs before the live registers change.
+Lines 201–212 then aim `pt_regs` at the handler:
 
 ```c
 	/* Set up registers for signal handler */
-	regs->di = sig;
+	regs->di = ksig->sig;
 	/* In case the signal handler was declared without prototypes */
 	regs->ax = 0;
 
@@ -530,7 +549,9 @@ end of the handler pops `pretcode` and jumps to the restorer. `di`,
 fetches the handler as if the program had called it. The call is a
 kernel edit of the register file.
 
-`SYSCALL_DEFINE0(rt_sigreturn)`, lines 656–679, undoes that edit:
+`SYSCALL_DEFINE0(rt_sigreturn)` in the same file, lines 246–276, undoes
+that edit. `restore_altstack` runs before `restore_sigcontext`, then
+`restore_signal_shadow_stack`:
 
 ```c
 SYSCALL_DEFINE0(rt_sigreturn)
@@ -550,27 +571,35 @@ SYSCALL_DEFINE0(rt_sigreturn)
 
 	set_current_blocked(&set);
 
-	if (!restore_sigcontext(regs, &frame->uc.uc_mcontext, uc_flags))
-		goto badframe;
-
 	if (restore_altstack(&frame->uc.uc_stack))
 		goto badframe;
 
+	if (!restore_sigcontext(regs, &frame->uc.uc_mcontext, uc_flags))
+		goto badframe;
+
+	if (restore_signal_shadow_stack())
+		goto badframe;
+
 	return regs->ax;
+
+badframe:
+	signal_fault(regs, frame, "rt_sigreturn");
+	return 0;
 ```
 
 `regs->sp - sizeof(long)` recovers the frame after the restorer's
 syscall entry has pushed a return slot. `restore_sigcontext` copies the
 saved user registers back into `pt_regs`. The mask saved at delivery is
 restored. The next return to user mode resumes the interrupted
-instruction stream. A bad frame takes `signal_fault` (line 682) and the
+instruction stream. A bad frame takes `signal_fault` (line 275) and the
 process receives `SIGSEGV`. Forging a frame from user C is a way to
 corrupt that restore. The lab proves the handler ran. It leaves the
 frame bytes on the stack for the kernel and the C library.
 
-The same file's `arch_do_signal_or_restart` (line 863) rewinds a
-restartable syscall by `regs->ip -= 2`, because the x86-64 `syscall`
-instruction is two bytes. That constant is an ISA fact. It is why this
+`arch_do_signal_or_restart` in `arch/x86/kernel/signal.c` (line 333)
+rewinds a restartable syscall by `regs->ip -= 2` (lines 351 and 356),
+because the x86-64 `syscall` instruction is two bytes. That constant is
+an ISA fact. It is why this
 lesson's frame discussion is architectural and Day 6's process groups
 are not.
 
@@ -579,10 +608,15 @@ are not.
 Both architectures build a different frame and return through their own
 `rt_sigreturn`.
 
-AArch64's `setup_return` in `arch/arm64/kernel/signal.c`, lines 735–764,
-sets the handler's entry registers and the link register:
+AArch64's `setup_return` in `arch/arm64/kernel/signal.c`, lines
+1252–1306, sets the handler's entry registers and the link register:
 
 ```c
+static void setup_return(struct pt_regs *regs, struct k_sigaction *ka,
+			 struct rt_sigframe_user_layout *user, int usig)
+{
+	__sigrestore_t sigtramp;
+
 	regs->regs[0] = usig;
 	regs->sp = (unsigned long)user->sigframe;
 	regs->regs[29] = (unsigned long)&user->next_frame->fp;
@@ -607,23 +641,45 @@ sets the handler's entry registers and the link register:
 	/* TCO (Tag Check Override) always cleared for signal handlers */
 	regs->pstate &= ~PSR_TCO_BIT;
 
+	/* Signal handlers are invoked with ZA and streaming mode disabled */
+	if (system_supports_sme()) {
+		/*
+		 * If we were in streaming mode the saved register
+		 * state was SVE but we will exit SM and use the
+		 * FPSIMD register state - flush the saved FPSIMD
+		 * register state in case it gets loaded.
+		 */
+		if (current->thread.svcr & SVCR_SM_MASK) {
+			memset(&current->thread.uw.fpsimd_state, 0,
+			       sizeof(current->thread.uw.fpsimd_state));
+			current->thread.fp_type = FP_STATE_FPSIMD;
+		}
+
+		current->thread.svcr &= ~(SVCR_ZA_MASK |
+					  SVCR_SM_MASK);
+		sme_smstop();
+	}
+
 	if (ka->sa.sa_flags & SA_RESTORER)
 		sigtramp = ka->sa.sa_restorer;
 	else
 		sigtramp = VDSO_SYMBOL(current->mm->context.vdso, sigtramp);
 
 	regs->regs[30] = (unsigned long)sigtramp;
+}
 ```
 
 `pc` is the handler, `sp` is the frame, `x0` is the signal number, and
 `x30` is the restorer, so a normal function return branches to
-`sigreturn` machinery. `SYSCALL_DEFINE0(rt_sigreturn)` is at line 531 of
-the same file. Branch Target Identification and tag-check override are
-architectural state this kernel writes because a handler entry has to
-look like a real indirect call on that CPU. x86-64 has no `PSTATE.BTYPE`
+`sigreturn` machinery. When the CPU supports SME, the same function
+disables ZA and streaming mode before it writes that restorer.
+`SYSCALL_DEFINE0(rt_sigreturn)` is at line 964 of the same file. Branch
+Target Identification and tag-check override are architectural state
+this kernel writes because a handler entry has to look like a real
+indirect call on that CPU. x86-64 has no `PSTATE.BTYPE`
 field to set. The pending-bit logic in `kernel/signal.c` is unchanged.
 
-RISC-V's `setup_rt_frame` in `arch/riscv/kernel/signal.c`, lines 238–264:
+RISC-V's `setup_rt_frame` in `arch/riscv/kernel/signal.c`, lines 344–375:
 
 ```c
 	/* Set up to return from userspace. */
@@ -638,7 +694,12 @@ RISC-V's `setup_rt_frame` in `arch/riscv/kernel/signal.c`, lines 238–264:
 	if (copy_to_user(&frame->sigreturn_code, __user_rt_sigreturn,
 			 sizeof(frame->sigreturn_code)))
 		return -EFAULT;
-	regs->ra = (unsigned long)&frame->sigreturn_code;
+
+	addr = (unsigned long)&frame->sigreturn_code;
+	/* Make sure the two instructions are pushed to icache. */
+	flush_icache_range(addr, addr + sizeof(frame->sigreturn_code));
+
+	regs->ra = addr;
 #endif /* CONFIG_MMU */
 
 	/*
@@ -657,9 +718,11 @@ RISC-V's `setup_rt_frame` in `arch/riscv/kernel/signal.c`, lines 238–264:
 
 `epc` is the PC that exception return will resume. `ra` is the return
 address, aimed at the vDSO `rt_sigreturn` when the kernel has an MMU.
-`SYSCALL_DEFINE0(rt_sigreturn)` is at line 138 of the same file.
-`do_signal` (line 313) rewinds a restartable syscall with
-`regs->epc -= 0x4`, one RISC-V instruction, where x86-64 subtracted 2.
+A no-MMU build copies a two-instruction stub and flushes the icache
+before `ra` aims at it. `SYSCALL_DEFINE0(rt_sigreturn)` is at line 231
+of the same file. `arch_do_signal_or_restart` (line 402) sets
+`restart_addr` to `continue_addr - 4` and then stores it in `regs->epc`
+(line 428). x86-64 subtracted 2 from `ip` in place.
 
 ```text
                 x86-64              AArch64               RISC-V
@@ -668,8 +731,8 @@ stack           regs->sp            regs->sp              regs->sp
 signal number   regs->di            regs->regs[0]         regs->a0
 return tramp    frame->pretcode     regs->regs[30]        regs->ra
 sigreturn       rt_sigreturn        rt_sigreturn          rt_sigreturn
-                (line 656)          (line 531)            (line 138)
-syscall rewind  ip -= 2             pc = restart_addr     epc -= 4
+                (line 246)          (line 964)            (line 231)
+syscall rewind  ip -= 2             pc = restart_addr     epc = restart_addr
 ```
 
 The shared idea is one sentence: the kernel writes a user frame and a
@@ -705,7 +768,7 @@ thread is eligible, stays in `kernel/signal.c`.
 
 ---
 
-## 10. Execution trace: blocked `SIGUSR1`, then the self-pipe
+## 11. Execution trace: blocked `SIGUSR1`, then the self-pipe
 
 This is the sequence inside
 [`../challenges/day-005-signals-safe-handlers.sh`](../challenges/day-005-signals-safe-handlers.sh).
@@ -716,7 +779,7 @@ current process or a child it created.
 install sigaction for SIGUSR1
 sigprocmask(SIG_BLOCK) adds SIGUSR1 to current->blocked
 raise(SIGUSR1)
-    __send_signal
+    __send_signal_locked
         pending bit set
         legacy_queue will collapse a second SIGUSR1
         complete_signal: the only thread blocks it, so no delivery yet
@@ -728,7 +791,7 @@ return toward user mode
     arch_do_signal_or_restart / do_signal
         get_signal dequeues SIGUSR1
         disposition is the user handler
-        __setup_rt_frame / setup_rt_frame
+        x64_setup_rt_frame / setup_return / setup_rt_frame
             save registers into the user frame
             set PC to the handler, SP to the frame
     exception return
@@ -767,7 +830,7 @@ pipe byte on the normal path.
 
 ---
 
-## 11. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 The wrapper is
 [`../challenges/day-005-signals-safe-handlers.sh`](../challenges/day-005-signals-safe-handlers.sh).
@@ -790,7 +853,7 @@ below are still yours to write. These notes leave mastery open.
 
 ### Draw
 
-Draw the pending-bit trace from section 10, and a second picture of the
+Draw the pending-bit trace from section 11, and a second picture of the
 user stack at the moment `regs->ip` (or `pc`, or `epc`) first points at
 the handler. Label the saved context, the trampoline, and the
 interrupted instruction the trampoline will resume. Mark which boxes
@@ -801,7 +864,7 @@ are ISA-specific.
 Run the wrapper. Record the pending membership before the unblock, the
 flag afterward, and the pipe byte. Record `uname -r`. If you open
 `kernel/signal.c` or `arch/<isa>/kernel/signal.c`, confirm the tree id
-`c9b2385d6793` or say which tree you actually have before quoting a
+`adc218676eef` or say which tree you actually have before quoting a
 line.
 
 ### Build

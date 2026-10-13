@@ -22,8 +22,8 @@ Four threads run this loop, `ITERATIONS` equal to 200000:
 for (int i = 0; i < ITERATIONS; ++i) unsafe_counter++;
 ```
 
-Linux 5.10 wording quoted below is from tree `c9b2385d6793`. The listing in
-section 2 is Linux 0.12 and is not that tree. The assembly is
+Linux 6.12 wording quoted below is from commit `adc218676eef25575469234709c2d87185ca223a`. The listing in
+section 2 is Linux 0.12 and is not that commit. The assembly is
 from this host's GCC 16.2.1 20260819 (Red Hat 16.2.1-2), which is also the
 compiler that produced `projects/linux-system-programming/build/thread_lab`
 under the project's `CFLAGS ?= -O2`.
@@ -47,7 +47,7 @@ void bump(void)
 ```
 
 Nothing in that expression is an atomic operation, a memory order, or a
-lock. The 5.10 and C11 sections below name the extra syntax (`_Atomic`,
+lock. The 6.12 and C11 sections below name the extra syntax (`_Atomic`,
 `memory_order`, `data_race`) when the program actually needs it.
 
 ## 2. Linux 0.12 first: one CPU, and the timer can interleave
@@ -75,21 +75,40 @@ instructions. Across the switch they are neighbors in time.
 That is why an ordering question shows up even before a second core exists.
 What carries forward is the question, not a rule for answering it.
 
-ToyOS has the same shape at the scheduler milestone: one core, a timer tick
-that can switch tasks, and no C memory model. Week 7 records that switch;
-[Day 7](day-007-debuggers-sanitizers-and-system-comparison.md) puts ToyOS
-beside the hosted C rules. Neither system is the authority for `counter++`.
-
 Linux 0.12 cannot teach C11 atomics, data-race undefined behavior, or an
 SMP memory model. It predates those contracts. The C abstract machine
-remains the authority for the lab, and the Linux 5.10 wording later in this
-day (tree `c9b2385d6793`) is evidence of how that kernel talks about an
-intentional race, not a definition of the language. The shared
-[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
-(Week 11) states the same limit. The following sections stay with the C
-model.
+remains the authority for the lab. The shared
+[Linux 0.12 reading map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) states the same limit.
 
-## 3. Why a lost update and a perfect total are one fact
+## 3. Evolution: why the early design changed
+
+On the uniprocessor in section 2, task A and task B never execute at once.
+The timer is the interleaving: `schedule` switches, and the two tasks'
+stores are neighbors only across that switch. A second core removes that
+assumption. Both tasks can execute, and a cache-coherence protocol moves the
+line so a later load observes some store. Coherence agrees on bytes. It does
+not create a happens-before edge the language never had.
+
+The compiler is the other actor. Where the abstract machine says a data race
+cannot occur, a conforming compiler may collapse a loop, keep a value in a
+register, or delete a store. A lost update and a printed total of 800000 are
+one fact: both are executions the standard no longer constrains.
+
+C11 names the rule. Conflicting accesses, at least one non-atomic, with no
+happens-before between them, are a data race, and a data race is undefined
+behavior. Kernel C keeps that discipline for unmarked shared accesses.
+`data_race` in `include/linux/compiler.h` (lines 191–215 of commit
+`adc218676eef25575469234709c2d87185ca223a`) is a hint to tooling, and the
+access stays non-atomic. KCSAN (`include/linux/kcsan.h`) is the checker that
+hint talks to.
+
+ToyOS at the scheduler milestone is still one core and a timer tick, with no
+C memory model. Week 7 records that switch. [Day
+7](day-007-debuggers-sanitizers-and-system-comparison.md) places ToyOS
+beside these hosted rules. Neither is the authority for `counter++`.
+
+## 4. Why a lost update and a perfect total are one fact
 
 `counter++` on a plain `uint64_t` is a read, a modify, and a write of a
 non-atomic object. In the abstract machine those are separate accesses.
@@ -115,7 +134,7 @@ machine.
 
 ---
 
-## 4. Conflicting accesses and happens-before
+## 5. Conflicting accesses and happens-before
 
 Two accesses **conflict** when they target the same memory location and at
 least one of them modifies the object. A load conflicts with a store. Two
@@ -162,7 +181,7 @@ schedule is not one of those edges.
 
 ---
 
-## 5. The increment in registers
+## 6. The increment in registers
 
 [Week 2](../../02-assembly-memory-and-c/sections/day-001-x86-64-assembly-foundations.md)
 spells a memory increment as a load into a register, an `add`, and a
@@ -227,7 +246,7 @@ above. This lesson quotes the encoding this host emitted.
 
 ---
 
-## 6. Why the cache can look finished while the language is not
+## 7. Why the cache can look finished while the language is not
 
 [Week 2's cache lesson](../../02-assembly-memory-and-c/sections/day-005-cache-organization.md)
 already has the hardware half. A core that wants to write a line takes
@@ -266,7 +285,7 @@ size explains the traffic. The data-race rule explains the meaning.
 
 ---
 
-## 7. The compiler may assume the race does not exist
+## 8. The compiler may assume the race does not exist
 
 The as-if rule lets the compiler transform a program when the required
 observable behavior is preserved. For a program with a data race, there
@@ -341,9 +360,9 @@ source line is the same line in both cases.
 
 ---
 
-## 8. The interleaving picture is already the smaller claim
+## 9. The interleaving picture is already the smaller claim
 
-Section 5 is what the `-O0` instructions do when two cores overlap: each
+Section 6 is what the `-O0` instructions do when two cores overlap: each
 core adds 1 to a private register, and one of the stores survives. It is
 tempting to stop there, call the bug a lost update, and treat a total of
 800000 as proof the schedule was kind. That picture is real, and it is
@@ -392,7 +411,7 @@ missing too.
 
 ---
 
-## 9. The kernel's own name for an intentional race
+## 10. The kernel's own name for an intentional race
 
 The Linux tree you are reading is itself C, and it has the same rule.
 `include/linux/compiler.h` spells a narrow escape hatch for diagnostics.
@@ -400,8 +419,8 @@ The comment is the kernel's, and it matches the split above: the macro is
 a hint to tooling, and it leaves ordinary code generation alone.
 
 ```c
-/* include/linux/compiler.h :: data_race :: tree c9b2385d6793
- * lines 196–214
+/* include/linux/compiler.h :: data_race :: adc218676eef25575469234709c2d87185ca223a
+ * lines 191–215
  */
 /**
  * data_race - mark an expression as containing intentional data races
@@ -409,16 +428,22 @@ a hint to tooling, and it leaves ordinary code generation alone.
  * This data_race() macro is useful for situations in which data races
  * should be forgiven.  One example is diagnostic code that accesses
  * shared variables but is not a part of the core synchronization design.
+ * For example, if accesses to a given variable are protected by a lock,
+ * except for diagnostic code, then the accesses under the lock should
+ * be plain C-language accesses and those in the diagnostic code should
+ * use data_race().  This way, KCSAN will complain if buggy lockless
+ * accesses to that variable are introduced, even if the buggy accesses
+ * are protected by READ_ONCE() or WRITE_ONCE().
  *
  * This macro *does not* affect normal code generation, but is a hint
- * to tooling that data races here are to be ignored.
+ * to tooling that data races here are to be ignored.  If the access must
+ * be atomic *and* KCSAN should ignore the access, use both data_race()
+ * and READ_ONCE(), for example, data_race(READ_ONCE(x)).
  */
 #define data_race(expr)							\
 ({									\
-	__unqual_scalar_typeof(({ expr; })) __v = ({			\
-		__kcsan_disable_current();				\
-		expr;							\
-	});								\
+	__kcsan_disable_current();					\
+	__auto_type __v = (expr);					\
 	__kcsan_enable_current();					\
 	__v;								\
 })
@@ -428,18 +453,18 @@ a hint to tooling, and it leaves ordinary code generation alone.
 ignore the expression. The generated instructions for `expr` stay whatever
 the compiler would have emitted. `copy_process` in the same tree uses the
 macro on a limit check, `data_race(nr_threads >= max_threads)` at
-`kernel/fork.c` line 2074: a racy read of a counter, marked on purpose,
+`kernel/fork.c` line 2256: a racy read of a counter, marked on purpose,
 and not a read-modify-write of user data.
 
 `unsafe_counter++` carries no such mark, and it modifies the object. The
 abstract-machine rule for an unmarked conflicting pair is the one in
-section 4. The kernel macro is evidence that the people who compile this
+section 5. The kernel macro is evidence that the people who compile this
 tree treat "data race" as a language and tooling category, separate from
 "the CPU completed a load and a store."
 
 ---
 
-## 10. Execution trace: four workers, one object
+## 11. Execution trace: four workers, one object
 
 `mode_counter("race")` zeroes `unsafe_counter`, starts four threads in
 `increment_unsafe`, joins them, and prints the value. The binary under
@@ -489,7 +514,7 @@ tool on this host. The race is a fact about the source.
 
 ---
 
-## 11. Mastery: Explain · Draw · Observe · Build
+## 12. Mastery: Explain · Draw · Observe · Build
 
 Run [`../challenges/day-002-data-races.sh`](../challenges/day-002-data-races.sh).
 Predict `mutex_counter=800000`. Leave the racy total unpredicted. Predict
@@ -515,7 +540,7 @@ printed.
 
 ### Draw
 
-1. The happens-before sketch from section 4, with the four workers on the
+1. The happens-before sketch from section 5, with the four workers on the
    horizontal line and create/join as the only vertical edges.
 2. Two cores executing `mov` / `add` / `mov` against one line, and the
    same two cores executing unlocked `addq $0x30d40`. Mark where the value
@@ -585,8 +610,8 @@ binary is still an unlocked read-modify-write.
 
 - C abstract machine and undefined behavior, as used in
   [Week 2, day 7](../../02-assembly-memory-and-c/sections/day-007-c-execution-model-and-data-types.md).
-- Linux tree `c9b2385d6793`, `include/linux/compiler.h` `data_race`, and
-  the call at `kernel/fork.c` line 2074.
+- Linux 6.12 commit `adc218676eef25575469234709c2d87185ca223a`, `include/linux/compiler.h` `data_race`, and
+  the call at `kernel/fork.c` line 2256.
 - Host observation: GCC 16.2.1, `increment_unsafe` in the `-O2`
   `thread_lab` binary, and the `-O0` / `volatile` / relaxed-atomic shapes
   compiled beside it.

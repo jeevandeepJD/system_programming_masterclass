@@ -12,8 +12,8 @@ The lab's relaxed counter and the lab's relaxed litmus use the same header,
 `<stdatomic.h>`, and they establish different facts.
 [challenges/day-005-atomics-memory-order.sh](../challenges/day-005-atomics-memory-order.sh)
 checks that the counter equals 800000, runs the litmus, and writes one
-compiler's assembly for this host. Kernel barrier headers from tree
-`c9b2385d6793` (Linux 5.10.134) show how *that kernel* lowers its own
+compiler's assembly for this host. Kernel barrier headers from commit
+`adc218676eef25575469234709c2d87185ca223a` (Linux 6.12) show how *that kernel* lowers its own
 release, acquire, and full barriers on x86, AArch64, and RISC-V. They are
 evidence about the kernel. They are not a dump of what `memory_order_release`
 compiles to in the lab.
@@ -37,7 +37,7 @@ void publish(void)
 
 `memory_order_release` is not implied by the semicolon, by `volatile`, or
 by a compiler barrier you did not write. The sections below say what this
-particular order promises, and what the 5.10 headers emit for their own
+particular order promises, and what the 6.12 headers emit for their own
 barriers.
 
 ## 2. Linux 0.12 first: cli on one uniprocessor
@@ -57,22 +57,38 @@ cannot enter, so `schedule` cannot switch tasks out of the interrupted
 kernel path. Trace it as a historical uniprocessor critical section: one
 core, the interrupt flag, then the ordinary stores that follow.
 
-What carries forward is only the motive for a critical section. ToyOS is
-one x86-64 core as well. Its timer interrupt is a scheduling event, the
-one Week 7 and [Day 7](day-007-debuggers-sanitizers-and-system-comparison.md)
-already describe. An interrupt flag there is not a C memory order.
+What carries forward is only the motive for a critical section.
 
 Linux 0.12 cannot teach portable C11 atomics or the ordering of a weakly
 ordered SMP machine. There is no second CPU whose loads could pass this
 core's stores, and there is no `<stdatomic.h>`. The C memory model remains
 the authority for the lab. The shared
-[Linux 0.12 → Linux 5.10 map](../../references/EARLY_LINUX_012_MAP.md)
-(Week 11) records that 0.12 predates that model. The following sections
-stay with C11 orders, then with the Linux 5.10 mappings at tree
-`c9b2385d6793`: x86-64 `barrier` plus a plain store, AArch64 `stlr`/`ldar`,
-and RISC-V `fence`.
+[Linux 0.12 reading map](../../references/EARLY_LINUX_012_MAP.md)
+(Week 11) records that 0.12 predates that model.
 
-## 3. Why the queue needed a mutex and the counter might not
+## 3. Evolution: why the early design changed
+
+`cli` stops interrupts on one CPU. It does not order another CPU's loads
+against this CPU's stores, and it is not a C memory order. Once more than
+one CPU can write the same line, exclusion by the interrupt flag is the
+wrong tool for publication. The kernel's SMP path uses atomic operations and
+explicit barriers. This tree states that model in
+`tools/memory-model/linux-kernel.cat` and lowers it in the architecture
+headers behind `smp_store_release`, `smp_load_acquire`, and `smp_mb`.
+
+That model is for kernel C: `READ_ONCE`, `WRITE_ONCE`, and the `smp_*`
+macros. Portable C11 is a separate contract in `<stdatomic.h>`. A
+`barrier()` plus `WRITE_ONCE` on x86-64, an `stlr` on AArch64, and a `fence`
+on RISC-V are this commit's kernel mappings
+(`adc218676eef25575469234709c2d87185ca223a`). They are evidence about the
+kernel. They are not what `memory_order_release` in the lab must compile to.
+
+ToyOS is one x86-64 core as well. Its timer interrupt is a scheduling event,
+the one Week 7 and [Day
+7](day-007-debuggers-sanitizers-and-system-comparison.md) already describe.
+An interrupt flag there is not a C memory order.
+
+## 4. Why the queue needed a mutex and the counter might not
 
 [Day 4](day-004-condition-variables-and-bounded-queues.md) protected four
 fields that move together: a slot, `head` or `tail`, `count`, and the
@@ -105,7 +121,7 @@ the `atomic_*` functions, makes the conflicting accesses atomic. The program
 stays inside the memory model. What the model then guarantees depends on the
 memory order written at each access.
 
-## 4. Modification order
+## 5. Modification order
 
 For each atomic object the model supplies one total order of all the
 modifications of that object. Every thread that looks at the object agrees
@@ -147,10 +163,10 @@ connects to Week 2. Coherence of a line is a hardware property. Modification
 order is a rule of the C abstract machine. A program can have a coherent
 machine and still have undefined behavior if it races on a non-atomic
 object. A program can have a well-defined relaxed counter and still allow
-surprising interleavings of *other* objects. The litmus in section 9 is that
+surprising interleavings of *other* objects. The litmus in section 10 is that
 second situation.
 
-## 5. What `memory_order_relaxed` promises
+## 6. What `memory_order_relaxed` promises
 
 `memory_order_relaxed` is the order that adds atomicity and participation in
 the object's modification order, and stops there. A relaxed store and a
@@ -172,7 +188,7 @@ Consequences that the lab relies on:
   the cheapest mapping that still implements an atomic access.
 
 `memory_order_relaxed` is the wrong order when a store is the publication of
-some other bytes. The flag example in section 7 is the standard shape. A
+some other bytes. The flag example in section 8 is the standard shape. A
 relaxed store to `flag` after a plain store to `data` does not make a
 relaxed load of `flag` synchronize with the writer. A reader that sees
 `flag == 1` and then reads `data` has no happens-before edge to the writer's
@@ -180,7 +196,7 @@ store of `data`. If `data` is non-atomic, that is a data race. If both are
 atomic and relaxed, the program is defined and the load of `data` may still
 return the old value.
 
-## 6. The compiler reorders, and then the CPU reorders
+## 7. The compiler reorders, and then the CPU reorders
 
 Two different machines sit between the source text and the wires.
 
@@ -226,7 +242,7 @@ instruction the compiler actually emits.
 
 A CPU fence is an instruction in the architecture header: `mfence`, a
 `lock` prefix, `dmb`, `stlr`, `ldar`, `fence`. Those names show up in
-section 10. They are how this kernel asks a particular CPU to order its own
+section 11. They are how this kernel asks a particular CPU to order its own
 accesses. They do not appear in the C source of the lab, and a C programmer
 asks for them by writing a memory order, then checks the assembly to see
 what this compiler did for this target.
@@ -237,7 +253,7 @@ first arrow, the C abstract machine, is what makes the same source mean
 something on another compiler and another ISA. A litmus test that prints the
 expected order on x86-64 does not prove the C program.
 
-## 7. Release and acquire
+## 8. Release and acquire
 
 `memory_order_release` on a store and `memory_order_acquire` on a load are
 the orders that publish a payload. The pattern is:
@@ -274,7 +290,7 @@ read-modify-write that both publishes and observes uses
 `memory_order_acq_rel` when it must do both jobs.
 
 Release/acquire is pairwise. Thread A releasing `flag1` and thread B
-acquiring `flag2` creates no edge. The litmus in section 9 is two relaxed
+acquiring `flag2` creates no edge. The litmus in section 10 is two relaxed
 operations on two different objects, so it has no release/acquire pair at
 all.
 
@@ -284,7 +300,7 @@ ordered machines. In practice major compilers have strengthened it to
 acquire for years. The lab does not use it, and new code in this course
 should write acquire when a dependency is the intent.
 
-## 8. Sequential consistency
+## 9. Sequential consistency
 
 `memory_order_seq_cst` places the operation in one total order, shared by
 every sequentially consistent operation in the program, consistent with the
@@ -328,9 +344,9 @@ Seq_cst is sufficient for a great many publication patterns and stricter
 than release/acquire. The counter does not need it. A single-flag message
 does not need it. The total order costs fences or locked instructions on
 machines where ordinary stores are cheap, which is visible in the headers
-in section 10: a full barrier is a different macro from a store-release.
+in section 11: a full barrier is a different macro from a store-release.
 
-## 9. Execution trace: the relaxed store-buffering litmus
+## 10. Execution trace: the relaxed store-buffering litmus
 
 `litmus_lab` runs 100000 rounds. `x` and `y` are `atomic_int`, set to 0 by
 the parent at the start of each round with relaxed stores. Two workers and
@@ -389,14 +405,14 @@ and then prints `caveat=x86_observation_is_not_C_language_proof`. Believe
 that line. The C abstract machine allows both-zero for `memory_order_relaxed`
 whether or not this CPU exhibited it today.
 
-A seq_cst compilation of the same shape forbids the cycle in section 8. If
+A seq_cst compilation of the same shape forbids the cycle in section 9. If
 you build that variant yourself, read the assembly before you interpret a
 zero count. A compiler that lowered seq_cst to the same plain stores as
 relaxed would not have implemented the model. The day's wrapper does not
 build that variant; it prints the relaxed counter's function so you can see
 a real lowering of a relaxed read-modify-write.
 
-## 10. Architecture lens: three headers, three mappings
+## 11. Architecture lens: three headers, three mappings
 
 The kernel macros `smp_store_release`, `smp_load_acquire`, and `smp_mb` are
 the kernel's names for release stores, acquire loads, and full barriers
@@ -407,10 +423,8 @@ this tree. The generic default is a full barrier around a `WRITE_ONCE` or
 `READ_ONCE`:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
- * path: include/asm-generic/barrier.h
- * lines: 104–120
- * macros: __smp_store_release, __smp_load_acquire
+/* include/asm-generic/barrier.h :: __smp_store_release, __smp_load_acquire :: adc218676eef25575469234709c2d87185ca223a
+ * lines 138–155
  */
 #ifndef __smp_store_release
 #define __smp_store_release(p, v)					\
@@ -443,16 +457,11 @@ separate layer that a C compiler lowers on its own.
 `arch/x86/include/asm/barrier.h` in this tree:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
- * path: arch/x86/include/asm/barrier.h
- * lines: 57–79
- * macros: __smp_mb, __smp_store_release, __smp_load_acquire
+/* arch/x86/include/asm/barrier.h :: __smp_mb, __smp_store_release, __smp_load_acquire :: adc218676eef25575469234709c2d87185ca223a
+ * lines 53–72
  */
-#ifdef CONFIG_X86_32
-#define __smp_mb()	asm volatile("lock; addl $0,-4(%%esp)" ::: "memory", "cc")
-#else
-#define __smp_mb()	asm volatile("lock; addl $0,-4(%%rsp)" ::: "memory", "cc")
-#endif
+#define __smp_mb()	asm volatile("lock; addl $0,-4(%%" _ASM_SP ")" ::: "memory", "cc")
+
 #define __smp_rmb()	dma_rmb()
 #define __smp_wmb()	barrier()
 #define __smp_store_mb(var, value) do { (void)xchg(&var, value); } while (0)
@@ -473,14 +482,18 @@ do {									\
 })
 ```
 
-On the 64-bit path, `__smp_mb()` is a locked `addl` to a stack slot. The
-`lock` prefix makes that instruction a full barrier for ordinary memory, and
-the `"memory"` clobber is also a compiler barrier. `__smp_store_release` is
-not that instruction. It is `barrier()` followed by `WRITE_ONCE`: a compiler
-barrier, then a plain store. `__smp_load_acquire` is `READ_ONCE` followed by
-`barrier()`: a plain load, then a compiler barrier. Earlier in the same
-header, `dma_rmb()` is defined as `barrier()`, so `__smp_rmb()` is a
-compiler barrier too. `__smp_wmb()` is a compiler barrier directly.
+`__smp_mb()` is one macro. `_ASM_SP` (`arch/x86/include/asm/asm.h` line 49,
+via `__ASM_REG(sp)` at line 32) expands to `rsp` in a 64-bit build and `esp`
+in a 32-bit build, so the locked `addl` targets that kernel's stack pointer.
+The `lock` prefix makes that instruction a full barrier for ordinary memory,
+and the `"memory"` clobber is also a compiler barrier. `__smp_store_release`
+is not that instruction. It is `barrier()` followed by `WRITE_ONCE`: a
+compiler barrier, then a plain store. `__smp_load_acquire` is `READ_ONCE`
+followed by `barrier()`: a plain load, then a compiler barrier. The same
+header defines `__dma_rmb()` as `barrier()` (line 50). `__smp_rmb()` calls
+`dma_rmb()`, and `include/asm-generic/barrier.h` lines 45–46 wrap that helper
+with a KCSAN annotation. The CPU half of that read barrier is the compiler
+barrier. `__smp_wmb()` is `barrier()` directly.
 
 The header does not contain the words "total store order." The mapping is
 still the one people summarize that way, and the summary should stay tied
@@ -489,7 +502,7 @@ write-back memory, the Intel and AMD x86-64 models keep stores in program
 order with other stores, keep loads in program order with other loads, and
 keep a store from passing an older load. They allow a load to pass an older
 store to a different address. That last allowance is the store buffer in
-section 9.
+section 10.
 
 Under those rules a store-release needs the compiler to keep the payload
 accesses before the flag store, and the CPU already keeps earlier stores
@@ -512,11 +525,13 @@ emits a release store instruction. The same file sets `__smp_mb()` to
 inner-shareable data memory barriers, full, load, and store.
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
- * path: arch/arm64/include/asm/barrier.h
- * lines: 101–134
- * macro: __smp_store_release
+/* arch/arm64/include/asm/barrier.h :: __smp_mb, __smp_store_release :: adc218676eef25575469234709c2d87185ca223a
+ * lines 123–160
  */
+#define __smp_mb()	dmb(ish)
+#define __smp_rmb()	dmb(ishld)
+#define __smp_wmb()	dmb(ishst)
+
 #define __smp_store_release(p, v)					\
 do {									\
 	typeof(p) __p = (p);						\
@@ -528,25 +543,25 @@ do {									\
 	case 1:								\
 		asm volatile ("stlrb %w1, %0"				\
 				: "=Q" (*__p)				\
-				: "r" (*(__u8 *)__u.__c)		\
+				: "rZ" (*(__u8 *)__u.__c)		\
 				: "memory");				\
 		break;							\
 	case 2:								\
 		asm volatile ("stlrh %w1, %0"				\
 				: "=Q" (*__p)				\
-				: "r" (*(__u16 *)__u.__c)		\
+				: "rZ" (*(__u16 *)__u.__c)		\
 				: "memory");				\
 		break;							\
 	case 4:								\
 		asm volatile ("stlr %w1, %0"				\
 				: "=Q" (*__p)				\
-				: "r" (*(__u32 *)__u.__c)		\
+				: "rZ" (*(__u32 *)__u.__c)		\
 				: "memory");				\
 		break;							\
 	case 8:								\
-		asm volatile ("stlr %1, %0"				\
+		asm volatile ("stlr %x1, %0"				\
 				: "=Q" (*__p)				\
-				: "r" (*(__u64 *)__u.__c)		\
+				: "rZ" (*(__u64 *)__u.__c)		\
 				: "memory");				\
 		break;							\
 	}								\
@@ -555,7 +570,7 @@ do {									\
 
 `stlrb`, `stlrh`, and `stlr` are AArch64 store-release instructions for 8,
 16, 32, and 64 bits. The matching acquire loads are in `__smp_load_acquire`
-immediately below, lines 136–165 of the same file: `ldarb`, `ldarh`, and
+immediately below, lines 162–191 of the same file: `ldarb`, `ldarh`, and
 `ldar`, again selected by size, each with a `"memory"` clobber. Those
 mnemonics are the architecture's acquire loads. This lesson stops at naming
 the instructions the header emits. The Arm Architecture Reference Manual is
@@ -572,31 +587,64 @@ showing through.
 ### RISC-V
 
 RISC-V's base memory model is weak, and this tree inserts a `fence`
-instruction rather than a plain store. `arch/riscv/include/asm/barrier.h`:
+instruction rather than a plain store. The fence text lives in
+`arch/riscv/include/asm/fence.h`, and `arch/riscv/include/asm/barrier.h`
+calls it:
 
 ```c
-/* tree c9b2385d6793 (Linux 5.10.134)
- * path: arch/riscv/include/asm/barrier.h
- * lines: 17–43
- * macros: RISCV_FENCE, __smp_mb, __smp_store_release, __smp_load_acquire
+/* arch/riscv/include/asm/fence.h :: RISCV_FENCE :: adc218676eef25575469234709c2d87185ca223a
+ * lines 5–7
  */
+#define RISCV_FENCE_ASM(p, s)		"\tfence " #p "," #s "\n"
 #define RISCV_FENCE(p, s) \
-	__asm__ __volatile__ ("fence " #p "," #s : : : "memory")
+	({ __asm__ __volatile__ (RISCV_FENCE_ASM(p, s) : : : "memory"); })
+```
 
+```c
+/* arch/riscv/include/asm/barrier.h :: __smp_mb, __smp_store_release, __smp_load_acquire, smp_mb__after_spinlock :: adc218676eef25575469234709c2d87185ca223a
+ * lines 22–72
+ */
 /* These barriers need to enforce ordering on both devices or memory. */
-#define mb()		RISCV_FENCE(iorw,iorw)
-#define rmb()		RISCV_FENCE(ir,ir)
-#define wmb()		RISCV_FENCE(ow,ow)
+#define __mb()		RISCV_FENCE(iorw, iorw)
+#define __rmb()		RISCV_FENCE(ir, ir)
+#define __wmb()		RISCV_FENCE(ow, ow)
 
 /* These barriers do not need to enforce ordering on devices, just memory. */
-#define __smp_mb()	RISCV_FENCE(rw,rw)
-#define __smp_rmb()	RISCV_FENCE(r,r)
-#define __smp_wmb()	RISCV_FENCE(w,w)
+#define __smp_mb()	RISCV_FENCE(rw, rw)
+#define __smp_rmb()	RISCV_FENCE(r, r)
+#define __smp_wmb()	RISCV_FENCE(w, w)
+
+/*
+ * This is a very specific barrier: it's currently only used in two places in
+ * the kernel, both in the scheduler.  See include/linux/spinlock.h for the two
+ * orderings it guarantees, but the "critical section is RCsc" guarantee
+ * mandates a barrier on RISC-V.  The sequence looks like:
+ *
+ *    lr.aq lock
+ *    sc    lock <= LOCKED
+ *    smp_mb__after_spinlock()
+ *    // critical section
+ *    lr    lock
+ *    sc.rl lock <= UNLOCKED
+ *
+ * The AQ/RL pair provides a RCpc critical section, but there's not really any
+ * way we can take advantage of that here because the ordering is only enforced
+ * on that one lock.  Thus, we're just doing a full fence.
+ *
+ * Since we allow writeX to be called from preemptive regions we need at least
+ * an "o" in the predecessor set to ensure device writes are visible before the
+ * task is marked as available for scheduling on a new hart.  While I don't see
+ * any concrete reason we need a full IO fence, it seems safer to just upgrade
+ * this in order to avoid any IO crossing a scheduling boundary.  In both
+ * instances the scheduler pairs this with an mb(), so nothing is necessary on
+ * the new hart.
+ */
+#define smp_mb__after_spinlock()	RISCV_FENCE(iorw, iorw)
 
 #define __smp_store_release(p, v)					\
 do {									\
 	compiletime_assert_atomic_type(*p);				\
-	RISCV_FENCE(rw,w);						\
+	RISCV_FENCE(rw, w);						\
 	WRITE_ONCE(*p, v);						\
 } while (0)
 
@@ -604,29 +652,30 @@ do {									\
 ({									\
 	typeof(*p) ___p1 = READ_ONCE(*p);				\
 	compiletime_assert_atomic_type(*p);				\
-	RISCV_FENCE(r,rw);						\
+	RISCV_FENCE(r, rw);						\
 	___p1;								\
 })
 ```
 
 `fence pred,succ` orders the predecessor set against the successor set.
-`RISCV_FENCE(rw,w)` before the store orders earlier reads and writes before
-later writes, which is this tree's release fence. `RISCV_FENCE(r,rw)` after
+`RISCV_FENCE(rw, w)` before the store orders earlier reads and writes before
+later writes, which is this tree's release fence. `RISCV_FENCE(r, rw)` after
 the load orders the load, a read, before later reads and writes, which is
-this tree's acquire fence. `__smp_mb()` is `fence rw,rw`, a full memory
-fence, distinct from `mb()`, which is `fence iorw,iorw` and also orders I/O.
-The `"memory"` clobber on the fence is again the compiler half.
+this tree's acquire fence. `__smp_mb()` is `RISCV_FENCE(rw, rw)`. `__mb()`
+is `RISCV_FENCE(iorw, iorw)` and also orders I/O; the generic header wraps
+`__mb()` as `mb()`. The `"memory"` clobber on `RISCV_FENCE` is the compiler
+half.
 
-A comment just below this excerpt, on `smp_mb__after_spinlock`, says the
-kernel's own lock sequence uses acquire/release bits on the atomic
-instructions and that those bits give an RCpc critical section on that one
-lock. The comment's conclusion in this tree is to emit a full `fence
-iorw,iorw` after the lock anyway. The detail that matters here is the
-caution already present in the source: a RISC-V acquire/release pair in
-this kernel is not treated as a drop-in sequential-consistency fence. When
-you map a C11 order onto RISC-V, cite the compiler output and the ISA
-manual for that order, and expect a `fence` or an `aq`/`rl` bit where x86
-had a plain `mov`.
+The comment on `smp_mb__after_spinlock` in that excerpt (lines 32–57) sits
+above `__smp_store_release`. It says the kernel's own lock sequence uses
+acquire/release bits on the atomic instructions and that those bits give an
+RCpc critical section on that one lock. The comment's conclusion in this
+tree is to emit `RISCV_FENCE(iorw, iorw)` after the lock anyway. The detail
+that matters here is the caution already present in the source: a RISC-V
+acquire/release pair in this kernel is not treated as a drop-in
+sequential-consistency fence. When you map a C11 order onto RISC-V, cite
+the compiler output and the ISA manual for that order, and expect a `fence`
+or an `aq`/`rl` bit where x86 had a plain `mov`.
 
 ### What these three mappings do not decide
 
@@ -646,7 +695,7 @@ without `aq`/`rl`. This tree's kernel headers show the kernel's choices.
 The wrapper's `.s` file shows one C compiler's choice for one function on
 the host you actually run.
 
-## 11. How to read the evidence without promoting it
+## 12. How to read the evidence without promoting it
 
 The wrapper's prediction line is the right size. The atomic count is exact:
 800000. The litmus prints `both_zero` and does not require a particular
@@ -675,7 +724,7 @@ passing the waiter's publication. Those are kernel clients of the barriers
 in this section. The queue lab remains a mutex program. It does not become
 a lock-free program because the kernel uses atomics on the sleep path.
 
-## 12. Mastery: Explain · Draw · Observe · Build
+## 13. Mastery: Explain · Draw · Observe · Build
 
 ### Explain
 
@@ -693,7 +742,7 @@ a lock-free program because the kernel uses atomics on the sleep path.
 
 ### Draw
 
-Draw the two arrows of section 6 for the litmus: source operations, then
+Draw the two arrows of section 7 for the litmus: source operations, then
 the instructions you think this host emits, then the store buffers and the
 loads that return 0. Draw the modification orders of `x` and `y` as two
 separate chains. Draw the seq_cst cycle underneath and mark it as a
@@ -706,7 +755,7 @@ Run
 Keep the exact counter line, the litmus line including `both_zero` and the
 caveat, the compiler version, `uname -m`, and either the `increment_atomic`
 assembly or the skip line. If `both_zero` is 0, write the sentence from
-section 9 about what that count measures.
+section 10 about what that count measures.
 
 ### Build
 
