@@ -181,12 +181,9 @@ quantitatively.
 A practical digital receiver therefore does not demand two perfect voltage
 points. It recognizes ranges. As an illustrative example:
 
-```text
-0.0 V ───────── 0.8 V       2.0 V ───────── 3.3 V
-     valid LOW             valid HIGH
-       → 0      unspecified    → 1
-                  region
-```
+![Illustrative voltage axis with valid LOW, an undefined transition, valid HIGH, and a noise-margin bracket](../visuals/day-001-voltage-noise-margin.svg)
+
+*Illustrative thresholds only: valid LOW and valid HIGH are accepted ranges, the hatched middle is an undefined transition, and noise margin is the room between a sender's level and the LOW threshold.*
 
 The actual thresholds depend on the device and logic family. The durable
 idea is this:
@@ -435,6 +432,10 @@ Hand it to several readers:
 ```
 
 The bits did not change. The interpretation did.
+
+![Byte 01000001 read as unsigned 65, ASCII A, a pixel mask, or an opcode](../visuals/day-001-bits-need-interpretation.svg)
+
+*The same stored byte 01000001 is unsigned 65, ASCII A, a pixel mask, or an opcode, and only the contract selects which reading is active.*
 
 An **encoding** is an agreed mapping between patterns and meanings:
 

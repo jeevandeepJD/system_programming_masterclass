@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Tiny-8 fetch and execute timeline</title>
+  <desc>One Tiny-8 instruction across two intervals bounded by adjacent clock edges. Combinational paths settle between edges. The following edge captures enabled state. This two-phase schedule is the teaching design, not a rule for every CPU.</desc>
+  <defs>
+    <marker id="mk-blue" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-red" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#9E2A2A"/>
+    </marker>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">One Tiny-8 instruction between clock edges</text>
+  <text x="500" y="58" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">This two-phase split is a teaching choice, not a rule for every CPU.</text>
+  <rect x="180" y="84" width="300" height="78" rx="6" fill="#E7F0FA" stroke="#1D4E89" stroke-width="1.5"/>
+  <rect x="480" y="84" width="300" height="78" rx="6" fill="#FFF4E0" stroke="#8A4B00" stroke-width="1.5"/>
+  <path d="M80,130 H180 V96 H280 V130 H480 V96 H580 V130 H780 V96 H900" stroke="#8A4B00" stroke-width="3" fill="none"/>
+  <text x="28" y="118" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700">clock</text>
+  <line x1="180" y1="84" x2="180" y2="162" stroke="#1B2A4A" stroke-width="1.2" fill="none" stroke-dasharray="3 3"/>
+  <text x="180" y="186" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">edge 1</text>
+  <line x1="480" y1="84" x2="480" y2="162" stroke="#1B2A4A" stroke-width="1.2" fill="none" stroke-dasharray="3 3"/>
+  <text x="480" y="186" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">edge 2</text>
+  <line x1="780" y1="84" x2="780" y2="162" stroke="#1B2A4A" stroke-width="1.2" fill="none" stroke-dasharray="3 3"/>
+  <text x="780" y="186" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">edge 3</text>
+  <text x="330" y="210" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">FETCH interval</text>
+  <text x="630" y="210" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">EXECUTE interval</text>
+  <rect x="150" y="230" width="300" height="118" rx="8" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2"/>
+  <text x="300" y="258" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Between edge 1 and 2</text>
+  <text x="300" y="286" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">combinational settling</text>
+  <text x="300" y="314" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">byte and PC+1 form</text>
+  <text x="300" y="338" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">nothing new is stored yet</text>
+  <rect x="530" y="230" width="320" height="118" rx="8" fill="#FFFFFF" stroke="#8A4B00" stroke-width="2"/>
+  <text x="690" y="258" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Between edge 2 and 3</text>
+  <text x="690" y="286" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">combinational settling</text>
+  <text x="690" y="314" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">decode, ALU, enables form</text>
+  <text x="690" y="338" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">example: 3+5 settles to 8</text>
+  <rect x="40" y="372" width="250" height="96" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="165" y="406" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Edge 1</text>
+  <text x="165" y="434" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">prior state drives out</text>
+  <text x="165" y="456" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">FETCH starts from it</text>
+  <rect x="360" y="372" width="280" height="96" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="500" y="406" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Edge 2 captures</text>
+  <text x="500" y="434" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">IR, PC, and phase</text>
+  <text x="500" y="456" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">FETCH state update</text>
+  <rect x="690" y="372" width="280" height="96" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="830" y="406" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Edge 3 captures</text>
+  <text x="830" y="434" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">enabled result, phase</text>
+  <text x="830" y="456" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">EXECUTE state update</text>
+  <text x="500" y="498" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Settle first. Capture only at the next edge. Other CPUs may overlap or skip these phases.</text>
+</svg>

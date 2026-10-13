@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" width="1000" height="720" role="img" font-family="sans-serif">
+  <title>4-bit two's-complement wheel, wrap, and invert-plus-one</title>
+  <desc>A 16-position circle maps 4-bit patterns 0000 through 1111 onto signed values 0 through 7 and then -8 through -1. Adding one moves clockwise and wraps from 1111 to 0000. Adding one to 0111 lands on 1000, signed -8. Negating +3, pattern 0011, inverts to 1100 and adds one to reach 1101, which is -3 and also 13 modulo 16.</desc>
+  <defs>
+    <marker id="arrowNavy" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#17693F"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#8A4B00"/>
+    </marker>
+    <pattern id="amberHatch" patternUnits="userSpaceOnUse" width="10" height="10">
+      <path d="M0 10 L10 0" stroke="#8A4B00" stroke-width="1.6"/>
+    </pattern>
+    <pattern id="greenStripe" patternUnits="userSpaceOnUse" width="12" height="12">
+      <rect width="12" height="12" fill="#E3F6EB"/>
+      <path d="M0 12 L12 0" stroke="#17693F" stroke-width="1.2" opacity="0.45"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="1000" height="720" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="716" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="28.0" y="36.0" font-size="26" fill="#1B2A4A" text-anchor="start" font-weight="700">4-bit two's-complement wheel</text>
+  <text x="28.0" y="64.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Clockwise +1 is arithmetic modulo 16. Signed labels jump at -8.</text>
+  <circle cx="300.0" cy="400.0" r="96.0" fill="#FFFFFF" stroke="#1D4E89" stroke-width="3"/>
+  <text x="300.0" y="392.0" font-size="28" fill="#1D4E89" text-anchor="middle" font-weight="700">+1</text>
+  <text x="300.0" y="424.0" font-size="18" fill="#1D4E89" text-anchor="middle" font-weight="700">clockwise</text>
+  <path d="M 261.0 467.5 A 78 78 0 1 1 376.8 386.5" fill="none" stroke="#1D4E89" stroke-width="3" marker-end="url(#arrowBlue)"/>
+  <rect x="264.0" y="147.0" width="72.0" height="50.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="300.0" y="168.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0000</text>
+  <text x="300.0" y="190.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="351.3" y="164.4" width="72.0" height="50.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="387.3" y="185.4" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0001</text>
+  <text x="387.3" y="207.4" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">+1</text>
+  <rect x="425.2" y="213.8" width="72.0" height="50.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="461.2" y="234.8" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0010</text>
+  <text x="461.2" y="256.8" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">+2</text>
+  <rect x="474.6" y="287.7" width="72.0" height="50.0" rx="6" fill="#E6F1FB" stroke="#1D4E89" stroke-width="4"/>
+  <text x="510.6" y="308.7" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0011</text>
+  <text x="510.6" y="330.7" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">+3</text>
+  <rect x="492.0" y="375.0" width="72.0" height="50.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="528.0" y="396.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0100</text>
+  <text x="528.0" y="418.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">+4</text>
+  <rect x="474.6" y="462.3" width="72.0" height="50.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="510.6" y="483.3" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0101</text>
+  <text x="510.6" y="505.3" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">+5</text>
+  <rect x="425.2" y="536.2" width="72.0" height="50.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="461.2" y="557.2" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0110</text>
+  <text x="461.2" y="579.2" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">+6</text>
+  <rect x="351.3" y="585.6" width="72.0" height="50.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="387.3" y="606.6" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0111</text>
+  <text x="387.3" y="628.6" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">+7</text>
+  <rect x="264.0" y="603.0" width="72.0" height="50.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="300.0" y="624.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1000</text>
+  <text x="300.0" y="646.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">-8</text>
+  <rect x="176.7" y="585.6" width="72.0" height="50.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="212.7" y="606.6" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1001</text>
+  <text x="212.7" y="628.6" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">-7</text>
+  <rect x="102.8" y="536.2" width="72.0" height="50.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="138.8" y="557.2" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1010</text>
+  <text x="138.8" y="579.2" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">-6</text>
+  <rect x="53.4" y="462.3" width="72.0" height="50.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="89.4" y="483.3" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1011</text>
+  <text x="89.4" y="505.3" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">-5</text>
+  <rect x="36.0" y="375.0" width="72.0" height="50.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="72.0" y="396.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1100</text>
+  <text x="72.0" y="418.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">-4</text>
+  <rect x="53.4" y="287.7" width="72.0" height="50.0" rx="6" fill="#E6F1FB" stroke="#1D4E89" stroke-width="4"/>
+  <text x="89.4" y="308.7" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1101</text>
+  <text x="89.4" y="330.7" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">-3</text>
+  <rect x="102.8" y="213.8" width="72.0" height="50.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="138.8" y="234.8" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1110</text>
+  <text x="138.8" y="256.8" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">-2</text>
+  <rect x="176.7" y="164.4" width="72.0" height="50.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="212.7" y="185.4" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1111</text>
+  <text x="212.7" y="207.4" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">-1</text>
+  <line x1="404.9" y1="653.1" x2="300.0" y2="674.0" stroke="#8A4B00" stroke-width="4" marker-end="url(#arrowAmber)"/>
+  <text x="358.5" y="694.2" font-size="18" fill="#8A4B00" text-anchor="middle" font-weight="700">+1 to -8</text>
+  <path d="M 228.6 133.4 A 276 276 0 0 1 371.4 133.4" fill="none" stroke="#1D4E89" stroke-width="3" marker-end="url(#arrowBlue)"/>
+  <text x="300.0" y="94.0" font-size="18" fill="#1D4E89" text-anchor="middle" font-weight="700">wrap +1</text>
+  <rect x="640.0" y="96.0" width="336.0" height="590.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="656.0" y="128.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">Why negate = invert + 1</text>
+  <text x="656.0" y="158.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Start at +3, pattern 0011.</text>
+  <text x="656.0" y="198.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">+3</text>
+  <rect x="790.0" y="176.0" width="34.0" height="32.0" rx="4" fill="#E6F1FB" stroke="#1D4E89" stroke-width="2"/>
+  <text x="807.0" y="199.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="830.0" y="176.0" width="34.0" height="32.0" rx="4" fill="#E6F1FB" stroke="#1D4E89" stroke-width="2"/>
+  <text x="847.0" y="199.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="870.0" y="176.0" width="34.0" height="32.0" rx="4" fill="#E6F1FB" stroke="#1D4E89" stroke-width="2"/>
+  <text x="887.0" y="199.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="910.0" y="176.0" width="34.0" height="32.0" rx="4" fill="#E6F1FB" stroke="#1D4E89" stroke-width="2"/>
+  <text x="927.0" y="199.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="656.0" y="236.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="700">Invert every bit</text>
+  <text x="656.0" y="270.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">flip</text>
+  <rect x="790.0" y="248.0" width="34.0" height="32.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="807.0" y="271.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="830.0" y="248.0" width="34.0" height="32.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="847.0" y="271.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="870.0" y="248.0" width="34.0" height="32.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="887.0" y="271.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="910.0" y="248.0" width="34.0" height="32.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="927.0" y="271.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="656.0" y="310.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="700">Then add one</text>
+  <text x="656.0" y="344.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">-3</text>
+  <rect x="790.0" y="322.0" width="34.0" height="32.0" rx="4" fill="#E6F1FB" stroke="#1D4E89" stroke-width="2"/>
+  <text x="807.0" y="345.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="830.0" y="322.0" width="34.0" height="32.0" rx="4" fill="#E6F1FB" stroke="#1D4E89" stroke-width="2"/>
+  <text x="847.0" y="345.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="870.0" y="322.0" width="34.0" height="32.0" rx="4" fill="#E6F1FB" stroke="#1D4E89" stroke-width="2"/>
+  <text x="887.0" y="345.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="910.0" y="322.0" width="34.0" height="32.0" rx="4" fill="#E6F1FB" stroke="#1D4E89" stroke-width="2"/>
+  <text x="927.0" y="345.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="656.0" y="382.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="700">1101 is signed -3.</text>
+  <text x="656.0" y="408.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">It is also unsigned 13.</text>
+  <text x="656.0" y="434.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">16 - 3 = 13, same residue.</text>
+  <text x="656.0" y="470.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">Blue boxes on the wheel</text>
+  <text x="656.0" y="496.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="400">are this pair: +3 and -3.</text>
+  <line x1="656.0" y1="518.0" x2="960.0" y2="518.0" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="656.0" y="548.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">Wrap on this circle</text>
+  <text x="656.0" y="578.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">1111 + 1 leaves 4 bits,</text>
+  <text x="656.0" y="602.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">so the pattern returns to 0000.</text>
+  <text x="656.0" y="636.0" font-size="18" fill="#8A4B00" text-anchor="start" font-weight="700">0111 (+7) + 1 lands on 1000.</text>
+  <text x="656.0" y="662.0" font-size="18" fill="#8A4B00" text-anchor="start" font-weight="400">Signed, that pattern is -8.</text>
+</svg>

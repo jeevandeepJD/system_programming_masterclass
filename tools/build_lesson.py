@@ -128,6 +128,13 @@ code {
   padding: 1px 3px;
 }
 pre code { background: transparent; padding: 0; }
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 14px auto 7px;
+  break-inside: avoid;
+}
 table {
   border-collapse: collapse;
   font-size: 8.8pt;

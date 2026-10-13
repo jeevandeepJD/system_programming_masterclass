@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" width="1000" height="620" role="img" font-family="sans-serif">
+  <title>Four-bit ripple-carry adder computing 3 + 5 = 8</title>
+  <desc>Four full adders add unsigned 0011 and 0101. Bit 0 is on the right. Carry moves left toward the MSB. Bit 0 is 1+1+0 giving sum 0 carry 1; bit 1 is 1+0+1 giving sum 0 carry 1; bit 2 is 0+1+1 giving sum 0 carry 1; bit 3 is 0+0+1 giving sum 1 carry 0. The sum bits are 1000, which is 8.</desc>
+  <defs>
+    <marker id="arrowNavy" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#17693F"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#8A4B00"/>
+    </marker>
+    <pattern id="amberHatch" patternUnits="userSpaceOnUse" width="10" height="10">
+      <path d="M0 10 L10 0" stroke="#8A4B00" stroke-width="1.6"/>
+    </pattern>
+    <pattern id="greenStripe" patternUnits="userSpaceOnUse" width="12" height="12">
+      <rect width="12" height="12" fill="#E3F6EB"/>
+      <path d="M0 12 L12 0" stroke="#17693F" stroke-width="1.2" opacity="0.45"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="1000" height="620" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="616" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="28.0" y="36.0" font-size="26" fill="#1B2A4A" text-anchor="start" font-weight="700">Ripple carry: 3 + 5 = 8</text>
+  <text x="28.0" y="64.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Unsigned 4-bit. Carry arrows point left, toward the more significant bit.</text>
+  <text x="28.0" y="100.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">A = 0011 = 3</text>
+  <text x="280.0" y="100.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">B = 0101 = 5</text>
+  <text x="560.0" y="100.0" font-size="20" fill="#17693F" text-anchor="start" font-weight="700">Sum = 1000 = 8</text>
+  <rect x="28.0" y="140.0" width="160.0" height="360.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="108.0" y="172.0" font-size="20" fill="#1B2A4A" text-anchor="middle" font-weight="700">bit 3  MSB</text>
+  <text x="44.0" y="218.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">A</text>
+  <text x="172.0" y="218.0" font-size="28" fill="#1B2A4A" text-anchor="end" font-weight="700">0</text>
+  <text x="44.0" y="262.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">B</text>
+  <text x="172.0" y="262.0" font-size="28" fill="#1B2A4A" text-anchor="end" font-weight="700">0</text>
+  <text x="44.0" y="306.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Cin</text>
+  <text x="172.0" y="306.0" font-size="28" fill="#1D4E89" text-anchor="end" font-weight="700">1</text>
+  <line x1="44.0" y1="330.0" x2="172.0" y2="330.0" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="44.0" y="370.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="700">Sum</text>
+  <text x="172.0" y="370.0" font-size="28" fill="#17693F" text-anchor="end" font-weight="700">1</text>
+  <text x="44.0" y="418.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">Cout</text>
+  <text x="172.0" y="418.0" font-size="28" fill="#1D4E89" text-anchor="end" font-weight="700">0</text>
+  <text x="108.0" y="468.0" font-size="20" fill="#1B2A4A" text-anchor="middle" font-weight="700">0+0+1</text>
+  <rect x="262.0" y="140.0" width="160.0" height="360.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="342.0" y="172.0" font-size="20" fill="#1B2A4A" text-anchor="middle" font-weight="700">bit 2</text>
+  <text x="278.0" y="218.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">A</text>
+  <text x="406.0" y="218.0" font-size="28" fill="#1B2A4A" text-anchor="end" font-weight="700">0</text>
+  <text x="278.0" y="262.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">B</text>
+  <text x="406.0" y="262.0" font-size="28" fill="#1B2A4A" text-anchor="end" font-weight="700">1</text>
+  <text x="278.0" y="306.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Cin</text>
+  <text x="406.0" y="306.0" font-size="28" fill="#1D4E89" text-anchor="end" font-weight="700">1</text>
+  <line x1="278.0" y1="330.0" x2="406.0" y2="330.0" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="278.0" y="370.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="700">Sum</text>
+  <text x="406.0" y="370.0" font-size="28" fill="#17693F" text-anchor="end" font-weight="700">0</text>
+  <text x="278.0" y="418.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">Cout</text>
+  <text x="406.0" y="418.0" font-size="28" fill="#1D4E89" text-anchor="end" font-weight="700">1</text>
+  <text x="342.0" y="468.0" font-size="20" fill="#1B2A4A" text-anchor="middle" font-weight="700">0+1+1</text>
+  <rect x="496.0" y="140.0" width="160.0" height="360.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="576.0" y="172.0" font-size="20" fill="#1B2A4A" text-anchor="middle" font-weight="700">bit 1</text>
+  <text x="512.0" y="218.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">A</text>
+  <text x="640.0" y="218.0" font-size="28" fill="#1B2A4A" text-anchor="end" font-weight="700">1</text>
+  <text x="512.0" y="262.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">B</text>
+  <text x="640.0" y="262.0" font-size="28" fill="#1B2A4A" text-anchor="end" font-weight="700">0</text>
+  <text x="512.0" y="306.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Cin</text>
+  <text x="640.0" y="306.0" font-size="28" fill="#1D4E89" text-anchor="end" font-weight="700">1</text>
+  <line x1="512.0" y1="330.0" x2="640.0" y2="330.0" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="512.0" y="370.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="700">Sum</text>
+  <text x="640.0" y="370.0" font-size="28" fill="#17693F" text-anchor="end" font-weight="700">0</text>
+  <text x="512.0" y="418.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">Cout</text>
+  <text x="640.0" y="418.0" font-size="28" fill="#1D4E89" text-anchor="end" font-weight="700">1</text>
+  <text x="576.0" y="468.0" font-size="20" fill="#1B2A4A" text-anchor="middle" font-weight="700">1+0+1</text>
+  <rect x="730.0" y="140.0" width="160.0" height="360.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="810.0" y="172.0" font-size="20" fill="#1B2A4A" text-anchor="middle" font-weight="700">bit 0  LSB</text>
+  <text x="746.0" y="218.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">A</text>
+  <text x="874.0" y="218.0" font-size="28" fill="#1B2A4A" text-anchor="end" font-weight="700">1</text>
+  <text x="746.0" y="262.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">B</text>
+  <text x="874.0" y="262.0" font-size="28" fill="#1B2A4A" text-anchor="end" font-weight="700">1</text>
+  <text x="746.0" y="306.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Cin</text>
+  <text x="874.0" y="306.0" font-size="28" fill="#1D4E89" text-anchor="end" font-weight="700">0</text>
+  <line x1="746.0" y1="330.0" x2="874.0" y2="330.0" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="746.0" y="370.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="700">Sum</text>
+  <text x="874.0" y="370.0" font-size="28" fill="#17693F" text-anchor="end" font-weight="700">0</text>
+  <text x="746.0" y="418.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">Cout</text>
+  <text x="874.0" y="418.0" font-size="28" fill="#1D4E89" text-anchor="end" font-weight="700">1</text>
+  <text x="810.0" y="468.0" font-size="20" fill="#1B2A4A" text-anchor="middle" font-weight="700">1+1+0</text>
+  <line x1="260.0" y1="408.0" x2="196.0" y2="408.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <circle cx="225.0" cy="380.0" r="16.0" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2"/>
+  <text x="225.0" y="386.0" font-size="18" fill="#1D4E89" text-anchor="middle" font-weight="700">1</text>
+  <line x1="494.0" y1="408.0" x2="430.0" y2="408.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <circle cx="459.0" cy="380.0" r="16.0" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2"/>
+  <text x="459.0" y="386.0" font-size="18" fill="#1D4E89" text-anchor="middle" font-weight="700">1</text>
+  <line x1="728.0" y1="408.0" x2="664.0" y2="408.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <circle cx="693.0" cy="380.0" r="16.0" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2"/>
+  <text x="693.0" y="386.0" font-size="18" fill="#1D4E89" text-anchor="middle" font-weight="700">1</text>
+  <text x="36.0" y="530.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Cout 0 leaves bit 3. No further stage.</text>
+  <text x="520.0" y="530.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Cin 0 enters bit 0 from outside.</text>
+  <text x="28.0" y="572.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Read Sum from the left: 1 0 0 0. Each carry digit above an arrow is the Cout of the stage on its right.</text>
+  <text x="28.0" y="600.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">Settled values: c1=1, c2=1, c3=1, final Cout=0.</text>
+</svg>

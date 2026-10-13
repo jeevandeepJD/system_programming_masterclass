@@ -273,6 +273,10 @@ Read `S3 S2 S1 S0`:
 1000₂ = 8
 ```
 
+![Four full adders ripple 0011 plus 0101 into sum 1000, with carry moving toward the MSB](../visuals/day-004-ripple-carry.svg)
+
+*Each stage shows its bits for unsigned 3 + 5, and each carry arrow points toward the more significant bit until the settled sum is 1000.*
+
 ### Physical implementation
 
 In one possible CMOS implementation:
@@ -491,6 +495,10 @@ at edge:     sampling event
 after edge:  D must satisfy hold time
 later:       Q changes after clock-to-Q delay
 ```
+
+![D settles before an active clock edge, Q changes on that edge and holds, with setup and hold windows](../visuals/day-004-state-and-clock.svg)
+
+*D is already stable in the setup window, Q takes that value at the active edge and holds it, and D stays stable through a hold window that has no numeric duration.*
 
 “At the edge” is a useful logical model, not a claim of zero-duration or
 perfect simultaneity. Real storage has an aperture defined by setup and hold

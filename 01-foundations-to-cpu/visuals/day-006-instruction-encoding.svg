@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Teaching sketch of fixed-width and variable-length instruction encoding</title>
+  <desc>A simple fixed 32-bit field layout beside a variable-length byte stream. Opcode, operand, and immediate roles compete for bits. The drawing is a teaching sketch and is not an exact encoding of x86, ARM, or RISC-V.</desc>
+  <defs>
+    <marker id="mk-blue" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-red" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#9E2A2A"/>
+    </marker>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="30" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Encoding is a bit budget</text>
+  <text x="500" y="56" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Teaching sketch only. Not an exact real ISA field map.</text>
+  <text x="40" y="88" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">Fixed 32-bit sketch</text>
+  <text x="530" y="88" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">Variable-length sketch</text>
+  <rect x="30" y="100" width="108" height="64" rx="4" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2"/>
+  <text x="84.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">opcode</text>
+  <rect x="138" y="100" width="78" height="64" rx="4" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="177.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">rd</text>
+  <rect x="216" y="100" width="78" height="64" rx="4" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="255.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">rs1</text>
+  <rect x="294" y="100" width="78" height="64" rx="4" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="333.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">rs2</text>
+  <rect x="372" y="100" width="148" height="64" rx="4" fill="#E3F6EB" stroke="#17693F" stroke-width="2"/>
+  <text x="446.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">immediate</text>
+  <text x="30" y="184" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">bit 31</text>
+  <text x="500" y="184" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="end">bit 0</text>
+  <text x="30" y="210" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Every instruction uses the full width.</text>
+  <text x="30" y="234" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">One opcode block is a simplification.</text>
+  <rect x="530" y="100" width="48" height="64" rx="3" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2"/>
+  <text x="554.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">op</text>
+  <rect x="580" y="100" width="48" height="64" rx="3" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="604.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">reg</text>
+  <rect x="630" y="100" width="48" height="64" rx="3" fill="#E3F6EB" stroke="#17693F" stroke-width="2"/>
+  <text x="654.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">imm</text>
+  <rect x="680" y="100" width="48" height="64" rx="3" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="704.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">pre</text>
+  <rect x="730" y="100" width="48" height="64" rx="3" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2"/>
+  <text x="754.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">op</text>
+  <rect x="780" y="100" width="48" height="64" rx="3" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="804.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">mod</text>
+  <rect x="830" y="100" width="48" height="64" rx="3" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="854.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">d1</text>
+  <rect x="880" y="100" width="48" height="64" rx="3" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="904.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">d2</text>
+  <rect x="930" y="100" width="48" height="64" rx="3" fill="#E3F6EB" stroke="#17693F" stroke-width="2"/>
+  <text x="954.0" y="138" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">imm</text>
+  <text x="560" y="184" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">3-byte form</text>
+  <text x="760" y="184" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">6-byte form</text>
+  <text x="530" y="210" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Not every byte role appears.</text>
+  <text x="530" y="234" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">The next start is not one stride.</text>
+  <rect x="24" y="258" width="952" height="230" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="286" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Opcode, operands, and immediates share one budget</text>
+  <rect x="48" y="304" width="28" height="28" rx="4" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2"/>
+  <text x="86" y="326" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">Opcode</text>
+  <text x="48" y="366" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Selects the operation.</text>
+  <text x="48" y="392" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">More opcodes need more bits.</text>
+  <rect x="360" y="304" width="28" height="28" rx="4" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="398" y="326" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">Operands</text>
+  <text x="360" y="366" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Name registers or memory.</text>
+  <text x="360" y="392" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">More names need more bits.</text>
+  <rect x="672" y="304" width="28" height="28" rx="4" fill="#E3F6EB" stroke="#17693F" stroke-width="2"/>
+  <text x="710" y="326" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">Immediate</text>
+  <text x="672" y="366" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Carries a constant.</text>
+  <text x="672" y="392" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">A wider constant steals bits.</text>
+  <text x="48" y="428" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Fixed: the next address is a constant stride away. Simple ops still pay full width.</text>
+  <text x="48" y="456" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Variable: common ops can be shorter, so the decoder must find each end.</text>
+</svg>

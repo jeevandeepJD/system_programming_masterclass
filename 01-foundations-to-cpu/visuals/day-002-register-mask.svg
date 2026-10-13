@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 830" width="1000" height="830" role="img" font-family="sans-serif">
+  <title>8-bit device register fields with AND clear, OR set, and XOR toggle</title>
+  <desc>Register 11010110 has fields READY, ERROR, MODE bits 5 through 3 equal to 2, reserved bit 2, IRQ_EN, and START. From that same byte, AND with 11111101 clears IRQ_EN, OR with 00000001 sets START, and XOR with 01000000 toggles ERROR. Other bits stay unchanged.</desc>
+  <defs>
+    <marker id="arrowNavy" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#17693F"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#8A4B00"/>
+    </marker>
+    <pattern id="amberHatch" patternUnits="userSpaceOnUse" width="10" height="10">
+      <path d="M0 10 L10 0" stroke="#8A4B00" stroke-width="1.6"/>
+    </pattern>
+    <pattern id="greenStripe" patternUnits="userSpaceOnUse" width="12" height="12">
+      <rect width="12" height="12" fill="#E3F6EB"/>
+      <path d="M0 12 L12 0" stroke="#17693F" stroke-width="1.2" opacity="0.45"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="1000" height="830" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="826" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="28.0" y="36.0" font-size="26" fill="#1B2A4A" text-anchor="start" font-weight="700">One register, three mask operations</text>
+  <text x="28.0" y="64.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Every operation below starts again from 11010110. Results are not chained.</text>
+  <text x="28.0" y="144.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="700">fields</text>
+  <text x="290.0" y="88.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">7</text>
+  <rect x="248.0" y="96.0" width="84.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="290.0" y="138.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="290.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">READY</text>
+  <text x="380.0" y="88.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">6</text>
+  <rect x="338.0" y="96.0" width="84.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="380.0" y="138.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="380.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">ERROR</text>
+  <text x="470.0" y="88.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">5</text>
+  <rect x="428.0" y="96.0" width="84.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="470.0" y="138.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="470.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">MODE</text>
+  <text x="560.0" y="88.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">4</text>
+  <rect x="518.0" y="96.0" width="84.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="560.0" y="138.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="560.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">MODE</text>
+  <text x="650.0" y="88.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">3</text>
+  <rect x="608.0" y="96.0" width="84.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="650.0" y="138.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="650.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">MODE</text>
+  <text x="740.0" y="88.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">2</text>
+  <rect x="698.0" y="96.0" width="84.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="740.0" y="138.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="740.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">RSV</text>
+  <text x="830.0" y="88.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">1</text>
+  <rect x="788.0" y="96.0" width="84.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="830.0" y="138.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="830.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">IRQ_EN</text>
+  <text x="920.0" y="88.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">0</text>
+  <rect x="878.0" y="96.0" width="84.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="920.0" y="138.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="920.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">START</text>
+  <line x1="428.0" y1="204.0" x2="428.0" y2="216.0" stroke="#1D4E89" stroke-width="3"/>
+  <line x1="692.0" y1="204.0" x2="692.0" y2="216.0" stroke="#1D4E89" stroke-width="3"/>
+  <line x1="428.0" y1="216.0" x2="692.0" y2="216.0" stroke="#1D4E89" stroke-width="3"/>
+  <text x="560.0" y="240.0" font-size="18" fill="#1D4E89" text-anchor="middle" font-weight="700">MODE[2:0] = 010 = 2</text>
+  <text x="28.0" y="240.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">bit 2 RSV = reserved</text>
+  <text x="28.0" y="268.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">AND clear  IRQ_EN (bit 1)</text>
+  <text x="28.0" y="294.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">A mask 0 clears that bit. A mask 1 keeps the bit.</text>
+  <text x="28.0" y="330.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">register</text>
+  <rect x="248.0" y="308.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="290.0" y="329.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="338.0" y="308.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="380.0" y="329.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="428.0" y="308.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="470.0" y="329.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="518.0" y="308.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="560.0" y="329.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="608.0" y="308.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="650.0" y="329.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="698.0" y="308.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="740.0" y="329.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="788.0" y="308.0" width="84.0" height="28.0" rx="4" fill="#FFF3DC" stroke="#8A4B00" stroke-width="3"/>
+  <text x="830.0" y="329.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="878.0" y="308.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="920.0" y="329.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="28.0" y="362.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">mask</text>
+  <rect x="248.0" y="340.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="290.0" y="361.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="338.0" y="340.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="380.0" y="361.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="428.0" y="340.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="470.0" y="361.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="518.0" y="340.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="560.0" y="361.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="608.0" y="340.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="650.0" y="361.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="698.0" y="340.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="740.0" y="361.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="788.0" y="340.0" width="84.0" height="28.0" rx="4" fill="#FFF3DC" stroke="#8A4B00" stroke-width="3"/>
+  <text x="830.0" y="361.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="878.0" y="340.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="920.0" y="361.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="28.0" y="394.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="700">result</text>
+  <rect x="248.0" y="372.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="290.0" y="393.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="338.0" y="372.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="380.0" y="393.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="428.0" y="372.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="470.0" y="393.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="518.0" y="372.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="560.0" y="393.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="608.0" y="372.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="650.0" y="393.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="698.0" y="372.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="740.0" y="393.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="788.0" y="372.0" width="84.0" height="28.0" rx="4" fill="#E3F6EB" stroke="#17693F" stroke-width="3"/>
+  <text x="830.0" y="393.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="878.0" y="372.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="920.0" y="393.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="830.0" y="422.0" font-size="18" fill="#17693F" text-anchor="middle" font-weight="700">cleared</text>
+  <text x="28.0" y="448.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">OR set  START (bit 0)</text>
+  <text x="28.0" y="474.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">A mask 1 sets that bit. A mask 0 keeps the bit.</text>
+  <text x="28.0" y="510.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">register</text>
+  <rect x="248.0" y="488.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="290.0" y="509.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="338.0" y="488.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="380.0" y="509.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="428.0" y="488.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="470.0" y="509.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="518.0" y="488.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="560.0" y="509.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="608.0" y="488.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="650.0" y="509.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="698.0" y="488.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="740.0" y="509.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="788.0" y="488.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="830.0" y="509.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="878.0" y="488.0" width="84.0" height="28.0" rx="4" fill="#FFF3DC" stroke="#8A4B00" stroke-width="3"/>
+  <text x="920.0" y="509.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="28.0" y="542.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">mask</text>
+  <rect x="248.0" y="520.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="290.0" y="541.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="338.0" y="520.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="380.0" y="541.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="428.0" y="520.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="470.0" y="541.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="518.0" y="520.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="560.0" y="541.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="608.0" y="520.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="650.0" y="541.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="698.0" y="520.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="740.0" y="541.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="788.0" y="520.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="830.0" y="541.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="878.0" y="520.0" width="84.0" height="28.0" rx="4" fill="#FFF3DC" stroke="#8A4B00" stroke-width="3"/>
+  <text x="920.0" y="541.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="28.0" y="574.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="700">result</text>
+  <rect x="248.0" y="552.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="290.0" y="573.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="338.0" y="552.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="380.0" y="573.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="428.0" y="552.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="470.0" y="573.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="518.0" y="552.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="560.0" y="573.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="608.0" y="552.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="650.0" y="573.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="698.0" y="552.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="740.0" y="573.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="788.0" y="552.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="830.0" y="573.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="878.0" y="552.0" width="84.0" height="28.0" rx="4" fill="#E3F6EB" stroke="#17693F" stroke-width="3"/>
+  <text x="920.0" y="573.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="920.0" y="602.0" font-size="18" fill="#17693F" text-anchor="middle" font-weight="700">set</text>
+  <text x="28.0" y="628.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">XOR toggle  ERROR (bit 6)</text>
+  <text x="28.0" y="654.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">A mask 1 flips that bit. A mask 0 keeps the bit.</text>
+  <text x="28.0" y="690.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">register</text>
+  <rect x="248.0" y="668.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="290.0" y="689.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="338.0" y="668.0" width="84.0" height="28.0" rx="4" fill="#FFF3DC" stroke="#8A4B00" stroke-width="3"/>
+  <text x="380.0" y="689.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="428.0" y="668.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="470.0" y="689.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="518.0" y="668.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="560.0" y="689.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="608.0" y="668.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="650.0" y="689.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="698.0" y="668.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="740.0" y="689.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="788.0" y="668.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="830.0" y="689.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="878.0" y="668.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="920.0" y="689.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="28.0" y="722.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">mask</text>
+  <rect x="248.0" y="700.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="290.0" y="721.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="338.0" y="700.0" width="84.0" height="28.0" rx="4" fill="#FFF3DC" stroke="#8A4B00" stroke-width="3"/>
+  <text x="380.0" y="721.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="428.0" y="700.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="470.0" y="721.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="518.0" y="700.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="560.0" y="721.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="608.0" y="700.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="650.0" y="721.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="698.0" y="700.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="740.0" y="721.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="788.0" y="700.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="830.0" y="721.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="878.0" y="700.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="920.0" y="721.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="28.0" y="754.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="700">result</text>
+  <rect x="248.0" y="732.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="290.0" y="753.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="338.0" y="732.0" width="84.0" height="28.0" rx="4" fill="#E3F6EB" stroke="#17693F" stroke-width="3"/>
+  <text x="380.0" y="753.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="428.0" y="732.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="470.0" y="753.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="518.0" y="732.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="560.0" y="753.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="608.0" y="732.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="650.0" y="753.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <rect x="698.0" y="732.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="740.0" y="753.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="788.0" y="732.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="830.0" y="753.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <rect x="878.0" y="732.0" width="84.0" height="28.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5"/>
+  <text x="920.0" y="753.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="380.0" y="782.0" font-size="18" fill="#17693F" text-anchor="middle" font-weight="700">toggled</text>
+</svg>

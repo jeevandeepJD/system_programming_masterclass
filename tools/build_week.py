@@ -56,6 +56,7 @@ def slug_from_overview(path: Path) -> str:
 def lesson_with_challenge_links(
     lesson: Path, module: Path, temp_dir: Path
 ) -> Path:
+    visuals_uri = (module / "visuals").resolve().as_uri() + "/"
     day_match = re.match(r"(day-\d+)-", lesson.stem)
     if not day_match:
         return lesson
@@ -82,6 +83,9 @@ def lesson_with_challenge_links(
     if not challenges:
         lesson_text = lesson.read_text(encoding="utf-8")
         portable_text = lesson_text.replace(
+            "](../visuals/",
+            f"]({visuals_uri}",
+        ).replace(
             "](../../",
             "](repo-relative:../",
         ).replace(
@@ -202,6 +206,9 @@ def lesson_with_challenge_links(
     # rewrite_relative_links() remove the marker after WeasyPrint renders them.
     lesson_text = lesson.read_text(encoding="utf-8")
     lesson_text = lesson_text.replace(
+        "](../visuals/",
+        f"]({visuals_uri}",
+    ).replace(
         "](../../",
         "](repo-relative:../",
     ).replace(
@@ -381,6 +388,9 @@ def main() -> None:
         temp_dir = Path(temp)
         overview_text = overview.read_text(encoding="utf-8")
         portable_overview = overview_text.replace(
+            "](visuals/",
+            f"]({(module / 'visuals').resolve().as_uri()}/",
+        ).replace(
             "](../",
             "](repo-relative:../",
         ).replace(

@@ -246,6 +246,10 @@ This is more than “blocking electricity.” The network actively drives the
 output toward a valid rail. That restoring behavior lets one imperfect
 physical signal become another clean logical signal.
 
+![Levels from a series switch, to Boolean A AND B, to a transistor gate, to a restored logic output](../visuals/day-003-switches-to-gates.svg)
+
+*A series contact, the condition A AND B, a transistor gate network, and a restored 0 or 1 are four different descriptions, linked but not the same object.*
+
 ### Pause and predict
 
 Without looking ahead:
@@ -617,11 +621,9 @@ Sum   = A XOR B
 Carry = A AND B
 ```
 
-```text
-A ──┬── XOR ── Sum
-    │
-B ──┴── AND ── Carry
-```
+![Half-adder with XOR sum, AND carry, a truth table, and the highlighted trace A=1, B=1](../visuals/day-003-half-adder.svg)
+
+*For the highlighted inputs A=1 and B=1, the XOR gate produces Sum 0 and the AND gate produces Carry 1, matching that row of the truth table.*
 
 This is a **half-adder**. It adds two bits, but it does not accept a carry
 from a less-significant position. That limitation is exactly why it is only a

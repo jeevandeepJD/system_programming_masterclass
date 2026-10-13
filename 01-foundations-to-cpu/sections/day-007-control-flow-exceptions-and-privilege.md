@@ -59,13 +59,9 @@ PC = 0x1008  execute
 
 Control flow appears when an instruction can replace the ordinary next PC:
 
-```text
-ordinary instruction:  PC ← address after this instruction
-branch taken:           PC ← branch target
-call:                   save return location; PC ← function entry
-return:                 PC ← saved return location
-exception/interrupt:    save interrupted state; PC ← trusted handler
-```
+![Map of sequential flow, conditional branch, call and return, synchronous exception, asynchronous interrupt, and syscall](../visuals/day-007-control-transfer-map.svg)
+
+*Each path names the trigger that selects it and the source of the address that will be fetched next.*
 
 These mechanisms differ in purpose and authority, but all answer the same
 physical question: **which instruction address will be presented for fetch
@@ -344,30 +340,9 @@ prearrange legal entry paths.
 On x86, exceptions and interrupts have vector numbers. The kernel installs
 descriptor information in an Interrupt Descriptor Table (IDT). Conceptually:
 
-```text
-event source
-    │
-    ├── identifies vector
-    ▼
-CPU consults protected vector/descriptor state
-    │
-    ├── checks entry rules
-    ├── changes privilege when required
-    ├── changes to a kernel stack when entering from user mode
-    ├── saves an architectural return context
-    └── loads the handler entry PC
-                         │
-                         ▼
-                 kernel entry code
-                         │
-                 full software save/frame
-                         │
-                    event handler
-                         │
-                 return-from-exception
-                         ▼
-               restored prior context
-```
+![Privilege transition from a user instruction through a controlled entry, saved kernel context, a handler, and a return](../visuals/day-007-privilege-transition.svg)
+
+*A page fault, an interrupt, and a syscall cross the user/kernel boundary for different causes, then share a saved-context entry before the return.*
 
 Exact saved fields depend on the event and transition. On x86, hardware entry
 preserves enough control state for the architectural return; entry assembly

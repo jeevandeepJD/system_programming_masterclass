@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>ISA boundary between software and two microarchitectures</title>
+  <desc>Software, a compiler, and ELF bytes sit above an ISA contract. Two different microarchitectures sit below that contract and are required to produce the same architectural behavior. Architecture is the contract. Microarchitecture is one internal organization.</desc>
+  <defs>
+    <marker id="mk-blue" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-red" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#9E2A2A"/>
+    </marker>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Architecture is the contract, not one circuit</text>
+  <rect x="30" y="58" width="280" height="96" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="170" y="98" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Software</text>
+  <text x="170" y="128" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">relies on visible results</text>
+  <line x1="170" y1="154" x2="170" y2="196" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="360" y="58" width="280" height="96" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="500" y="98" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Compiler</text>
+  <text x="500" y="128" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">targets the contract</text>
+  <line x1="500" y1="154" x2="500" y2="196" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="690" y="58" width="280" height="96" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="830" y="98" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">ELF .text bytes</text>
+  <text x="830" y="128" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">encoded instructions</text>
+  <line x1="830" y1="154" x2="830" y2="196" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="170" y="188" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">uses</text>
+  <text x="500" y="188" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">emits</text>
+  <text x="830" y="188" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">stores</text>
+  <line x1="24" y1="214" x2="976" y2="214" stroke="#1B2A4A" stroke-width="4" fill="none"/>
+  <rect x="355.4" y="208.0" width="289.2" height="26.0" fill="#FBF9F4"/>
+  <text x="500" y="222" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">ISA contract  ·  architecture</text>
+  <rect x="30" y="268" width="450" height="132" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4" stroke-dasharray="7 4"/>
+  <text x="255" y="302" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Microarchitecture A</text>
+  <text x="255" y="332" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">small in-order core</text>
+  <text x="255" y="360" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">its own pipeline and caches</text>
+  <text x="255" y="386" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">microarchitecture</text>
+  <rect x="520" y="268" width="450" height="132" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4" stroke-dasharray="7 4"/>
+  <text x="745" y="302" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Microarchitecture B</text>
+  <text x="745" y="332" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">wide out-of-order core</text>
+  <text x="745" y="360" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">different schedule and caches</text>
+  <text x="745" y="386" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">microarchitecture</text>
+  <line x1="255" y1="228" x2="255" y2="266" stroke="#8A4B00" stroke-width="2.2" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <line x1="745" y1="228" x2="745" y2="266" stroke="#8A4B00" stroke-width="2.2" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <rect x="204.9" y="242.0" width="100.2" height="26.0" fill="#FBF9F4"/>
+  <text x="255" y="256" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">may differ</text>
+  <rect x="694.9" y="242.0" width="100.2" height="26.0" fill="#FBF9F4"/>
+  <text x="745" y="256" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">may differ</text>
+  <rect x="30" y="430" width="940" height="70" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.5"/>
+  <text x="500" y="460" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">same architectural behavior</text>
+  <text x="500" y="486" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">A software model can honor this same contract.</text>
+  <line x1="255" y1="400" x2="255" y2="428" stroke="#17693F" stroke-width="3" fill="none" marker-end="url(#mk-green)"/>
+  <line x1="745" y1="400" x2="745" y2="428" stroke="#17693F" stroke-width="3" fill="none" marker-end="url(#mk-green)"/>
+</svg>

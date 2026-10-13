@@ -274,32 +274,9 @@ PC, IR, register file, buses, multiplexers, ALU, and memory interfaces.
 
 The **control path** decides which datapath action is allowed now.
 
-```text
-                     ┌──────── CONTROL UNIT ────────┐
-                     │ phase + opcode → enables,   │
-                     │ selects, ALU operation      │
-                     └──────┬─────────┬────────────┘
-                            │         │ control signals
-                            ▼         ▼
+![Tiny-8 datapath with PC, instruction memory, IR, decoder, register file, ALU, data memory, and a next-PC mux](../visuals/day-005-minimal-cpu-datapath.svg)
 
- ┌────┐ address  ┌──────────────┐ byte  ┌────┐ fields  ┌──────────────┐
- │ PC │─────────▶│ instruction  │──────▶│ IR │────────▶│ register file│
- └─┬──┘          │ memory       │       └────┘         │ R0 R1 R2 R3 │
-   │             └──────────────┘                      └───┬──────┬───┘
-   │ PC+1                                                  │ A    │ B
-   └─────────────── incrementer                            ▼      ▼
-                                                      ┌────────────┐
-                                                      │    ALU     │
-                                                      └─────┬──────┘
-                                                            │ result
-                                                            ▼
-                                                   register write-back
-                                                            │
-                                      address + write data   ▼
-                                                    ┌─────────────┐
-                                                    │ data memory │
-                                                    └─────────────┘
-```
+*Solid blue wires carry values, dashed amber wires carry enables and selects, and double borders mark state captured at a clock edge.*
 
 The diagram is a logical block diagram, not a claim that values flow in a
 single direction on every real wire. A practical register file has multiple
@@ -439,6 +416,10 @@ architectural state transition
 “Fetch, decode, execute” is a conceptual sequence, not a universal promise of
 three clock cycles. In our microarchitecture, decoding is combinational during
 the EXECUTE interval, so one instruction takes two state-update cycles.
+
+![Clock timeline of one Tiny-8 instruction, with fetch and execute intervals between adjacent edges](../visuals/day-005-fetch-execute-timeline.svg)
+
+*Combinational results settle during each interval, and the next edge captures only the enabled state in this two-phase teaching design.*
 
 ### FETCH interval and edge
 

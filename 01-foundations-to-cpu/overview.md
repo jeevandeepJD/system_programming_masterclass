@@ -19,21 +19,9 @@ follow a full instruction trace through an implemented processor in
 The modern CPU is easy to memorize as a block diagram and difficult to
 understand as a causal system. This week builds it in dependency order:
 
-```text
-physical state and encoding
-    ↓
-signed values and bit-level transformations
-    ↓
-Boolean gates
-    ↓
-arithmetic, selection, and storage
-    ↓
-minimal stored-program CPU
-    ↓
-instruction-set contract and machine code
-    ↓
-control flow, exceptions, and privilege
-```
+![Causal chain from voltage state through bits, gates, storage, a minimal CPU, instruction bytes, and privileged control](visuals/week-01-causal-roadmap.svg)
+
+*Each stage's output is the next stage's input, from voltage ranges to the bytes that later request a branch or a privileged entry.*
 
 Every section answers two questions:
 

@@ -168,6 +168,10 @@ To encode `−3`, choose the non-negative representative of the same residue:
 −3 mod 16 = 16 − 3 = 13 = 1101₂
 ```
 
+![4-bit wheel mapping 0000 through 1111 onto 0 through 7 and -8 through -1, with invert-plus-one](../visuals/day-002-twos-complement-wheel.svg)
+
+*Adding one walks clockwise modulo 16, +7 steps onto -8, and +3 becomes -3 because inverting 0011 and adding one lands on 1101.*
+
 This gives two equivalent ways to decode an `n`-bit pattern whose high bit is
 1:
 
@@ -326,6 +330,10 @@ through logic gates.
 ---
 
 ## 4. Four bitwise operations, four mask intentions
+
+![8-bit register fields with AND clearing IRQ_EN, OR setting START, and XOR toggling ERROR](../visuals/day-002-register-mask.svg)
+
+*From the same byte 11010110, AND with a 0 clears IRQ_EN, OR with a 1 sets START, and XOR with a 1 toggles ERROR, while every other bit stays put.*
 
 ### AND: keep selected information
 

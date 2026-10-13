@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Week 1 causal roadmap</title>
+  <desc>Seven dependent stages from physical voltage state through bits, gates, add select and store, a minimal CPU, instruction bytes, and branches, exceptions, and privilege. Each arrow carries the previous stage output into the next stage input.</desc>
+  <defs>
+    <marker id="mk-blue" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-red" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#9E2A2A"/>
+    </marker>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="34" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Prior output becomes the next input</text>
+  <rect x="24" y="52" width="220" height="128" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="134.0" y="100" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: a physical level</text>
+  <text x="134.0" y="136" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">1  State / voltage</text>
+  <text x="134.0" y="164" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: high/low ranges</text>
+  <rect x="268" y="52" width="220" height="128" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="378.0" y="88" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: high/low ranges</text>
+  <text x="378.0" y="124" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">2  Bits / encoding</text>
+  <text x="378.0" y="164" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: bit patterns</text>
+  <rect x="512" y="52" width="220" height="128" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="622.0" y="88" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: bit patterns</text>
+  <text x="622.0" y="124" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">3  Gates</text>
+  <text x="622.0" y="164" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: gate functions</text>
+  <rect x="748" y="52" width="236" height="128" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="866.0" y="88" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: gate functions</text>
+  <text x="866.0" y="124" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">4  Add, select, store</text>
+  <text x="866.0" y="164" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: sums and state</text>
+  <line x1="244" y1="116.0" x2="266" y2="116.0" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <line x1="488" y1="116.0" x2="510" y2="116.0" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <line x1="732" y1="116.0" x2="746" y2="116.0" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="24" y="268" width="300" height="156" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="174.0" y="300" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: sums and state</text>
+  <text x="174.0" y="336" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">5  Minimal CPU</text>
+  <text x="174.0" y="364" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">fetch and execute</text>
+  <text x="174.0" y="400" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: sequenced updates</text>
+  <rect x="348" y="268" width="300" height="156" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="498.0" y="300" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: sequenced updates</text>
+  <text x="498.0" y="336" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">6  ISA / bytes</text>
+  <text x="498.0" y="364" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">contract and encodings</text>
+  <text x="498.0" y="400" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: instruction bytes</text>
+  <rect x="672" y="268" width="300" height="156" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="822.0" y="300" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: instruction bytes</text>
+  <text x="822.0" y="336" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">7  Branches, exceptions,</text>
+  <text x="822.0" y="364" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">and privilege</text>
+  <text x="822.0" y="400" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: next PC and entry</text>
+  <line x1="324" y1="346" x2="346" y2="346" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <line x1="648" y1="346" x2="670" y2="346" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <path d="M866,180 V224 H174 V266" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="438.2" y="202.0" width="163.7" height="26.0" fill="#FBF9F4"/>
+  <text x="520" y="216" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">sums and state</text>
+  <text x="500" y="462" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Blue solid arrow: dependency.  Green out text is the next stage's blue in text.</text>
+  <text x="500" y="492" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Stage 4's stored sums and choices are the input that stage 5's CPU sequences.</text>
+</svg>

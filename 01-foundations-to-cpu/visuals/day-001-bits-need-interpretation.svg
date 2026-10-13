@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="1000" height="640" role="img" font-family="sans-serif">
+  <title>Same byte 01000001 under four interpretation contracts</title>
+  <desc>The stored byte 01000001 branches to four contracts: unsigned integer 65, ASCII character A, a pixel mask with ink on the second and last bits, and an opcode whose operation depends on an instruction-set contract.</desc>
+  <defs>
+    <marker id="arrowNavy" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#17693F"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#8A4B00"/>
+    </marker>
+    <pattern id="amberHatch" patternUnits="userSpaceOnUse" width="10" height="10">
+      <path d="M0 10 L10 0" stroke="#8A4B00" stroke-width="1.6"/>
+    </pattern>
+    <pattern id="greenStripe" patternUnits="userSpaceOnUse" width="12" height="12">
+      <rect width="12" height="12" fill="#E3F6EB"/>
+      <path d="M0 12 L12 0" stroke="#17693F" stroke-width="1.2" opacity="0.45"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="1000" height="640" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="636" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="36.0" y="38.0" font-size="26" fill="#1B2A4A" text-anchor="start" font-weight="700">Same bits, four contracts</text>
+  <text x="36.0" y="66.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">The stored byte does not change. Each arrow is a different rule.</text>
+  <rect x="184.0" y="132.0" width="72.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="220.0" y="174.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="220.0" y="124.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">7</text>
+  <rect x="264.0" y="132.0" width="72.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="300.0" y="174.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="300.0" y="124.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">6</text>
+  <rect x="344.0" y="132.0" width="72.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="380.0" y="174.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="380.0" y="124.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">5</text>
+  <rect x="424.0" y="132.0" width="72.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="460.0" y="174.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="460.0" y="124.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">4</text>
+  <rect x="504.0" y="132.0" width="72.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="540.0" y="174.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="540.0" y="124.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">3</text>
+  <rect x="584.0" y="132.0" width="72.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="620.0" y="174.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="620.0" y="124.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">2</text>
+  <rect x="664.0" y="132.0" width="72.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="700.0" y="174.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">0</text>
+  <text x="700.0" y="124.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">1</text>
+  <rect x="744.0" y="132.0" width="72.0" height="64.0" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="780.0" y="174.0" font-size="28" fill="#1B2A4A" text-anchor="middle" font-weight="700">1</text>
+  <text x="780.0" y="124.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">0</text>
+  <text x="184.0" y="100.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">stored pattern</text>
+  <text x="816.0" y="100.0" font-size="18" fill="#1B2A4A" text-anchor="end" font-weight="400">bit number</text>
+  <line x1="500.0" y1="200.0" x2="500.0" y2="230.0" stroke="#1D4E89" stroke-width="4"/>
+  <line x1="180.0" y1="230.0" x2="820.0" y2="230.0" stroke="#1D4E89" stroke-width="4"/>
+  <line x1="250.0" y1="230.0" x2="250.0" y2="248.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <line x1="740.0" y1="230.0" x2="740.0" y2="248.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <line x1="250.0" y1="230.0" x2="250.0" y2="450.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <line x1="740.0" y1="230.0" x2="740.0" y2="450.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <rect x="36.0" y="248.0" width="446.0" height="176.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="52.0" y="278.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">Contract: unsigned integer</text>
+  <text x="52.0" y="308.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Weights: bit 6 = 64, bit 0 = 1</text>
+  <rect x="52.0" y="324.0" width="120.0" height="72.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="3"/>
+  <text x="112.0" y="372.0" font-size="32" fill="#17693F" text-anchor="middle" font-weight="700">65</text>
+  <text x="190.0" y="366.0" font-size="20" fill="#17693F" text-anchor="start" font-weight="700">64 + 1 = 65</text>
+  <rect x="518.0" y="248.0" width="446.0" height="176.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="534.0" y="278.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">Contract: ASCII</text>
+  <text x="534.0" y="308.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">This code unit maps to a character.</text>
+  <rect x="534.0" y="324.0" width="120.0" height="72.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="3"/>
+  <text x="594.0" y="372.0" font-size="36" fill="#17693F" text-anchor="middle" font-weight="700">A</text>
+  <text x="670.0" y="366.0" font-size="20" fill="#17693F" text-anchor="start" font-weight="700">character A</text>
+  <rect x="36.0" y="450.0" width="446.0" height="160.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="52.0" y="480.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">Contract: pixel mask</text>
+  <text x="52.0" y="506.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">1 draws ink. 0 leaves a blank. MSB at the left.</text>
+  <rect x="52.0" y="522.0" width="40.0" height="40.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="72.0" y="548.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">.</text>
+  <rect x="100.0" y="522.0" width="40.0" height="40.0" rx="4" fill="#1B2A4A" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="120.0" y="548.0" font-size="18" fill="#FFFFFF" text-anchor="middle" font-weight="700">#</text>
+  <rect x="148.0" y="522.0" width="40.0" height="40.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="168.0" y="548.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">.</text>
+  <rect x="196.0" y="522.0" width="40.0" height="40.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="216.0" y="548.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">.</text>
+  <rect x="244.0" y="522.0" width="40.0" height="40.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="264.0" y="548.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">.</text>
+  <rect x="292.0" y="522.0" width="40.0" height="40.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="312.0" y="548.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">.</text>
+  <rect x="340.0" y="522.0" width="40.0" height="40.0" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="360.0" y="548.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">.</text>
+  <rect x="388.0" y="522.0" width="40.0" height="40.0" rx="4" fill="#1B2A4A" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="408.0" y="548.0" font-size="18" fill="#FFFFFF" text-anchor="middle" font-weight="700">#</text>
+  <text x="52.0" y="590.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">mask:  .  #  .  .  .  .  .  #</text>
+  <rect x="518.0" y="450.0" width="446.0" height="160.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="534.0" y="480.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">Contract: instruction</text>
+  <text x="534.0" y="508.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">A decoder may treat this byte as an opcode.</text>
+  <rect x="534.0" y="524.0" width="180.0" height="58.0" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="3"/>
+  <text x="624.0" y="562.0" font-size="24" fill="#17693F" text-anchor="middle" font-weight="700">opcode</text>
+  <text x="730.0" y="548.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="700">Meaning follows</text>
+  <text x="730.0" y="572.0" font-size="18" fill="#17693F" text-anchor="start" font-weight="400">the ISA, not ASCII.</text>
+</svg>

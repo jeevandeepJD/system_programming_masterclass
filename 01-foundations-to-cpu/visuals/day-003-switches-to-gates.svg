@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 710" width="1000" height="710" role="img" font-family="sans-serif">
+  <title>Abstraction levels from a switch to a restored logic level</title>
+  <desc>Four distinct levels: a physical series switch or relay contact, the Boolean condition A AND B, a transistor gate network that implements that condition, and a stable logic output driven into a valid LOW or HIGH band.</desc>
+  <defs>
+    <marker id="arrowNavy" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#17693F"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#8A4B00"/>
+    </marker>
+    <pattern id="amberHatch" patternUnits="userSpaceOnUse" width="10" height="10">
+      <path d="M0 10 L10 0" stroke="#8A4B00" stroke-width="1.6"/>
+    </pattern>
+    <pattern id="greenStripe" patternUnits="userSpaceOnUse" width="12" height="12">
+      <rect width="12" height="12" fill="#E3F6EB"/>
+      <path d="M0 12 L12 0" stroke="#17693F" stroke-width="1.2" opacity="0.45"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="1000" height="710" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="706" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="28.0" y="36.0" font-size="26" fill="#1B2A4A" text-anchor="start" font-weight="700">From contacts to a restored logic level</text>
+  <text x="28.0" y="64.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Each arrow changes the description. These are not the same object.</text>
+  <rect x="28.0" y="96.0" width="944.0" height="112.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <rect x="40.0" y="112.0" width="210.0" height="80.0" rx="6" fill="#F4F7FB" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="145.0" y="158.0" font-size="22" fill="#1B2A4A" text-anchor="middle" font-weight="700">1  Physical</text>
+  <rect x="28.0" y="250.0" width="944.0" height="112.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <rect x="40.0" y="266.0" width="210.0" height="80.0" rx="6" fill="#F4F7FB" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="145.0" y="312.0" font-size="22" fill="#1B2A4A" text-anchor="middle" font-weight="700">2  Boolean</text>
+  <rect x="28.0" y="404.0" width="944.0" height="112.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <rect x="40.0" y="420.0" width="210.0" height="80.0" rx="6" fill="#F4F7FB" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="145.0" y="466.0" font-size="22" fill="#1B2A4A" text-anchor="middle" font-weight="700">3  Circuit</text>
+  <rect x="28.0" y="558.0" width="944.0" height="112.0" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <rect x="40.0" y="574.0" width="210.0" height="80.0" rx="6" fill="#F4F7FB" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="145.0" y="620.0" font-size="22" fill="#1B2A4A" text-anchor="middle" font-weight="700">4  Logic level</text>
+  <line x1="145.0" y1="208.0" x2="145.0" y2="246.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <line x1="145.0" y1="362.0" x2="145.0" y2="400.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <line x1="145.0" y1="516.0" x2="145.0" y2="554.0" stroke="#1D4E89" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <text x="270.0" y="234.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">name the rule</text>
+  <text x="270.0" y="388.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">build the network</text>
+  <text x="270.0" y="542.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">restore a valid level</text>
+  <line x1="280.0" y1="152.0" x2="330.0" y2="152.0" stroke="#1B2A4A" stroke-width="3"/>
+  <line x1="360.0" y1="152.0" x2="410.0" y2="152.0" stroke="#1B2A4A" stroke-width="3"/>
+  <line x1="440.0" y1="152.0" x2="500.0" y2="152.0" stroke="#1B2A4A" stroke-width="3"/>
+  <line x1="330.0" y1="152.0" x2="358.0" y2="128.0" stroke="#1B2A4A" stroke-width="3"/>
+  <line x1="410.0" y1="152.0" x2="438.0" y2="128.0" stroke="#1B2A4A" stroke-width="3"/>
+  <circle cx="518.0" cy="152.0" r="16.0" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="300.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">A</text>
+  <text x="380.0" y="184.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">B</text>
+  <text x="620.0" y="140.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Series contacts conduct only if</text>
+  <text x="620.0" y="164.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">both are closed. A relay coil can</text>
+  <text x="620.0" y="188.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">move a contact. This is still physics.</text>
+  <text x="300.0" y="306.0" font-size="28" fill="#1B2A4A" text-anchor="start" font-weight="700">A AND B</text>
+  <text x="620.0" y="294.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">True only when A and B are both true.</text>
+  <text x="620.0" y="318.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">The algebra names a condition.</text>
+  <text x="620.0" y="342.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">It does not mention voltage or metal.</text>
+  <path d="M 280 444 H 340 A 36 36 0 0 0 340 516 H 280 Z" fill="#E6F1FB" stroke="#1D4E89" stroke-width="3"/>
+  <line x1="274.0" y1="462.0" x2="280.0" y2="462.0" stroke="#1D4E89" stroke-width="3"/>
+  <line x1="274.0" y1="498.0" x2="280.0" y2="498.0" stroke="#1D4E89" stroke-width="3"/>
+  <line x1="376.0" y1="480.0" x2="500.0" y2="480.0" stroke="#1D4E89" stroke-width="3" marker-end="url(#arrowBlue)"/>
+  <text x="258.0" y="456.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">A</text>
+  <text x="258.0" y="506.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">B</text>
+  <text x="300.0" y="486.0" font-size="18" fill="#1D4E89" text-anchor="start" font-weight="700">AND</text>
+  <text x="620.0" y="460.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Transistors form a network.</text>
+  <text x="620.0" y="484.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">The topology, not one device,</text>
+  <text x="620.0" y="508.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">makes the Boolean function.</text>
+  <rect x="280.0" y="576.0" width="220.0" height="32.0" rx="4" fill="url(#greenStripe)" stroke="#17693F" stroke-width="2"/>
+  <text x="390.0" y="598.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">valid LOW = 0</text>
+  <rect x="280.0" y="616.0" width="220.0" height="32.0" rx="4" fill="url(#greenStripe)" stroke="#17693F" stroke-width="2"/>
+  <text x="390.0" y="638.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">valid HIGH = 1</text>
+  <text x="620.0" y="602.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">The output is driven to a stable</text>
+  <text x="620.0" y="626.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">0 or 1 clean enough for the next gate.</text>
+</svg>

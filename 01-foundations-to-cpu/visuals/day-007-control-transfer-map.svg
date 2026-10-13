@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Map of six control transfers and the source of the next instruction address</title>
+  <desc>Normal next PC, conditional branch, call or return, synchronous exception, asynchronous interrupt, and syscall. Each row names the trigger and the source of the destination address.</desc>
+  <defs>
+    <marker id="mk-blue" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-red" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#9E2A2A"/>
+    </marker>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="30" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">What supplies the next fetch address?</text>
+  <text x="146" y="62" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Transfer</text>
+  <text x="490" y="62" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Trigger</text>
+  <text x="834" y="62" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Destination source</text>
+  <rect x="12" y="78" width="268" height="56" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="146" y="112" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Normal next PC</text>
+  <line x1="280" y1="106" x2="676" y2="106" stroke="#1D4E89" stroke-width="2.4" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="376.0" y="84.0" width="203.9" height="26.0" fill="#FBF9F4"/>
+  <text x="478" y="98" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">no transfer requested</text>
+  <rect x="688" y="78" width="292" height="56" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="834" y="112" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">address after this one</text>
+  <rect x="12" y="144" width="268" height="56" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="146" y="178" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Conditional branch</text>
+  <line x1="280" y1="172" x2="676" y2="172" stroke="#1D4E89" stroke-width="2.4" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="374.7" y="150.0" width="206.6" height="26.0" fill="#FBF9F4"/>
+  <text x="478" y="164" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">condition true or false</text>
+  <rect x="688" y="144" width="292" height="56" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="834" y="178" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">target, or next address</text>
+  <rect x="12" y="210" width="268" height="56" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="146" y="244" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Call / return</text>
+  <line x1="280" y1="238" x2="676" y2="238" stroke="#1D4E89" stroke-width="2.4" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="372.8" y="216.0" width="210.3" height="26.0" fill="#FBF9F4"/>
+  <text x="478" y="230" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">call or return executes</text>
+  <rect x="688" y="210" width="292" height="56" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="834" y="244" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">entry, or saved return</text>
+  <rect x="12" y="276" width="268" height="56" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="146" y="310" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Synchronous exception</text>
+  <line x1="280" y1="304" x2="676" y2="304" stroke="#1B2A4A" stroke-width="2.4" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="371.0" y="282.0" width="213.9" height="26.0" fill="#FBF9F4"/>
+  <text x="478" y="296" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">this instruction's event</text>
+  <rect x="688" y="276" width="292" height="56" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="834" y="310" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">kernel vector for it</text>
+  <rect x="12" y="342" width="268" height="56" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="146" y="376" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Asynchronous interrupt</text>
+  <line x1="280" y1="370" x2="676" y2="370" stroke="#8A4B00" stroke-width="2.4" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <rect x="368.4" y="348.0" width="219.2" height="26.0" fill="#FBF9F4"/>
+  <text x="478" y="362" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">device or timer request</text>
+  <rect x="688" y="342" width="292" height="56" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="834" y="376" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">kernel vector for it</text>
+  <rect x="12" y="408" width="268" height="56" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="146" y="442" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Syscall</text>
+  <line x1="280" y1="436" x2="676" y2="436" stroke="#8A4B00" stroke-width="2.4" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <rect x="393.0" y="414.0" width="170.1" height="26.0" fill="#FBF9F4"/>
+  <text x="478" y="428" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">syscall instruction</text>
+  <rect x="688" y="408" width="292" height="56" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="834" y="442" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">kernel-configured entry</text>
+  <text x="500" y="492" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Blue solid: program address. Navy solid: this instruction. Amber dashed: kernel entry.</text>
+</svg>

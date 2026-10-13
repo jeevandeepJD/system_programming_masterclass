@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" role="img" font-family="sans-serif">
+  <title>Tiny-8 minimal CPU datapath</title>
+  <desc>Teaching block diagram of one minimal CPU. Solid blue lines are the datapath. Dashed amber lines are control enables and selects from the decoder. Double-bordered boxes are state elements. The next-PC mux chooses PC plus one or hold. This is the lesson's Tiny-8 organization, not a claim about every CPU.</desc>
+  <defs>
+    <marker id="mk-blue" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-red" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#9E2A2A"/>
+    </marker>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="560" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="556" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="28" y="36" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700">Tiny-8 datapath: values, control, and state</text>
+  <text x="28" y="62" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Blue solid moves values. Amber dashed enables them. Double border is state.</text>
+  <rect x="300" y="76" width="400" height="58" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4" stroke-dasharray="7 4"/>
+  <text x="500" y="100" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Decoder / control</text>
+  <text x="500" y="124" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">enables and selects</text>
+  <rect x="16" y="176" width="148" height="112" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <rect x="21" y="181" width="138" height="102" rx="5" fill="none" stroke="#1B2A4A" stroke-width="1.4"/>
+  <text x="90" y="214" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">PC</text>
+  <text x="90" y="242" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">state</text>
+  <text x="90" y="270" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: next PC</text>
+  <rect x="260" y="176" width="200" height="112" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="360" y="214" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Instruction</text>
+  <text x="360" y="242" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">memory</text>
+  <text x="360" y="270" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">byte at address</text>
+  <rect x="556" y="176" width="136" height="112" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <rect x="561" y="181" width="126" height="102" rx="5" fill="none" stroke="#1B2A4A" stroke-width="1.4"/>
+  <text x="624" y="214" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">IR</text>
+  <text x="624" y="242" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">state</text>
+  <text x="624" y="270" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">opcode out</text>
+  <rect x="788" y="176" width="196" height="112" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <rect x="793" y="181" width="186" height="102" rx="5" fill="none" stroke="#1B2A4A" stroke-width="1.4"/>
+  <text x="886" y="214" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Register file</text>
+  <text x="886" y="242" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">R0 R1 R2 R3</text>
+  <text x="886" y="270" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">state</text>
+  <line x1="164" y1="232" x2="258" y2="232" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="198" y="222" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">address</text>
+  <line x1="460" y1="232" x2="554" y2="232" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="507" y="222" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">byte</text>
+  <line x1="692" y1="232" x2="786" y2="232" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="739" y="222" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">rd, rs</text>
+  <line x1="580" y1="176" x2="580" y2="134" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="572" y="162" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="end">opcode</text>
+  <path d="M300,104 H90 V174" stroke="#8A4B00" stroke-width="2.3" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <text x="150" y="96" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">pc_inc</text>
+  <line x1="660" y1="134" x2="660" y2="174" stroke="#8A4B00" stroke-width="2.3" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <text x="668" y="162" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400">ir_load</text>
+  <path d="M700,104 H886 V174" stroke="#8A4B00" stroke-width="2.3" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <text x="790" y="96" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">reg_write</text>
+  <rect x="48" y="312" width="84" height="40" rx="8" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2"/>
+  <text x="90" y="338" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">PC+1</text>
+  <line x1="90" y1="288" x2="90" y2="312" stroke="#1D4E89" stroke-width="2.6" fill="none"/>
+  <line x1="90" y1="352" x2="90" y2="388" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <path d="M150,288 V368 H190 V388" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="158" y="348" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400">hold</text>
+  <rect x="16" y="390" width="210" height="112" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="121" y="426" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Next-PC mux</text>
+  <text x="121" y="454" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">PC+1 or hold</text>
+  <text x="121" y="482" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: next PC</text>
+  <path d="M300,124 H248 V430 H228" stroke="#8A4B00" stroke-width="2.3" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <text x="240" y="308" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="end">select</text>
+  <path d="M16,446 H8 V232 H14" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="788" y="390" width="196" height="112" rx="8" fill="#E7F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="886" y="438" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">ALU</text>
+  <text x="886" y="466" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">combinational</text>
+  <line x1="840" y1="288" x2="840" y2="388" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="828" y="340" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="end">A</text>
+  <line x1="940" y1="288" x2="940" y2="388" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="952" y="340" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400">B</text>
+  <path d="M700,118 H990 V446 H984" stroke="#8A4B00" stroke-width="2.3" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <text x="982" y="328" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="end">alu_op</text>
+  <path d="M788,446 H730 V232 H786" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="738" y="360" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400">result</text>
+  <rect x="300" y="400" width="280" height="112" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.5"/>
+  <rect x="305" y="405" width="270" height="102" rx="5" fill="none" stroke="#1B2A4A" stroke-width="1.4"/>
+  <text x="440" y="442" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Data memory</text>
+  <text x="440" y="470" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">state</text>
+  <text x="440" y="496" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">addr and write data</text>
+  <path d="M624,288 V372 H390 V400" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="440" y="364" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">addr</text>
+  <line x1="508" y1="134" x2="508" y2="400" stroke="#8A4B00" stroke-width="2.3" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <text x="516" y="318" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400">mem_write</text>
+  <path d="M820,288 V328 H600 V456 H582" stroke="#1D4E89" stroke-width="2.6" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="700" y="312" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">data</text>
+  <line x1="28" y1="542" x2="78" y2="542" stroke="#1D4E89" stroke-width="3" fill="none" marker-end="url(#mk-blue)"/>
+  <text x="88" y="548" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400">datapath</text>
+  <line x1="210" y1="542" x2="260" y2="542" stroke="#8A4B00" stroke-width="2.4" fill="none" stroke-dasharray="7 4" marker-end="url(#mk-amber)"/>
+  <text x="270" y="548" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400">control</text>
+  <rect x="390" y="530" width="26" height="20" rx="3" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <rect x="394" y="534" width="18" height="12" rx="2" fill="none" stroke="#1B2A4A" stroke-width="1.2"/>
+  <text x="424" y="548" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">state</text>
+  <text x="520" y="548" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400">Green: a value that can be captured.</text>
+</svg>

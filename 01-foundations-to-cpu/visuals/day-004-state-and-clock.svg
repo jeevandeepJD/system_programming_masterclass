@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" role="img" font-family="sans-serif">
+  <title>D sampled at an active clock edge with setup and hold windows</title>
+  <desc>A timing sketch with no numeric durations. D changes, then stays stable through a setup window before the active rising edge. Q changes at that edge from the previous value to the sampled D and holds afterward. D remains stable through a hold window after the edge, then may change without changing Q.</desc>
+  <defs>
+    <marker id="arrowNavy" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#17693F"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#8A4B00"/>
+    </marker>
+    <pattern id="amberHatch" patternUnits="userSpaceOnUse" width="10" height="10">
+      <path d="M0 10 L10 0" stroke="#8A4B00" stroke-width="1.6"/>
+    </pattern>
+    <pattern id="greenStripe" patternUnits="userSpaceOnUse" width="12" height="12">
+      <rect width="12" height="12" fill="#E3F6EB"/>
+      <path d="M0 12 L12 0" stroke="#17693F" stroke-width="1.2" opacity="0.45"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="1000" height="560" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="556" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="28.0" y="34.0" font-size="26" fill="#1B2A4A" text-anchor="start" font-weight="700">Edge-triggered capture, without numeric times</text>
+  <text x="28.0" y="62.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Setup and hold are conceptual windows, not measured lengths.</text>
+  <line x1="520.0" y1="88.0" x2="520.0" y2="470.0" stroke="#1B2A4A" stroke-width="2" stroke-dasharray="6 5"/>
+  <text x="520.0" y="84.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">active edge</text>
+  <text x="28.0" y="150.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">CLK</text>
+  <path d="M 120 168 L 520 168 L 520 112 L 920 112" fill="none" stroke="#1B2A4A" stroke-width="4"/>
+  <text x="300.0" y="196.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">low</text>
+  <text x="700.0" y="104.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">high after the rising edge</text>
+  <line x1="250.0" y1="214.0" x2="250.0" y2="230.0" stroke="#8A4B00" stroke-width="3"/>
+  <line x1="250.0" y1="222.0" x2="520.0" y2="222.0" stroke="#8A4B00" stroke-width="3"/>
+  <line x1="520.0" y1="214.0" x2="520.0" y2="230.0" stroke="#8A4B00" stroke-width="3"/>
+  <text x="385.0" y="212.0" font-size="18" fill="#8A4B00" text-anchor="middle" font-weight="700">setup window</text>
+  <line x1="520.0" y1="246.0" x2="520.0" y2="262.0" stroke="#8A4B00" stroke-width="3"/>
+  <line x1="520.0" y1="254.0" x2="700.0" y2="254.0" stroke="#8A4B00" stroke-width="3"/>
+  <line x1="700.0" y1="246.0" x2="700.0" y2="262.0" stroke="#8A4B00" stroke-width="3"/>
+  <text x="610.0" y="244.0" font-size="18" fill="#8A4B00" text-anchor="middle" font-weight="700">hold window</text>
+  <text x="28.0" y="330.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">D</text>
+  <path d="M 120 360 L 180 360 L 250 300 L 700 300 L 770 360 L 920 360" fill="none" stroke="#1D4E89" stroke-width="4"/>
+  <text x="150.0" y="392.0" font-size="18" fill="#8A4B00" text-anchor="middle" font-weight="700">changing</text>
+  <text x="460.0" y="288.0" font-size="18" fill="#1D4E89" text-anchor="middle" font-weight="700">D settled</text>
+  <text x="830.0" y="392.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">may change</text>
+  <text x="28.0" y="460.0" font-size="20" fill="#1B2A4A" text-anchor="start" font-weight="700">Q</text>
+  <path d="M 120 478 L 520 478 L 520 430 L 920 430" fill="none" stroke="#17693F" stroke-width="4"/>
+  <text x="280.0" y="468.0" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="400">previous Q</text>
+  <text x="700.0" y="418.0" font-size="18" fill="#17693F" text-anchor="middle" font-weight="700">new Q holds</text>
+  <text x="28.0" y="518.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">Q takes the settled D at the active edge and keeps it after D moves.</text>
+  <text x="28.0" y="544.0" font-size="18" fill="#1B2A4A" text-anchor="start" font-weight="400">No nanoseconds are shown. The windows only order settle, sample, and hold.</text>
+</svg>

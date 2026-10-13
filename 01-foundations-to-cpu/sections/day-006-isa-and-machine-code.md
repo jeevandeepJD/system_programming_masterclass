@@ -166,15 +166,9 @@ implement an ISA. It may choose:
 These choices affect speed, power, area, cost, and sometimes timing-visible
 side effects. They do not normally change the required architectural answer.
 
-```text
-                       one ISA contract
-                ┌──────────┼──────────┐
-                │          │          │
-          small in-order  wide OoO   software emulator
-             core           core       or virtual CPU
-                │          │          │
-                └── same architectural behavior ──┘
-```
+![ISA contract with software, compiler, and ELF bytes above it and two microarchitectures below it](../visuals/day-006-isa-boundary.svg)
+
+*Compilers and ELF bytes target the architectural contract, while two different internal organizations can still produce the same visible behavior.*
 
 A compact low-power x86-64 core and a wide server x86-64 core can decode the
 same architectural `ADD` instruction while using very different pipelines,
@@ -327,6 +321,10 @@ Sign extension is an architectural rule, not a guess made by the decoder.
 ---
 
 ## Part IV — Encoding is a constrained design problem
+
+![Teaching sketch comparing a fixed 32-bit field layout with a variable-length instruction byte stream](../visuals/day-006-instruction-encoding.svg)
+
+*Opcode, operand, and immediate fields share a limited bit budget, and these rectangles are a sketch rather than an exact real encoding.*
 
 ### Fixed-length instructions
 
