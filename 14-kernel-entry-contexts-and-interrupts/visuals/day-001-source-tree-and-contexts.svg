@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Source tree beside the execution contexts that code may run in</title>
+  <desc>Generic directories hold policy. The arch directory holds the entry sequence. Predicates in preempt.h name user, task, hardirq, softirq, and NMI contexts.</desc>
+  <defs>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Source tree and the context the code runs in</text>
+  <rect x="16" y="50" width="470" height="410" rx="8" fill="#F3F6FA" stroke="#1B2A4A" stroke-width="1.6"/>
+  <text x="32" y="80" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700">Directories at v6.12</text>
+  <rect x="32" y="96" width="438" height="52" rx="6" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2"/>
+  <text x="48" y="128" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">arch/$(SRCARCH)</text>
+  <text x="280" y="128" fill="#8A4B00" font-family="sans-serif" font-size="18">entry, paging, ABI</text>
+  <rect x="32" y="156" width="438" height="52" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="48" y="188" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">kernel/ and kernel/entry</text>
+  <text x="320" y="188" fill="#1D4E89" font-family="sans-serif" font-size="18">shared policy</text>
+  <rect x="32" y="216" width="438" height="52" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="48" y="248" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">mm/ and fs/</text>
+  <text x="220" y="248" fill="#1D4E89" font-family="sans-serif" font-size="18">faults and syscall bodies</text>
+  <rect x="32" y="276" width="438" height="52" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="48" y="308" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">include/linux</text>
+  <text x="230" y="308" fill="#1D4E89" font-family="sans-serif" font-size="18">kconfig.h, preempt.h</text>
+  <rect x="32" y="336" width="438" height="52" rx="6" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2"/>
+  <text x="48" y="368" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">include/asm-generic</text>
+  <text x="280" y="368" fill="#1D4E89" font-family="sans-serif" font-size="18">headers every arch owes</text>
+  <text x="32" y="424" fill="#1B2A4A" font-family="sans-serif" font-size="18">obj-$(CONFIG_...) selects which of these compile.</text>
+  <line x1="486" y1="250" x2="530" y2="250" stroke="#1B2A4A" stroke-width="2.4" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="534" y="50" width="450" height="410" rx="8" fill="#FBF6EE" stroke="#1B2A4A" stroke-width="1.6"/>
+  <text x="550" y="80" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700">Execution context</text>
+  <rect x="550" y="96" width="418" height="58" rx="6" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2"/>
+  <text x="566" y="130" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">User</text>
+  <text x="650" y="130" fill="#1D4E89" font-family="sans-serif" font-size="18">own page tables</text>
+  <rect x="550" y="162" width="418" height="58" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="2.2"/>
+  <text x="566" y="196" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700">Task kernel</text>
+  <text x="720" y="196" fill="#1B2A4A" font-family="sans-serif" font-size="18">in_task(), may sleep</text>
+  <rect x="550" y="228" width="418" height="58" rx="6" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2"/>
+  <text x="566" y="262" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700">Hardirq</text>
+  <text x="680" y="262" fill="#1B2A4A" font-family="sans-serif" font-size="18">borrowed stack, return</text>
+  <rect x="550" y="294" width="418" height="58" rx="6" fill="#FFFFFF" stroke="#8A4B00" stroke-width="2"/>
+  <text x="566" y="328" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700">Softirq</text>
+  <text x="680" y="328" fill="#1B2A4A" font-family="sans-serif" font-size="18">deferred, still atomic</text>
+  <rect x="550" y="360" width="418" height="58" rx="6" fill="#F8E8E8" stroke="#9E2A2A" stroke-width="2"/>
+  <text x="566" y="394" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="700">NMI</text>
+  <text x="650" y="394" fill="#1B2A4A" font-family="sans-serif" font-size="18">can interrupt an irq</text>
+  <text x="500" y="492" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">Kernel mode is several contexts. in_task() is the one that may sleep.</text>
+</svg>

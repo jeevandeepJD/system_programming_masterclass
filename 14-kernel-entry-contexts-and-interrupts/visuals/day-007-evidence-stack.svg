@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Source excerpt, proc interrupts line, and a hypothesis that can be rejected</title>
+  <desc>show_interrupts in kernel/irq/proc.c prints one /proc/interrupts line. The reader writes a hypothesis that a later sample can reject. strace records syscall names and stops before the IRQ handler.</desc>
+  <defs>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="34" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Source, runtime line, hypothesis</text>
+  <rect x="20" y="62" width="290" height="230" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.4"/>
+  <text x="165" y="104" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Source</text>
+  <text x="165" y="144" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">kernel/irq/proc.c</text>
+  <text x="165" y="178" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">show_interrupts</text>
+  <text x="165" y="212" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">counts, chip, names</text>
+  <text x="165" y="246" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">tree adc218676eef</text>
+  <line x1="310" y1="176" x2="348" y2="176" stroke="#1B2A4A" stroke-width="2.6" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="352" y="62" width="296" height="230" rx="8" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2.4"/>
+  <text x="500" y="104" fill="#1D4E89" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Runtime</text>
+  <text x="500" y="144" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">/proc/interrupts</text>
+  <text x="500" y="178" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">one count per CPU</text>
+  <text x="500" y="212" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">comma means shared</text>
+  <text x="500" y="246" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">record uname -r</text>
+  <line x1="648" y1="176" x2="686" y2="176" stroke="#1B2A4A" stroke-width="2.6" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="690" y="62" width="290" height="230" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4"/>
+  <text x="835" y="104" fill="#8A4B00" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Hypothesis</text>
+  <text x="835" y="148" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">a sentence a later</text>
+  <text x="835" y="178" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">sample can reject</text>
+  <text x="835" y="220" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">then one next read</text>
+  <text x="835" y="254" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">or an explicit skip</text>
+  <rect x="20" y="316" width="960" height="150" rx="8" fill="#F8E8E8" stroke="#9E2A2A" stroke-width="2.2"/>
+  <text x="40" y="358" fill="#9E2A2A" font-family="sans-serif" font-size="20" font-weight="700">strace stops at the syscall</text>
+  <text x="40" y="396" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">clock_nanosleep is a process entry. The timer IRQ is a different entry.</text>
+  <text x="40" y="434" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">tracefs and perf are optional. A missing file is a recorded skip.</text>
+  <text x="500" y="498" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Quote a line only from the tree you opened, beside uname -r.</text>
+</svg>

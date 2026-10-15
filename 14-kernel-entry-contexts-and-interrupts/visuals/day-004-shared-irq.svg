@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Two devices share one irq_desc and keep separate dev_id cookies</title>
+  <desc>Device A and device B share one Linux irq number and one irq_desc. Each has its own irqaction, name, and dev_id. The handler returns IRQ_NONE when the event is not its device. free_irq uses the same cookie.</desc>
+  <defs>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="34" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">One line, two owners</text>
+  <rect x="20" y="70" width="210" height="110" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4"/>
+  <text x="125" y="112" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Device A</text>
+  <text x="125" y="146" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">status bit set</text>
+  <rect x="20" y="210" width="210" height="110" rx="8" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2.4"/>
+  <text x="125" y="252" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Device B</text>
+  <text x="125" y="286" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">status bit clear</text>
+  <rect x="360" y="130" width="250" height="140" rx="8" fill="#F3F6FA" stroke="#1B2A4A" stroke-width="2.5"/>
+  <text x="485" y="176" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">One irq_desc</text>
+  <text x="485" y="210" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">IRQF_SHARED</text>
+  <text x="485" y="240" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">action chain</text>
+  <path d="M230,125 H330 V180 H358" stroke="#8A4B00" stroke-width="2.5" fill="none" marker-end="url(#mk-amber)"/>
+  <path d="M230,265 H330 V220 H358" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="700" y="62" width="276" height="120" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.4"/>
+  <text x="838" y="100" fill="#17693F" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">action A</text>
+  <text x="838" y="132" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">dev_id cookie A</text>
+  <text x="838" y="160" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">IRQ_HANDLED</text>
+  <rect x="700" y="202" width="276" height="120" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.4"/>
+  <text x="838" y="240" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">action B</text>
+  <text x="838" y="272" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">dev_id cookie B</text>
+  <text x="838" y="300" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">IRQ_NONE</text>
+  <line x1="610" y1="170" x2="698" y2="122" stroke="#17693F" stroke-width="2.5" fill="none" marker-end="url(#mk-green)"/>
+  <line x1="610" y1="220" x2="698" y2="262" stroke="#1B2A4A" stroke-width="2.5" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="20" y="350" width="960" height="128" rx="8" fill="#FBF6EE" stroke="#1B2A4A" stroke-width="1.6"/>
+  <text x="40" y="388" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Both flags carry IRQF_SHARED. Trigger type and oneshot must agree.</text>
+  <text x="40" y="422" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">The cookie passed to request_irq is the cookie passed to free_irq.</text>
+  <text x="40" y="456" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">An NMI action stays alone. A shared line is a normal device irq.</text>
+  <text x="500" y="504" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">/proc/interrupts joins shared names with a comma on one line.</text>
+</svg>

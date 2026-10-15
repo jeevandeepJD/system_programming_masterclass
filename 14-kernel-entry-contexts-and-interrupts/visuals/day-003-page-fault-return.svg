@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Page-fault entry, resolution or fixup, and return</title>
+  <desc>Vector 14 reads CR2 and classifies the address. A user mapping goes through handle_mm_fault and returns to the faulting instruction. A prepared kernel fault uses the exception table and returns to the helper. An unprepared kernel fault is an oops.</desc>
+  <defs>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+    <marker id="mk-red" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#9E2A2A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Page fault: classify, resolve or fix up, return</text>
+  <rect x="16" y="56" width="200" height="150" rx="8" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="116" y="96" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Entry</text>
+  <text x="116" y="130" fill="#1D4E89" font-family="sans-serif" font-size="18" text-anchor="middle">vector 14</text>
+  <text x="116" y="164" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">CR2 and error</text>
+  <line x1="216" y1="130" x2="252" y2="130" stroke="#1B2A4A" stroke-width="2.4" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="256" y="56" width="230" height="150" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.2"/>
+  <text x="371" y="96" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Classify</text>
+  <text x="371" y="130" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">kernel or user address</text>
+  <text x="371" y="164" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">user_mode(regs)</text>
+  <line x1="486" y1="100" x2="530" y2="78" stroke="#17693F" stroke-width="2.4" fill="none" marker-end="url(#mk-green)"/>
+  <line x1="486" y1="160" x2="530" y2="182" stroke="#8A4B00" stroke-width="2.4" fill="none" marker-end="url(#mk-amber)"/>
+  <rect x="534" y="52" width="220" height="72" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.2"/>
+  <text x="644" y="96" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">handle_mm_fault</text>
+  <rect x="534" y="150" width="220" height="72" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.2"/>
+  <text x="644" y="194" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">fixup_exception</text>
+  <line x1="754" y1="88" x2="800" y2="88" stroke="#17693F" stroke-width="2.4" fill="none" marker-end="url(#mk-green)"/>
+  <line x1="754" y1="186" x2="800" y2="160" stroke="#8A4B00" stroke-width="2.4" fill="none" marker-end="url(#mk-amber)"/>
+  <line x1="754" y1="186" x2="800" y2="214" stroke="#9E2A2A" stroke-width="2.4" fill="none" marker-end="url(#mk-red)"/>
+  <rect x="804" y="52" width="180" height="56" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2"/>
+  <text x="894" y="86" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Resume store</text>
+  <rect x="804" y="124" width="180" height="56" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2"/>
+  <text x="894" y="158" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Return -EFAULT</text>
+  <rect x="804" y="196" width="180" height="56" rx="8" fill="#F8E8E8" stroke="#9E2A2A" stroke-width="2"/>
+  <text x="894" y="230" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Oops</text>
+  <rect x="16" y="280" width="968" height="180" rx="8" fill="#F3F6FA" stroke="#1B2A4A" stroke-width="1.6"/>
+  <text x="32" y="316" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700">Which return is honest</text>
+  <text x="32" y="354" fill="#17693F" font-family="sans-serif" font-size="18">Resolved user fault: error_return sees user CS and resumes the store.</text>
+  <text x="32" y="392" fill="#8A4B00" font-family="sans-serif" font-size="18">UACCESS fixup: ip changes to the helper. The copy reports -EFAULT.</text>
+  <text x="32" y="430" fill="#9E2A2A" font-family="sans-serif" font-size="18">No table entry on a kernel fault: the instruction is a bug and must not resume.</text>
+  <text x="500" y="492" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">Same vector. The address, the mode, and the exception table choose the return.</text>
+</svg>

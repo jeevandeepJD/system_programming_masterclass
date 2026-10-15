@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Device signal through a controller and irq_desc to one handler</title>
+  <desc>A device pin or MSI write reaches a controller. The controller presents a hardware number. An irq_domain maps that number to a Linux irq_desc. The descriptor flow handler calls the irqaction handler.</desc>
+  <defs>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="34" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Device signal to one handler call</text>
+  <rect x="18" y="58" width="220" height="168" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4"/>
+  <text x="128" y="100" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Device</text>
+  <text x="128" y="132" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">pin level</text>
+  <text x="128" y="160" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">or MSI write</text>
+  <text x="128" y="188" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">owns the event</text>
+  <line x1="238" y1="142" x2="268" y2="142" stroke="#1B2A4A" stroke-width="2.6" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="272" y="58" width="220" height="168" rx="8" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2.4"/>
+  <text x="382" y="100" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Controller</text>
+  <text x="382" y="132" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">PIC, APIC, GIC</text>
+  <text x="382" y="160" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">or PLIC</text>
+  <text x="382" y="188" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">picks a CPU</text>
+  <line x1="492" y1="142" x2="522" y2="142" stroke="#1B2A4A" stroke-width="2.6" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="526" y="58" width="220" height="168" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.4"/>
+  <text x="636" y="100" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">irq_desc</text>
+  <text x="636" y="132" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Linux irq number</text>
+  <text x="636" y="160" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">handle_irq flow</text>
+  <text x="636" y="188" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">irq_chip ops</text>
+  <line x1="746" y1="142" x2="776" y2="142" stroke="#1B2A4A" stroke-width="2.6" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="780" y="58" width="200" height="168" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.4"/>
+  <text x="880" y="100" fill="#17693F" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Handler</text>
+  <text x="880" y="132" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">irqaction</text>
+  <text x="880" y="160" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">irq, dev_id</text>
+  <text x="880" y="188" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">IRQ_HANDLED</text>
+  <rect x="18" y="250" width="964" height="228" rx="8" fill="#F3F6FA" stroke="#1B2A4A" stroke-width="1.6"/>
+  <text x="36" y="286" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700">What each number means</text>
+  <text x="36" y="324" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">hwirq: the controller source, claimed or completed on that chip</text>
+  <text x="36" y="358" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">vector: the CPU entry slot, an IDT index on x86</text>
+  <text x="36" y="392" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Linux irq: the index of irq_desc after the irq_domain map</text>
+  <text x="36" y="426" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">mask, ack, and EOI are irq_chip calls chosen by the flow handler</text>
+  <text x="500" y="496" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">The generic layer names the descriptor. The chip ends the hardware event.</text>
+</svg>

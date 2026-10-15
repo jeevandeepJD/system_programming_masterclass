@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Page-fault state machine</title>
+  <desc>A hardware page fault decodes the error code, finds a VMA, then either signals SIGSEGV, fills a missing page, handles copy-on-write, or retries after dropping the lock. A finished PTE restarts the instruction. A file that cannot supply the page signals SIGBUS.</desc>
+  <defs>
+    <marker id="d2arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="12" markerHeight="12" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1B2A4A"/>
+    </marker>
+    <pattern id="d2hatch" patternUnits="userSpaceOnUse" width="8" height="8">
+      <rect width="8" height="8" fill="#FFFFFF"/>
+      <path d="M0 8 L8 0" stroke="#8A4B00" stroke-width="1.2"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="24" y="34" font-size="22" fill="#1B2A4A" font-weight="700">Page-fault states</text>
+  <text x="24" y="58" font-size="18" fill="#1B2A4A">Numbers are the order. A retry returns to state 3. Signals leave the machine.</text>
+
+  <rect x="24" y="76" width="220" height="64" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="134" y="104" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1  hardware #PF</text>
+  <text x="134" y="126" font-size="18" fill="#1B2A4A" text-anchor="middle">CR2 and error code</text>
+
+  <rect x="276" y="76" width="230" height="64" rx="8" fill="#FFFFFF" stroke="#1D4E89" stroke-width="3"/>
+  <text x="391" y="104" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">2  decode flags</text>
+  <text x="391" y="126" font-size="18" fill="#1D4E89" text-anchor="middle">write, user, instruction</text>
+
+  <rect x="538" y="76" width="210" height="64" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="643" y="104" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">3  find VMA</text>
+  <text x="643" y="126" font-size="18" fill="#1B2A4A" text-anchor="middle">mm_mt lookup</text>
+
+  <rect x="772" y="76" width="204" height="64" rx="8" fill="url(#d2hatch)" stroke="#8A4B00" stroke-width="3"/>
+  <text x="874" y="104" font-size="18" fill="#8A4B00" text-anchor="middle" font-weight="700">4  no VMA</text>
+  <text x="874" y="126" font-size="18" fill="#1B2A4A" text-anchor="middle">SIGSEGV</text>
+
+  <line x1="244" y1="108" x2="272" y2="108" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d2arrow)"/>
+  <line x1="506" y1="108" x2="534" y2="108" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d2arrow)"/>
+  <line x1="748" y1="108" x2="768" y2="108" stroke="#8A4B00" stroke-width="3" marker-end="url(#d2arrow)"/>
+
+  <rect x="24" y="176" width="300" height="88" rx="8" fill="#FFFFFF" stroke="#1D4E89" stroke-width="3"/>
+  <text x="174" y="208" font-size="18" fill="#1D4E89" text-anchor="middle" font-weight="700">5  PTE missing</text>
+  <text x="174" y="234" font-size="18" fill="#1B2A4A" text-anchor="middle">anonymous or file</text>
+  <text x="174" y="256" font-size="18" fill="#1B2A4A" text-anchor="middle">do_pte_missing</text>
+
+  <rect x="350" y="176" width="300" height="88" rx="8" fill="#FFFFFF" stroke="#17693F" stroke-width="3"/>
+  <text x="500" y="208" font-size="18" fill="#17693F" text-anchor="middle" font-weight="700">6  present, write blocked</text>
+  <text x="500" y="234" font-size="18" fill="#1B2A4A" text-anchor="middle">do_wp_page</text>
+  <text x="500" y="256" font-size="18" fill="#1B2A4A" text-anchor="middle">copy or mark writable</text>
+
+  <rect x="676" y="176" width="300" height="88" rx="8" fill="url(#d2hatch)" stroke="#8A4B00" stroke-width="3"/>
+  <text x="826" y="208" font-size="18" fill="#8A4B00" text-anchor="middle" font-weight="700">7  cannot fill</text>
+  <text x="826" y="234" font-size="18" fill="#1B2A4A" text-anchor="middle">file past EOF</text>
+  <text x="826" y="256" font-size="18" fill="#1B2A4A" text-anchor="middle">SIGBUS</text>
+
+  <line x1="174" y1="140" x2="174" y2="172" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d2arrow)"/>
+  <line x1="500" y1="140" x2="500" y2="172" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d2arrow)"/>
+
+  <rect x="24" y="300" width="460" height="88" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="3"/>
+  <text x="254" y="332" font-size="18" fill="#17693F" text-anchor="middle" font-weight="700">8  PTE installed</text>
+  <text x="254" y="358" font-size="18" fill="#1B2A4A" text-anchor="middle">restart the faulting instruction</text>
+  <text x="254" y="380" font-size="18" fill="#1B2A4A" text-anchor="middle">solid green box means done</text>
+
+  <rect x="516" y="300" width="460" height="88" rx="8" fill="#FFFFFF" stroke="#1D4E89" stroke-width="3" stroke-dasharray="8 5"/>
+  <text x="746" y="332" font-size="18" fill="#1D4E89" text-anchor="middle" font-weight="700">9  VM_FAULT_RETRY</text>
+  <text x="746" y="358" font-size="18" fill="#1B2A4A" text-anchor="middle">lock dropped, set TRIED</text>
+  <text x="746" y="380" font-size="18" fill="#1B2A4A" text-anchor="middle">dashed box returns to state 3</text>
+
+  <line x1="174" y1="264" x2="174" y2="296" stroke="#17693F" stroke-width="3" marker-end="url(#d2arrow)"/>
+  <line x1="500" y1="264" x2="400" y2="296" stroke="#17693F" stroke-width="3" marker-end="url(#d2arrow)"/>
+
+  <text x="24" y="428" font-size="18" fill="#1B2A4A">Hatched boxes are signals. They do not restart the instruction as a successful store.</text>
+  <text x="24" y="456" font-size="18" fill="#1B2A4A">State 5 reads the VMA: anonymous zero-fill, or filemap_fault. State 6 is copy-on-write or a shared dirty.</text>
+  <text x="24" y="484" font-size="18" fill="#1B2A4A">State 9 is not a finished fault. The entry returns to state 3, looks up the VMA again, and accounts later.</text>
+</svg>

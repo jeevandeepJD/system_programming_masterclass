@@ -1,0 +1,355 @@
+{
+  "week": 13,
+  "days": [
+    {
+      "day": 1,
+      "title": "Address Spaces, VMAs, Page Tables, and the TLB",
+      "questions": [
+        {
+          "prompt": "What does a VMA add beyond Linux 0.12's start_code, end_data, brk, and start_stack fields?",
+          "options": [
+            "A physical frame address for every byte",
+            "A range with its own protection and backing, so mmap can name more than code, heap, and stack",
+            "The TLB entry for that range",
+            "A copy of the file's inode data"
+          ],
+          "answer": 1,
+          "explanation": "Linux 0.12 described the user map with a handful of task fields inside one segment slot. A VMA is one range of virtual addresses with protection and a backing, which is what an arbitrary mmap needs."
+        },
+        {
+          "prompt": "What does the TLB cache?",
+          "options": [
+            "Recent virtual-to-physical translations",
+            "The bytes of the mapped file",
+            "The VMA red-black tree",
+            "The process's file-descriptor table"
+          ],
+          "answer": 0,
+          "explanation": "The TLB holds translations the CPU has already walked. The file bytes live in page-cache or anonymous pages. A stale TLB entry can still grant an old translation after a PTE change, which is why the kernel invalidates it."
+        },
+        {
+          "prompt": "What does /proc/self/maps report for the lab's untouched anonymous mapping?",
+          "options": [
+            "The physical frame number",
+            "A VMA the kernel exported for this process, with Size matching the page and Rss still 0",
+            "Proof that the page tables were never allocated",
+            "The glibc heap threshold"
+          ],
+          "answer": 1,
+          "explanation": "maps and smaps are a process-level export of VMAs and accounting. The lab checks that its one-page mapping is present and not resident yet. That export is not a dump of PTEs or physical addresses."
+        },
+        {
+          "prompt": "Why does ToyOS call invlpg after installing a page-table entry?",
+          "options": [
+            "To allocate the physical frame",
+            "To drop a translation the CPU might already have cached for that address",
+            "To switch to another process",
+            "To write the page back to disk"
+          ],
+          "answer": 1,
+          "explanation": "map_page in projects/toyos/src/memory.c stores the PTE and then executes invlpg. The store changes the table. The invalidation changes what the CPU is allowed to keep using."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Page Faults, Demand Paging, and Zero-Fill",
+      "questions": [
+        {
+          "prompt": "The lab's first load of a fresh anonymous page returns which byte, and why?",
+          "options": [
+            "Whatever the previous owner left in the frame",
+            "0, because a not-present anonymous page is filled with zeroes rather than leftover frame contents",
+            "The page-size value",
+            "EOF"
+          ],
+          "answer": 1,
+          "explanation": "Demand zero-fill is the contract. Linux 0.12's do_no_page took the empty-page path past the executable image. Linux 6.12's do_anonymous_page still has a zero-fill path, including the shared zero page for a read."
+        },
+        {
+          "prompt": "Why does the suite accept any minor-fault delta of at least 1, instead of an exact count?",
+          "options": [
+            "getrusage is not implemented on Linux",
+            "ru_minflt counts minor faults for the process between the two calls, and other activity can add faults",
+            "A minor fault is always a disk read",
+            "The delta includes other processes on the machine"
+          ],
+          "answer": 1,
+          "explanation": "The marker fault_count_caveat is part of the test. RUSAGE_SELF is this process, not the whole machine, and it is not a count of one C statement."
+        },
+        {
+          "prompt": "Which Linux 0.12 path handles a not-present fault?",
+          "options": [
+            "page_fault in mm/page.s calls do_no_page",
+            "un_wp_page always runs",
+            "sys_brk allocates the frame before returning",
+            "The fault is ignored"
+          ],
+          "answer": 0,
+          "explanation": "The assembly entry tests the error code. A not-present fault goes to do_no_page. A protection fault goes to do_wp_page. brk in that kernel only moves the break."
+        },
+        {
+          "prompt": "Why can a user file fault sleep when a hard interrupt handler must not?",
+          "options": [
+            "The fault always runs with interrupts disabled",
+            "Bringing in a file page may wait for I/O, and reclaim under an allocation may wait for writeback",
+            "Sleep is required for every TLB miss",
+            "The handler is not allowed to read registers"
+          ],
+          "answer": 1,
+          "explanation": "Week 12's blocking read slept until bytes could move. filemap_fault can sleep for the same reason. That sleep is legal in a user fault and illegal in hard-interrupt context. This is why the fault path is the foundation for later scheduler and interrupt work."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "mmap, mprotect, COW, and Shared Mappings",
+      "questions": [
+        {
+          "prompt": "What did the lab observe after the child stored through MAP_SHARED?",
+          "options": [
+            "The parent still saw the original byte",
+            "The parent saw the child's byte, because both mappings name the same page",
+            "The child received SIGSEGV",
+            "The file was truncated"
+          ],
+          "answer": 1,
+          "explanation": "MAP_SHARED means the store updates the shared page. The parent observes it after wait. That is the same page-cache relationship Week 12 showed with pread, now seen across fork."
+        },
+        {
+          "prompt": "What did the parent observe after the child stored through MAP_PRIVATE?",
+          "options": [
+            "The parent's byte stayed the original value",
+            "The parent's byte became the child's value",
+            "Both processes were killed",
+            "The mapping was unmapped"
+          ],
+          "answer": 0,
+          "explanation": "A private write copies. The child's pipe note shows the child did store. The parent's mapping kept the original byte. Linux 0.12 already had this shape in copy_page_tables and un_wp_page, without mmap."
+        },
+        {
+          "prompt": "Why is the mprotect write a SIGSEGV in the child rather than a copy-on-write?",
+          "options": [
+            "MAP_PRIVATE always signals",
+            "PROT_READ removed write permission from the VMA, so the fault is forbidden rather than a request to copy",
+            "The page was swapped out",
+            "fork does not copy page tables"
+          ],
+          "answer": 1,
+          "explanation": "Copy-on-write applies when the VMA allows the write and the PTE is not yet writable. mprotect changed the VMA. The parent only reads, survives, and decodes a signaled wait status."
+        },
+        {
+          "prompt": "In Linux 6.12, which do_fault branch is a private writable file fault?",
+          "options": [
+            "do_cow_fault",
+            "do_shared_fault",
+            "do_anonymous_page only",
+            "oom_kill_process"
+          ],
+          "answer": 0,
+          "explanation": "do_fault sends a read to do_read_fault, a private write to do_cow_fault, and a shared write to do_shared_fault. File data still comes through vm_ops->fault, and filemap_fault is the page-cache implementation. Those names are from commit adc218676eef."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "User Allocators, brk, mmap, and Lifetime",
+      "questions": [
+        {
+          "prompt": "What does Linux 0.12 sys_brk do with the new break?",
+          "options": [
+            "It allocates and zeroes every new page before returning",
+            "It records the break when the address is in range. The page is created later by the fault",
+            "It maps a file",
+            "It runs the buddy allocator"
+          ],
+          "answer": 1,
+          "explanation": "The syscall updates current->brk inside the gap below the stack. do_no_page's empty-page path is what zero-fills a later access. Linux 6.12 still separates brk, which calls do_brk_flags, from the fault that fills a page."
+        },
+        {
+          "prompt": "Why does the lab refuse to assert a glibc mmap threshold?",
+          "options": [
+            "malloc never calls mmap",
+            "The threshold is libc policy and can change. This run's brk and maps lines are observations",
+            "The kernel has no brk syscall",
+            "sbrk is undefined"
+          ],
+          "answer": 1,
+          "explanation": "The marker glibc_mmap_threshold_asserted=no is part of the test. A small object landing in [heap] and a large one in an anonymous mapping, or the reverse, would both be legal observations."
+        },
+        {
+          "prompt": "What does munmap change for the lab's explicit mapping?",
+          "options": [
+            "It keeps the VMA and only clears the bytes",
+            "The address is no longer in /proc/self/maps",
+            "It converts the mapping to MAP_SHARED",
+            "It moves the break"
+          ],
+          "answer": 1,
+          "explanation": "munmap drops that VMA. The lab checks the address is absent afterward. A later access would be a new fault against whatever mapping, if any, occupies the address then."
+        },
+        {
+          "prompt": "What is the ToyOS heap relative to brk and mmap?",
+          "options": [
+            "A bump pointer over a fixed number of mapped pages, without a user brk syscall or a free of individual objects",
+            "A full buddy allocator with NUMA nodes",
+            "glibc malloc running in ring 3",
+            "A swap-backed stack"
+          ],
+          "answer": 0,
+          "explanation": "Week 7 maps HEAP_PAGES at HEAP_BASE and bumps heap_next. That teaches ownership of mapped pages. It does not teach the libc choice between brk and mmap."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Physical Pages, Zones, the Buddy Allocator, and NUMA",
+      "questions": [
+        {
+          "prompt": "What does a buddy split produce?",
+          "options": [
+            "Two power-of-two blocks, one of which can satisfy a smaller order",
+            "A single page from a linear scan of mem_map",
+            "A VMA",
+            "A swap slot"
+          ],
+          "answer": 0,
+          "explanation": "The simulator starts from one high-order block and splits until the request fits, then coalesces a free block with its buddy. Linux 0.12's get_free_page scanned mem_map for one page and could not hand out this family of sizes."
+        },
+        {
+          "prompt": "Why does the teaching allocator keep ZONE_DMA off the GFP_KERNEL path?",
+          "options": [
+            "DMA memory is faster for every allocation",
+            "A device that cannot address all of physical memory needs a reserved low range, so ordinary allocations leave it alone",
+            "ZONE_DMA is the NUMA fallback",
+            "The buddy cannot allocate from ZONE_NORMAL"
+          ],
+          "answer": 1,
+          "explanation": "Linux 6.12's comment on zone_type says ZONE_DMA exists for devices with a limited address range, and ZONE_NORMAL is ordinary memory. The lab's rule is a teaching policy, not the kernel's full fallback list."
+        },
+        {
+          "prompt": "What does numa_fallback mean in this lab?",
+          "options": [
+            "The host migrated a page to another CPU socket",
+            "The simulator's local zone could not satisfy the order, so it took a block from the other node's same zone",
+            "The process was moved by the scheduler",
+            "An OOM kill of task_b"
+          ],
+          "answer": 1,
+          "explanation": "The program never calls mbind, migrate_pages, or any host allocator. host_pages_untouched=yes is a required marker. Distance in the simulator is an integer node id."
+        },
+        {
+          "prompt": "Why did the order-3 DMA allocation fail even though free DMA pages remained on node 0?",
+          "options": [
+            "The free pages were not one aligned block of that order",
+            "GFP_DMA is defined to fail",
+            "The buddy never splits",
+            "NUMA fallback is disabled for every request"
+          ],
+          "answer": 0,
+          "explanation": "An earlier order-1 allocation split the node-0 DMA zone, and the other node's DMA zone was already taken. Free pages that are not a single high-order buddy cannot satisfy a larger order. The marker is exhausted_alloc=fail."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "Reclaim, Writeback, Swap, and OOM",
+      "questions": [
+        {
+          "prompt": "Before the simulator reuses a frame that holds a dirty file page, what must it do?",
+          "options": [
+            "Drop the page and lose the store",
+            "Write the page back, then drop it",
+            "Swap it to the anonymous swap device",
+            "Kill task_b immediately"
+          ],
+          "answer": 1,
+          "explanation": "The dirty store is the only copy of a change that belongs in the file. writeback_count=1 and evict_dirty_file=writeback_then_drop record that step. A clean file page can be dropped because the file can supply it again."
+        },
+        {
+          "prompt": "Why does an anonymous victim need a swap slot in this model?",
+          "options": [
+            "Anonymous memory has no file that can supply the bytes again",
+            "Anonymous pages are always clean",
+            "The TLB requires a slot number",
+            "File pages cannot be evicted"
+          ],
+          "answer": 0,
+          "explanation": "A file page has a backing. An anonymous page's bytes live only in the frame unless they are written to swap. The simulator has two slots and records swapout_count=2."
+        },
+        {
+          "prompt": "What did the simulator do when the next anonymous eviction found swap full?",
+          "options": [
+            "It killed a host process",
+            "It forced the machine to swap",
+            "It selected task_b as a simulated OOM choice and left the resident anonymous page in place",
+            "It wrote the anonymous page back to a file"
+          ],
+          "answer": 2,
+          "explanation": "oom_kills_host_process=no and reclaim_host=no are required. Linux 0.12's oom() exited the current task. Linux 6.12's out_of_memory selects a victim. This lab does neither to the host."
+        },
+        {
+          "prompt": "Which Linux 6.12 functions are the real reclaim path the simulator is not running?",
+          "options": [
+            "try_to_free_pages, shrink_folio_list, pageout, and add_to_swap",
+            "dup and do_dup2",
+            "only sys_brk",
+            "invlpg in ToyOS"
+          ],
+          "answer": 0,
+          "explanation": "Those names are in mm/vmscan.c at commit adc218676eef. try_to_unmap finds the PTEs, and swap_writepage moves an anonymous page. The lab's four-frame LRU is a policy sketch of that idea."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "VM Observation and a Debugging Report",
+      "questions": [
+        {
+          "prompt": "Which observation belongs only to this process?",
+          "options": [
+            "/proc/vmstat pgfault",
+            "/proc/self/maps, smaps, and status",
+            "The buddy simulator's node 1",
+            "A system-wide swap total"
+          ],
+          "answer": 1,
+          "explanation": "The core lab reads /proc/self. vmstat_scope=system_wide is printed only by the optional tool, and the report says those counters are the whole machine."
+        },
+        {
+          "prompt": "What is a SKIP from perf or vmstat?",
+          "options": [
+            "A failed core test",
+            "Proof the kernel has no page faults",
+            "An optional observation that was missing or denied. The deterministic suite does not require it",
+            "A request to raise memory pressure until the counter moves"
+          ],
+          "answer": 2,
+          "explanation": "make tools and the day-7 wrapper treat a missing or denied tool as SKIP. They do not allocate until the machine reclaims."
+        },
+        {
+          "prompt": "What does a passing Week 13 wrapper establish?",
+          "options": [
+            "Mastery of the Linux reclaim subsystem",
+            "That the prepared checks ran and the stated limits still apply",
+            "That the host kernel is exactly commit adc218676eef",
+            "That glibc's allocator threshold is universal"
+          ],
+          "answer": 1,
+          "explanation": "The overview's checkpoint says finishing the wrappers does not complete mastery. uname on the host can differ from the pinned source tree. Quote symbols only from the tree you opened."
+        },
+        {
+          "prompt": "What does ToyOS record for an injected unmapped write?",
+          "options": [
+            "A demand-zero page and a retry",
+            "A diagnosed page fault, including the serial EXPECTED-FAULT line, not a reclaim scan",
+            "An OOM kill of another task",
+            "A buddy split"
+          ],
+          "answer": 1,
+          "explanation": "arch.c recognizes vector 14 as a page fault and can print EXPECTED-FAULT. Week 7 does not fill the page and continue. That difference is the point of comparing ToyOS with Linux demand paging."
+        }
+      ]
+    }
+  ]
+}

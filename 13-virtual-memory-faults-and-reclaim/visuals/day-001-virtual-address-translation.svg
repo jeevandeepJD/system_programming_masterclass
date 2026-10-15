@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Virtual address translation hierarchy</title>
+  <desc>A 64-bit virtual address is split into PGD, PUD, PMD, and PTE indexes plus a 12-bit offset. Each index selects the next table. The PTE names a physical page, and the offset selects the byte. A TLB hit uses a cached translation and skips the walk. On a 4-level build the Linux P4D level is folded into the PGD.</desc>
+  <defs>
+    <pattern id="d1virt" patternUnits="userSpaceOnUse" width="8" height="8">
+      <rect width="8" height="8" fill="#FFFFFF"/>
+      <path d="M0 8 L8 0" stroke="#1D4E89" stroke-width="1.2"/>
+    </pattern>
+    <pattern id="d1phys" patternUnits="userSpaceOnUse" width="8" height="8">
+      <rect width="8" height="8" fill="#E3F6EB"/>
+      <circle cx="2" cy="2" r="1.2" fill="#17693F"/>
+    </pattern>
+    <marker id="d1arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="12" markerHeight="12" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="24" y="36" font-size="22" fill="#1B2A4A" font-weight="700">Virtual address to physical page</text>
+  <text x="24" y="62" font-size="18" fill="#1B2A4A">4-level x86-64. Linux still names P4D; that level is folded into PGD.</text>
+
+  <rect x="24" y="84" width="180" height="64" rx="6" fill="url(#d1virt)" stroke="#1D4E89" stroke-width="3"/>
+  <text x="114" y="110" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">1  bits 47-39</text>
+  <text x="114" y="134" font-size="18" fill="#1D4E89" text-anchor="middle">PGD index</text>
+
+  <rect x="214" y="84" width="180" height="64" rx="6" fill="url(#d1virt)" stroke="#1D4E89" stroke-width="3"/>
+  <text x="304" y="110" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">2  bits 38-30</text>
+  <text x="304" y="134" font-size="18" fill="#1D4E89" text-anchor="middle">PUD index</text>
+
+  <rect x="404" y="84" width="180" height="64" rx="6" fill="url(#d1virt)" stroke="#1D4E89" stroke-width="3"/>
+  <text x="494" y="110" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">3  bits 29-21</text>
+  <text x="494" y="134" font-size="18" fill="#1D4E89" text-anchor="middle">PMD index</text>
+
+  <rect x="594" y="84" width="180" height="64" rx="6" fill="url(#d1virt)" stroke="#1D4E89" stroke-width="3"/>
+  <text x="684" y="110" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">4  bits 20-12</text>
+  <text x="684" y="134" font-size="18" fill="#1D4E89" text-anchor="middle">PTE index</text>
+
+  <rect x="784" y="84" width="192" height="64" rx="6" fill="#FFFFFF" stroke="#8A4B00" stroke-width="3" stroke-dasharray="7 4"/>
+  <text x="880" y="110" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">5  bits 11-0</text>
+  <text x="880" y="134" font-size="18" fill="#8A4B00" text-anchor="middle">page offset</text>
+
+  <line x1="114" y1="148" x2="114" y2="176" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d1arrow)"/>
+  <line x1="304" y1="148" x2="304" y2="176" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d1arrow)"/>
+  <line x1="494" y1="148" x2="494" y2="176" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d1arrow)"/>
+  <line x1="684" y1="148" x2="684" y2="176" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d1arrow)"/>
+  <line x1="880" y1="148" x2="880" y2="176" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d1arrow)"/>
+
+  <rect x="24" y="180" width="180" height="86" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="114" y="208" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">CR3 selects PGD</text>
+  <text x="114" y="232" font-size="18" fill="#1B2A4A" text-anchor="middle">mm-&gt;pgd</text>
+  <text x="114" y="254" font-size="18" fill="#1D4E89" text-anchor="middle">P4D folded here</text>
+
+  <rect x="214" y="180" width="180" height="86" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="304" y="214" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">PUD table</text>
+  <text x="304" y="242" font-size="18" fill="#1B2A4A" text-anchor="middle">512 entries</text>
+
+  <rect x="404" y="180" width="180" height="86" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="494" y="214" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">PMD table</text>
+  <text x="494" y="242" font-size="18" fill="#1B2A4A" text-anchor="middle">512 entries</text>
+
+  <rect x="594" y="180" width="180" height="86" rx="6" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="3"/>
+  <text x="684" y="214" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">PTE</text>
+  <text x="684" y="242" font-size="18" fill="#1B2A4A" text-anchor="middle">names the frame</text>
+
+  <rect x="784" y="180" width="192" height="86" rx="6" fill="url(#d1phys)" stroke="#17693F" stroke-width="3"/>
+  <text x="880" y="214" font-size="18" fill="#17693F" text-anchor="middle" font-weight="700">physical byte</text>
+  <text x="880" y="242" font-size="18" fill="#1B2A4A" text-anchor="middle">frame + offset</text>
+
+  <line x1="204" y1="223" x2="210" y2="223" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d1arrow)"/>
+  <line x1="394" y1="223" x2="400" y2="223" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d1arrow)"/>
+  <line x1="584" y1="223" x2="590" y2="223" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d1arrow)"/>
+  <line x1="774" y1="223" x2="780" y2="223" stroke="#1B2A4A" stroke-width="3" marker-end="url(#d1arrow)"/>
+
+  <rect x="24" y="286" width="952" height="70" rx="6" fill="#FFFFFF" stroke="#8A4B00" stroke-width="3"/>
+  <text x="40" y="316" font-size="18" fill="#1B2A4A" font-weight="700">Walk order is the numbers 1 to 5, left to right.</text>
+  <text x="40" y="342" font-size="18" fill="#1B2A4A">A 5-level CPU gives P4D its own table between PGD and PUD. The byte offset is never a table index.</text>
+
+  <rect x="24" y="372" width="460" height="124" rx="8" fill="#FFFFFF" stroke="#17693F" stroke-width="3"/>
+  <text x="40" y="404" font-size="20" fill="#17693F" font-weight="700">TLB hit</text>
+  <text x="40" y="432" font-size="18" fill="#1B2A4A">Cached translation. The load uses it</text>
+  <text x="40" y="456" font-size="18" fill="#1B2A4A">and does not read the tables.</text>
+  <text x="40" y="480" font-size="18" fill="#17693F" font-weight="700">shape: solid green box</text>
+
+  <rect x="504" y="372" width="472" height="124" rx="8" fill="#FFFFFF" stroke="#1D4E89" stroke-width="3" stroke-dasharray="8 5"/>
+  <text x="520" y="404" font-size="20" fill="#1D4E89" font-weight="700">TLB miss</text>
+  <text x="520" y="432" font-size="18" fill="#1B2A4A">Walker reads PGD, PUD, PMD, PTE.</text>
+  <text x="520" y="456" font-size="18" fill="#1B2A4A">The finished pair is stored in the TLB.</text>
+  <text x="520" y="480" font-size="18" fill="#1D4E89" font-weight="700">shape: dashed blue box</text>
+</svg>

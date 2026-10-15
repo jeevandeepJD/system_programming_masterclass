@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Hardirq returns after a short ack and chooses a deferred context</title>
+  <desc>The hardirq handler acknowledges the device and returns. Longer work moves to a softirq, a threaded IRQ named irq/N, or a workqueue. A WQ_BH work item stays in softirq context.</desc>
+  <defs>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="34" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Where the rest of the work runs</text>
+  <rect x="300" y="58" width="400" height="100" rx="8" fill="#F8E8E8" stroke="#9E2A2A" stroke-width="2.5"/>
+  <text x="500" y="96" fill="#9E2A2A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Hardirq top half</text>
+  <text x="500" y="130" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">ack the device, then return</text>
+  <line x1="400" y1="158" x2="160" y2="210" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-navy)"/>
+  <line x1="500" y1="158" x2="500" y2="210" stroke="#8A4B00" stroke-width="2.5" fill="none" marker-end="url(#mk-amber)"/>
+  <line x1="600" y1="158" x2="840" y2="210" stroke="#17693F" stroke-width="2.5" fill="none" marker-end="url(#mk-green)"/>
+  <rect x="20" y="214" width="280" height="200" rx="8" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2.4"/>
+  <text x="160" y="254" fill="#1D4E89" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Softirq</text>
+  <text x="160" y="292" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">fixed action vector</text>
+  <text x="160" y="324" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">per CPU, no sleep</text>
+  <text x="160" y="356" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">ksoftirqd if it loops</text>
+  <text x="160" y="388" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">tasklet rides this</text>
+  <rect x="360" y="214" width="280" height="200" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4"/>
+  <text x="500" y="254" fill="#8A4B00" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Threaded IRQ</text>
+  <text x="500" y="292" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">name irq/N-device</text>
+  <text x="500" y="324" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">thread may sleep</text>
+  <text x="500" y="356" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">primary still hardirq</text>
+  <text x="500" y="388" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">shared needs a check</text>
+  <rect x="700" y="214" width="280" height="200" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.4"/>
+  <text x="840" y="254" fill="#17693F" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Workqueue</text>
+  <text x="840" y="292" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">kworker may sleep</text>
+  <text x="840" y="324" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">queue_work_on</text>
+  <text x="840" y="356" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">WQ_BH stays softirq</text>
+  <text x="840" y="388" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">events_bh is that</text>
+  <text x="500" y="460" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Pick the context that matches the sleep rule and the rate.</text>
+  <text x="500" y="494" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Tasklets still run in 6.12. The API comment marks them deprecated.</text>
+</svg>

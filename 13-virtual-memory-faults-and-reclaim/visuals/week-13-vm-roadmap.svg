@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" role="img" font-family="sans-serif">
+  <title>Week 13 virtual memory roadmap</title>
+  <desc>A CPU virtual address is looked up in a VMA, then in the page tables or TLB. A miss or protection fault resolves to an anonymous zero page, a file page, or a copy-on-write page, installs a PTE, and retries the instruction. Reclaim is a separate path: write back a dirty file page, swap an anonymous page, or drop a clean file page.</desc>
+  <defs>
+    <marker id="mk-blue" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1D4E89"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="560" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="556" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">A fault installs a PTE. Reclaim is a separate path.</text>
+  <rect x="14" y="48" width="230" height="104" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="129" y="78" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: a CPU load</text>
+  <text x="129" y="106" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">1 Virtual address</text>
+  <text x="129" y="134" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: page-aligned VA</text>
+  <rect x="262" y="48" width="230" height="104" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="377" y="78" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: page-aligned VA</text>
+  <text x="377" y="106" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">2 VMA lookup</text>
+  <text x="377" y="134" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: range and prot</text>
+  <rect x="510" y="48" width="230" height="104" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="625" y="78" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: range and prot</text>
+  <text x="625" y="106" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">3 Page table / TLB</text>
+  <text x="625" y="134" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: PTE or miss</text>
+  <rect x="758" y="48" width="228" height="104" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="872" y="78" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: PTE or miss</text>
+  <text x="872" y="106" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">4 Fault</text>
+  <text x="872" y="134" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: miss or protect</text>
+  <line x1="244" y1="100" x2="260" y2="100" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <line x1="492" y1="100" x2="508" y2="100" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <line x1="740" y1="100" x2="756" y2="100" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <path d="M872,152 V174 H170 V192" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <path d="M500,174 V192" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <path d="M830,174 V192" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="14" y="196" width="312" height="108" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="170" y="226" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: absent anonymous</text>
+  <text x="170" y="254" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">5 Anonymous zero</text>
+  <text x="170" y="282" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: a zero-filled page</text>
+  <rect x="344" y="196" width="312" height="108" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="226" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: file-backed miss</text>
+  <text x="500" y="254" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">6 File page</text>
+  <text x="500" y="282" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: a cache page</text>
+  <rect x="674" y="196" width="312" height="108" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="830" y="226" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: write of shared page</text>
+  <text x="830" y="254" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">7 Copy-on-write</text>
+  <text x="830" y="282" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: a private copy</text>
+  <path d="M170,304 V316 H253" stroke="#17693F" stroke-width="2.5" fill="none"/>
+  <path d="M500,304 V316 H253" stroke="#17693F" stroke-width="2.5" fill="none"/>
+  <path d="M830,304 V316 H253" stroke="#17693F" stroke-width="2.5" fill="none"/>
+  <path d="M253,316 V326" stroke="#17693F" stroke-width="2.5" fill="none" marker-end="url(#mk-green)"/>
+  <rect x="14" y="328" width="478" height="96" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="253" y="360" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: the resolved page</text>
+  <text x="253" y="388" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">8 PTE install</text>
+  <text x="253" y="412" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: a present PTE</text>
+  <rect x="508" y="328" width="478" height="96" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="747" y="360" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">in: a present PTE</text>
+  <text x="747" y="388" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">9 Retry the instruction</text>
+  <text x="747" y="412" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">out: the load or store</text>
+  <line x1="492" y1="376" x2="506" y2="376" stroke="#1D4E89" stroke-width="2.5" fill="none" marker-end="url(#mk-blue)"/>
+  <rect x="14" y="440" width="972" height="104" rx="8" fill="#FFFFFF" stroke="#8A4B00" stroke-width="3"/>
+  <text x="500" y="466" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Reclaim path, separate from the fault</text>
+  <text x="500" y="492" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Dirty file page: write back, then free the frame. Clean file page: drop it.</text>
+  <text x="500" y="516" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Anonymous page: swap it out. No frame and no swap: an OOM choice.</text>
+  <text x="500" y="536" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">This lab does not kill, swap, or reclaim on the host.</text>
+</svg>

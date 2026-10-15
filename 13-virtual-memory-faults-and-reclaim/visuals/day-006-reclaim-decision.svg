@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" font-family="sans-serif">
+  <title>Reclaim decision loop from a watermark miss to a gated OOM</title>
+  <desc>The slow path wakes kswapd, may run direct reclaim, and retries the freelist. OOM has gates: costly order, missing GFP_FS outside a memcg, and a high-watermark retry. A kill is the last resort.</desc>
+  <rect width="1000" height="520" fill="#FBF6EC"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#142033" stroke-width="3"/>
+  <defs>
+    <marker id="arr" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#142033"/>
+    </marker>
+  </defs>
+  <text x="28" y="36" font-size="22" font-weight="700" fill="#142033" text-anchor="start">Reclaim decision loop</text>
+  <text x="28" y="64" font-size="18" font-weight="400" fill="#142033" text-anchor="start">OOM is the last box, and three gates can skip it.</text>
+  <rect x="24" y="92" width="500" height="84" rx="8" fill="#E5F0FA" stroke="#142033" stroke-width="2.5"/>
+  <text x="40" y="126" font-size="20" font-weight="700" fill="#142033" text-anchor="start">1  Low watermark miss</text>
+  <text x="40" y="154" font-size="18" font-weight="400" fill="#142033" text-anchor="start">get_page_from_freelist returns no page.</text>
+  <rect x="24" y="188" width="500" height="84" rx="8" fill="#FDE8C8" stroke="#142033" stroke-width="2.5"/>
+  <text x="40" y="222" font-size="20" font-weight="700" fill="#142033" text-anchor="start">2  Wake kswapd</text>
+  <text x="40" y="250" font-size="18" font-weight="400" fill="#142033" text-anchor="start">Background thread targets the high mark.</text>
+  <rect x="24" y="284" width="500" height="84" rx="8" fill="#E5F6EC" stroke="#142033" stroke-width="2.5"/>
+  <text x="40" y="318" font-size="20" font-weight="700" fill="#142033" text-anchor="start">3  Direct reclaim</text>
+  <text x="40" y="346" font-size="18" font-weight="400" fill="#142033" text-anchor="start">The allocator calls try_to_free_pages.</text>
+  <rect x="24" y="380" width="500" height="84" rx="8" fill="#E5F0FA" stroke="#142033" stroke-width="2.5"/>
+  <text x="40" y="414" font-size="20" font-weight="700" fill="#142033" text-anchor="start">4  Freelist retry</text>
+  <text x="40" y="442" font-size="18" font-weight="400" fill="#142033" text-anchor="start">drain_all_pages, then allocate again.</text>
+  <line x1="274" y1="176" x2="274" y2="188" stroke="#142033" stroke-width="3" marker-end="url(#arr)"/>
+  <line x1="274" y1="272" x2="274" y2="284" stroke="#142033" stroke-width="3" marker-end="url(#arr)"/>
+  <line x1="274" y1="368" x2="274" y2="380" stroke="#142033" stroke-width="3" marker-end="url(#arr)"/>
+  <rect x="548" y="92" width="428" height="276" rx="8" fill="#FFFFFF" stroke="#142033" stroke-width="2.5"/>
+  <text x="568" y="126" font-size="20" font-weight="700" fill="#142033" text-anchor="start">OOM gates</text>
+  <text x="568" y="148" font-size="18" font-weight="400" fill="#142033" text-anchor="start">Costly order: skip the killer</text>
+  <text x="568" y="196" font-size="18" font-weight="400" fill="#142033" text-anchor="start">No __GFP_FS, not a memcg: skip</text>
+  <text x="568" y="244" font-size="18" font-weight="400" fill="#142033" text-anchor="start">High-watermark retry finds a page</text>
+  <text x="568" y="292" font-size="18" font-weight="400" fill="#142033" text-anchor="start">Else out_of_memory may SIGKILL</text>
+  <rect x="548" y="380" width="428" height="84" rx="8" fill="#F8DADA" stroke="#142033" stroke-width="2.5"/>
+  <text x="568" y="414" font-size="20" font-weight="700" fill="#142033" text-anchor="start">Last resort under constraints</text>
+  <text x="568" y="442" font-size="18" font-weight="400" fill="#142033" text-anchor="start">Zone, node, order, or cgroup</text>
+</svg>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Comparison of hardirq, softirq, threaded IRQ, and workqueue contexts</title>
+  <desc>Four rows compare who runs the work, whether that context may sleep, and how the same work is serialized. Hardirq and softirq stay atomic. Threaded IRQ and a normal worker may sleep. A WQ_BH item runs as a softirq.</desc>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="34" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Deferred contexts side by side</text>
+  <text x="36" y="78" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">Context</text>
+  <text x="280" y="78" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">Who runs it</text>
+  <text x="560" y="78" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">Sleep</text>
+  <text x="740" y="78" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">Serialization</text>
+  <line x1="20" y1="90" x2="980" y2="90" stroke="#1B2A4A" stroke-width="1.5"/>
+  <rect x="16" y="102" width="968" height="72" rx="6" fill="#F8E8E8" stroke="#9E2A2A" stroke-width="1.8"/>
+  <text x="36" y="146" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="700">Hardirq</text>
+  <text x="280" y="146" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">IRQ entry on this CPU</text>
+  <text x="560" y="146" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="700">No</text>
+  <text x="740" y="146" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">desc lock, IF off</text>
+  <rect x="16" y="182" width="968" height="72" rx="6" fill="#E8F0FA" stroke="#1D4E89" stroke-width="1.8"/>
+  <text x="36" y="226" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="700">Softirq</text>
+  <text x="280" y="214" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">irq exit or</text>
+  <text x="280" y="240" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">ksoftirqd/%u</text>
+  <text x="560" y="226" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="700">No</text>
+  <text x="740" y="214" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">per-CPU pending</text>
+  <text x="740" y="240" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">tasklet self-lock</text>
+  <rect x="16" y="262" width="968" height="72" rx="6" fill="#FFF4E0" stroke="#8A4B00" stroke-width="1.8"/>
+  <text x="36" y="306" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700">Threaded</text>
+  <text x="280" y="306" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">irq/N-name kthread</text>
+  <text x="560" y="306" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700">Yes</text>
+  <text x="740" y="294" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">oneshot mask until</text>
+  <text x="740" y="320" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">the thread returns</text>
+  <rect x="16" y="342" width="968" height="88" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="1.8"/>
+  <text x="36" y="378" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700">Work item</text>
+  <text x="280" y="374" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">kworker thread</text>
+  <text x="280" y="402" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">or events_bh</text>
+  <text x="560" y="374" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700">Yes</text>
+  <text x="560" y="402" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="700">No if WQ_BH</text>
+  <text x="740" y="388" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">pool and CPU</text>
+  <text x="500" y="470" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">A tasklet is a softirq client. It is serialized with itself.</text>
+  <text x="500" y="500" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Different tasklets may run on different CPUs at the same time.</text>
+</svg>

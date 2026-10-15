@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" font-family="sans-serif">
+  <title>Writeback path for a dirty file folio and swap path for an anonymous folio</title>
+  <desc>A dirty file folio enters folio writeback and the file address space. An anonymous folio enters swap_writepage, which may record a zero page, store into zswap, or write the swap device.</desc>
+  <rect width="1000" height="520" fill="#FBF6EC"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#142033" stroke-width="3"/>
+  <defs>
+    <marker id="arr" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="14" markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#142033"/>
+    </marker>
+  </defs>
+  <text x="28" y="36" font-size="22" font-weight="700" fill="#142033" text-anchor="start">Dirty file writeback and anonymous swap</text>
+  <text x="28" y="64" font-size="18" font-weight="400" fill="#142033" text-anchor="start">Both can set writeback. They store bytes in different places.</text>
+  <rect x="24" y="92" width="460" height="400" rx="8" fill="#FFFFFF" stroke="#142033" stroke-width="2.5"/>
+  <rect x="36" y="108" width="436" height="48" rx="6" fill="#0E3A6B" stroke="#0E3A6B" stroke-width="0"/>
+  <text x="254" y="140" font-size="20" font-weight="700" fill="#FFFFFF" text-anchor="middle">Dirty file folio</text>
+  <line x1="254" y1="156" x2="254" y2="190" stroke="#142033" stroke-width="3" marker-end="url(#arr)"/>
+  <rect x="36" y="196" width="436" height="70" rx="6" fill="#E5F0FA" stroke="#142033" stroke-width="2.5"/>
+  <text x="254" y="226" font-size="18" font-weight="700" fill="#142033" text-anchor="middle">__folio_start_writeback</text>
+  <text x="254" y="250" font-size="18" font-weight="400" fill="#142033" text-anchor="middle">PAGECACHE_TAG_WRITEBACK</text>
+  <line x1="254" y1="266" x2="254" y2="300" stroke="#142033" stroke-width="3" marker-end="url(#arr)"/>
+  <rect x="36" y="306" width="436" height="70" rx="6" fill="#E5F6EC" stroke="#142033" stroke-width="2.5"/>
+  <text x="254" y="336" font-size="18" font-weight="700" fill="#142033" text-anchor="middle">File address space</text>
+  <text x="254" y="360" font-size="18" font-weight="400" fill="#142033" text-anchor="middle">Folio stays cached, then clean</text>
+  <text x="48" y="420" font-size="18" font-weight="400" fill="#142033" text-anchor="start">fsync and msync(MS_SYNC) wait</text>
+  <text x="48" y="446" font-size="18" font-weight="400" fill="#142033" text-anchor="start">from the user side.</text>
+  <rect x="516" y="92" width="460" height="400" rx="8" fill="#FFFFFF" stroke="#142033" stroke-width="2.5"/>
+  <rect x="528" y="108" width="436" height="48" rx="6" fill="#7A3E00" stroke="#7A3E00" stroke-width="0"/>
+  <text x="746" y="140" font-size="20" font-weight="700" fill="#FFFFFF" text-anchor="middle">Anonymous folio</text>
+  <line x1="746" y1="156" x2="746" y2="190" stroke="#142033" stroke-width="3" marker-end="url(#arr)"/>
+  <rect x="528" y="196" width="436" height="56" rx="6" fill="#FDE8C8" stroke="#142033" stroke-width="2.5"/>
+  <text x="746" y="230" font-size="18" font-weight="700" fill="#142033" text-anchor="middle">swap_writepage</text>
+  <line x1="640" y1="252" x2="600" y2="300" stroke="#142033" stroke-width="3" marker-end="url(#arr)"/>
+  <line x1="746" y1="252" x2="746" y2="300" stroke="#142033" stroke-width="3" marker-end="url(#arr)"/>
+  <line x1="852" y1="252" x2="890" y2="300" stroke="#142033" stroke-width="3" marker-end="url(#arr)"/>
+  <rect x="528" y="306" width="130" height="70" rx="6" fill="#E5F6EC" stroke="#142033" stroke-width="2.5"/>
+  <text x="593" y="336" font-size="18" font-weight="700" fill="#142033" text-anchor="middle">zeromap</text>
+  <text x="593" y="360" font-size="18" font-weight="400" fill="#142033" text-anchor="middle">all zeros</text>
+  <rect x="670" y="306" width="130" height="70" rx="6" fill="#E5F0FA" stroke="#142033" stroke-width="2.5"/>
+  <text x="735" y="336" font-size="18" font-weight="700" fill="#142033" text-anchor="middle">zswap</text>
+  <text x="735" y="360" font-size="18" font-weight="400" fill="#142033" text-anchor="middle">compressed</text>
+  <rect x="812" y="306" width="140" height="70" rx="6" fill="#F8DADA" stroke="#142033" stroke-width="2.5"/>
+  <text x="882" y="336" font-size="18" font-weight="700" fill="#142033" text-anchor="middle">swap I/O</text>
+  <text x="882" y="360" font-size="18" font-weight="400" fill="#142033" text-anchor="middle">the device</text>
+  <text x="540" y="420" font-size="18" font-weight="400" fill="#142033" text-anchor="start">A later fault allocates a frame</text>
+  <text x="540" y="446" font-size="18" font-weight="400" fill="#142033" text-anchor="start">and reads the slot back.</text>
+</svg>

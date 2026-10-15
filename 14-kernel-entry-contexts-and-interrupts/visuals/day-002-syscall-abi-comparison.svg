@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Three syscall ABIs for the number, the arguments, and the result</title>
+  <desc>x86-64 uses rax, r10 as the fourth argument, SYSCALL and SYSRET. AArch64 uses x8 and ERET, with write numbered 64. RISC-V uses a7 and ecall, and adds 4 to sepc. All three call the shared enter and exit helpers.</desc>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Where the syscall ABI lives</text>
+  <rect x="16" y="52" width="316" height="400" rx="8" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="174" y="86" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">x86-64</text>
+  <text x="32" y="126" fill="#1D4E89" font-family="sans-serif" font-size="18">Entry: SYSCALL</text>
+  <text x="32" y="160" fill="#1B2A4A" font-family="sans-serif" font-size="18">Number: rax, orig_ax</text>
+  <text x="32" y="194" fill="#1B2A4A" font-family="sans-serif" font-size="18">Args: rdi rsi rdx</text>
+  <text x="32" y="228" fill="#1B2A4A" font-family="sans-serif" font-size="18">then r10 r8 r9</text>
+  <text x="32" y="262" fill="#1B2A4A" font-family="sans-serif" font-size="18">Return addr: rcx</text>
+  <text x="32" y="296" fill="#1B2A4A" font-family="sans-serif" font-size="18">Result: rax</text>
+  <text x="32" y="330" fill="#17693F" font-family="sans-serif" font-size="18">Fast return: SYSRET</text>
+  <text x="32" y="364" fill="#8A4B00" font-family="sans-serif" font-size="18">Full return: iret</text>
+  <text x="32" y="408" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">write is number 1</text>
+  <rect x="342" y="52" width="316" height="400" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.2"/>
+  <text x="500" y="86" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">AArch64</text>
+  <text x="358" y="126" fill="#8A4B00" font-family="sans-serif" font-size="18">Class: ESR SVC64</text>
+  <text x="358" y="160" fill="#1B2A4A" font-family="sans-serif" font-size="18">Number: x8</text>
+  <text x="358" y="194" fill="#1B2A4A" font-family="sans-serif" font-size="18">Args: x0 through x5</text>
+  <text x="358" y="228" fill="#1B2A4A" font-family="sans-serif" font-size="18">Handler: do_el0_svc</text>
+  <text x="358" y="262" fill="#1B2A4A" font-family="sans-serif" font-size="18">Result: x0</text>
+  <text x="358" y="296" fill="#17693F" font-family="sans-serif" font-size="18">Return: ERET</text>
+  <text x="358" y="330" fill="#1B2A4A" font-family="sans-serif" font-size="18">Vector: EL0 sync</text>
+  <text x="358" y="364" fill="#1B2A4A" font-family="sans-serif" font-size="18">Shared exit helper</text>
+  <text x="358" y="408" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">write is number 64</text>
+  <rect x="668" y="52" width="316" height="400" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.2"/>
+  <text x="826" y="86" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">RISC-V</text>
+  <text x="684" y="126" fill="#17693F" font-family="sans-serif" font-size="18">Entry: ecall</text>
+  <text x="684" y="160" fill="#1B2A4A" font-family="sans-serif" font-size="18">Cause: scause 8</text>
+  <text x="684" y="194" fill="#1B2A4A" font-family="sans-serif" font-size="18">Number: a7</text>
+  <text x="684" y="228" fill="#1B2A4A" font-family="sans-serif" font-size="18">Args: a0 through a5</text>
+  <text x="684" y="262" fill="#1B2A4A" font-family="sans-serif" font-size="18">epc increases by 4</text>
+  <text x="684" y="296" fill="#1B2A4A" font-family="sans-serif" font-size="18">Result: a0</text>
+  <text x="684" y="330" fill="#17693F" font-family="sans-serif" font-size="18">Return: sret path</text>
+  <text x="684" y="364" fill="#1B2A4A" font-family="sans-serif" font-size="18">do_trap_ecall_u</text>
+  <text x="684" y="408" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">same enter helper</text>
+  <text x="500" y="488" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">The number register and the call number are ABI facts. The enter helper is shared.</text>
+</svg>

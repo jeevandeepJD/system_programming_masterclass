@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" font-family="sans-serif">
+  <title>VM evidence layers: source, API, and one measurement</title>
+  <desc>Three bands: kernel source functions, the proc and syscall API, and a single measurement such as VmRSS, a maps line, or a signal. perf is an optional extra view.</desc>
+  <rect width="1000" height="520" fill="#FBF6EC"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#142033" stroke-width="3"/>
+  <text x="28" y="36" font-size="22" font-weight="700" fill="#142033" text-anchor="start">Three evidence layers</text>
+  <text x="28" y="64" font-size="18" font-weight="400" fill="#142033" text-anchor="start">Name the function, the API, and the number you read.</text>
+  <rect x="24" y="92" width="952" height="100" rx="8" fill="#142033" stroke="#142033" stroke-width="0"/>
+  <text x="48" y="134" font-size="22" font-weight="700" fill="#FFFFFF" text-anchor="start">Source</text>
+  <text x="48" y="166" font-size="18" font-weight="400" fill="#FFFFFF" text-anchor="start">task_mem, show_vma_header_prefix, mincore, getrusage</text>
+  <rect x="24" y="204" width="952" height="100" rx="8" fill="#0E3A6B" stroke="#0E3A6B" stroke-width="0"/>
+  <text x="48" y="246" font-size="22" font-weight="700" fill="#FFFFFF" text-anchor="start">API</text>
+  <text x="48" y="278" font-size="18" font-weight="400" fill="#FFFFFF" text-anchor="start">/proc maps, smaps, status, mincore, waitpid</text>
+  <rect x="24" y="316" width="952" height="100" rx="8" fill="#0F6A3A" stroke="#0F6A3A" stroke-width="0"/>
+  <text x="48" y="358" font-size="22" font-weight="700" fill="#FFFFFF" text-anchor="start">Measurement</text>
+  <text x="48" y="390" font-size="18" font-weight="400" fill="#FFFFFF" text-anchor="start">One pid, one instant: VmRSS, a maps line, a signal</text>
+  <text x="28" y="460" font-size="18" font-weight="400" fill="#142033" text-anchor="start">A torn pair of reads is still two measurements.</text>
+  <text x="28" y="488" font-size="18" font-weight="400" fill="#142033" text-anchor="start">perf page-faults is a fourth view, and it is optional.</text>
+</svg>

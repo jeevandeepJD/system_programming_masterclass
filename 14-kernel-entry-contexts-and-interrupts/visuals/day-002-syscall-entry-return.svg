@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Syscall entry builds a kernel frame, runs the call, and returns with SYSRET or iret</title>
+  <desc>SYSCALL leaves the user stack in place. entry_SYSCALL_64 switches to the kernel stack and builds pt_regs. do_syscall_64 runs enter work, the table, and exit work. SYSRET is used only when the saved user state is a clean 64-bit return.</desc>
+  <defs>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">Syscall entry, the call, and the return</text>
+  <rect x="18" y="58" width="150" height="200" rx="8" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="93" y="98" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">User</text>
+  <text x="93" y="132" fill="#1D4E89" font-family="sans-serif" font-size="18" text-anchor="middle">SYSCALL</text>
+  <text x="93" y="164" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">rax = number</text>
+  <text x="93" y="196" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">rcx = rip</text>
+  <text x="93" y="228" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">rsp unchanged</text>
+  <line x1="168" y1="158" x2="198" y2="158" stroke="#1B2A4A" stroke-width="2.4" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="202" y="58" width="180" height="200" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.2"/>
+  <text x="292" y="98" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">entry_SYSCALL_64</text>
+  <text x="292" y="132" fill="#8A4B00" font-family="sans-serif" font-size="18" text-anchor="middle">swapgs</text>
+  <text x="292" y="164" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">save user rsp</text>
+  <text x="292" y="196" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">kernel stack</text>
+  <text x="292" y="228" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">build pt_regs</text>
+  <line x1="382" y1="158" x2="412" y2="158" stroke="#1B2A4A" stroke-width="2.4" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="416" y="58" width="250" height="200" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.2"/>
+  <text x="541" y="98" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">do_syscall_64</text>
+  <text x="541" y="132" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">enter work</text>
+  <text x="541" y="164" fill="#1D4E89" font-family="sans-serif" font-size="18" text-anchor="middle">x64_sys_call</text>
+  <text x="541" y="196" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">exit-to-user loop</text>
+  <text x="541" y="228" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">true or false</text>
+  <line x1="666" y1="120" x2="708" y2="100" stroke="#17693F" stroke-width="2.4" fill="none" marker-end="url(#mk-green)"/>
+  <line x1="666" y1="196" x2="708" y2="216" stroke="#8A4B00" stroke-width="2.4" fill="none" marker-end="url(#mk-amber)"/>
+  <rect x="712" y="58" width="268" height="88" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.4"/>
+  <text x="846" y="92" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">SYSRET</text>
+  <text x="846" y="122" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">clean 64-bit user state</text>
+  <rect x="712" y="170" width="268" height="88" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4"/>
+  <text x="846" y="204" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">Full iret return</text>
+  <text x="846" y="234" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">signals, changed ip, TF</text>
+  <rect x="18" y="280" width="964" height="180" rx="8" fill="#F3F6FA" stroke="#1B2A4A" stroke-width="1.6"/>
+  <text x="36" y="316" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700">Enter work, in order</text>
+  <text x="36" y="354" fill="#1B2A4A" font-family="sans-serif" font-size="18">user dispatch, then ptrace, then seccomp, then the tracepoint, then audit</text>
+  <text x="36" y="392" fill="#1B2A4A" font-family="sans-serif" font-size="18">A user pointer in a register is still a user address. copy_from_user owns it.</text>
+  <text x="36" y="430" fill="#1D4E89" font-family="sans-serif" font-size="18">The kernel stack is X86_top_of_stack. The user stack stays in pt_regs.sp.</text>
+  <text x="500" y="496" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">Two stacks, one frame, and a return instruction chosen from the saved state.</text>
+</svg>

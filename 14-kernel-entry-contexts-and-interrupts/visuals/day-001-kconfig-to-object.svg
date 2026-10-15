@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Kconfig symbol flowing through autoconf.h into a built-in object or a module</title>
+  <desc>A tristate symbol becomes CONFIG_FOO or CONFIG_FOO_MODULE. An obj- line then compiles the unit into built-in.a or a module. An absent symbol produces no object. IS_ENABLED is true for both y and m.</desc>
+  <defs>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+    <marker id="mk-green" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#17693F"/>
+    </marker>
+    <marker id="mk-amber" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#8A4B00"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">From a Kconfig symbol to an object</text>
+  <rect x="20" y="64" width="210" height="150" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4"/>
+  <text x="125" y="104" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Kconfig</text>
+  <text x="125" y="140" fill="#8A4B00" font-family="sans-serif" font-size="18" text-anchor="middle">config FOO</text>
+  <text x="125" y="172" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">y, m, or absent</text>
+  <line x1="230" y1="140" x2="268" y2="140" stroke="#1B2A4A" stroke-width="2.5" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="272" y="64" width="220" height="150" rx="8" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2.4"/>
+  <text x="382" y="104" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">autoconf.h</text>
+  <text x="382" y="140" fill="#1D4E89" font-family="sans-serif" font-size="18" text-anchor="middle">CONFIG_FOO 1</text>
+  <text x="382" y="172" fill="#1D4E89" font-family="sans-serif" font-size="18" text-anchor="middle">or FOO_MODULE 1</text>
+  <line x1="492" y1="140" x2="530" y2="140" stroke="#1B2A4A" stroke-width="2.5" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="534" y="64" width="220" height="150" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2.4"/>
+  <text x="644" y="104" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">Makefile</text>
+  <text x="644" y="140" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">obj-y or obj-m</text>
+  <text x="644" y="172" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">names the .o</text>
+  <line x1="754" y1="110" x2="800" y2="90" stroke="#17693F" stroke-width="2.5" fill="none" marker-end="url(#mk-green)"/>
+  <line x1="754" y1="170" x2="800" y2="190" stroke="#8A4B00" stroke-width="2.5" fill="none" marker-end="url(#mk-amber)"/>
+  <rect x="804" y="58" width="176" height="70" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.4"/>
+  <text x="892" y="100" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">built-in.a</text>
+  <rect x="804" y="160" width="176" height="70" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.4"/>
+  <text x="892" y="202" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">foo.ko</text>
+  <rect x="20" y="250" width="960" height="210" rx="8" fill="#F3F6FA" stroke="#1B2A4A" stroke-width="1.6"/>
+  <text x="40" y="288" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700">What C is allowed to test</text>
+  <text x="40" y="328" fill="#1B2A4A" font-family="sans-serif" font-size="18">#ifdef CONFIG_FOO is true only for the built-in choice y.</text>
+  <text x="40" y="364" fill="#1B2A4A" font-family="sans-serif" font-size="18">IS_ENABLED(CONFIG_FOO) is 1 for y and for m.</text>
+  <text x="40" y="400" fill="#1B2A4A" font-family="sans-serif" font-size="18">IS_BUILTIN is y only. IS_REACHABLE is a call the caller can link.</text>
+  <text x="40" y="436" fill="#1D4E89" font-family="sans-serif" font-size="18">Example: select GENERIC_ENTRY builds kernel/entry/common.o.</text>
+  <text x="500" y="496" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">The symbol chooses the object. The predicate tells C the symbol is on.</text>
+</svg>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Exception classification on x86-64, AArch64, and RISC-V</title>
+  <desc>x86 uses an IDT vector plus an error code. AArch64 uses an ESR exception class. RISC-V uses scause, and the sign bit marks an interrupt. Each encoding becomes a syscall, a fault, or an interrupt before shared C runs.</desc>
+  <defs>
+    <marker id="mk-navy" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#1B2A4A"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">How the CPU names the entry</text>
+  <rect x="16" y="52" width="316" height="250" rx="8" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="174" y="84" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">x86-64 IDT</text>
+  <text x="32" y="122" fill="#1B2A4A" font-family="sans-serif" font-size="18">Vector 14: page fault</text>
+  <text x="32" y="156" fill="#1B2A4A" font-family="sans-serif" font-size="18">Error bit 1: write</text>
+  <text x="32" y="190" fill="#1B2A4A" font-family="sans-serif" font-size="18">Error bit 2: user access</text>
+  <text x="32" y="224" fill="#1D4E89" font-family="sans-serif" font-size="18">Address: CR2</text>
+  <text x="32" y="258" fill="#1B2A4A" font-family="sans-serif" font-size="18">SYSCALL is separate</text>
+  <rect x="342" y="52" width="316" height="250" rx="8" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.2"/>
+  <text x="500" y="84" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">AArch64 ESR</text>
+  <text x="358" y="122" fill="#1B2A4A" font-family="sans-serif" font-size="18">Class in bits 31:26</text>
+  <text x="358" y="156" fill="#8A4B00" font-family="sans-serif" font-size="18">0x15 SVC64 syscall</text>
+  <text x="358" y="190" fill="#8A4B00" font-family="sans-serif" font-size="18">0x24 data abort, EL0</text>
+  <text x="358" y="224" fill="#8A4B00" font-family="sans-serif" font-size="18">0x20 insn abort, EL0</text>
+  <text x="358" y="258" fill="#1B2A4A" font-family="sans-serif" font-size="18">WNR is bit 6, FAR</text>
+  <rect x="668" y="52" width="316" height="250" rx="8" fill="#E3F6EB" stroke="#17693F" stroke-width="2.2"/>
+  <text x="826" y="84" fill="#1B2A4A" font-family="sans-serif" font-size="20" font-weight="700" text-anchor="middle">RISC-V scause</text>
+  <text x="684" y="122" fill="#1B2A4A" font-family="sans-serif" font-size="18">Sign bit: interrupt</text>
+  <text x="684" y="156" fill="#17693F" font-family="sans-serif" font-size="18">Cause 8: ecall</text>
+  <text x="684" y="190" fill="#17693F" font-family="sans-serif" font-size="18">12 instruction fault</text>
+  <text x="684" y="224" fill="#17693F" font-family="sans-serif" font-size="18">13 load, 15 store</text>
+  <text x="684" y="258" fill="#1B2A4A" font-family="sans-serif" font-size="18">Address: stval</text>
+  <line x1="174" y1="302" x2="174" y2="332" stroke="#1B2A4A" stroke-width="2.2" fill="none" marker-end="url(#mk-navy)"/>
+  <line x1="500" y1="302" x2="500" y2="332" stroke="#1B2A4A" stroke-width="2.2" fill="none" marker-end="url(#mk-navy)"/>
+  <line x1="826" y1="302" x2="826" y2="332" stroke="#1B2A4A" stroke-width="2.2" fill="none" marker-end="url(#mk-navy)"/>
+  <rect x="16" y="336" width="968" height="124" rx="8" fill="#F3F6FA" stroke="#1B2A4A" stroke-width="1.6"/>
+  <text x="32" y="372" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">After the decode, the shared flags match</text>
+  <text x="32" y="408" fill="#1B2A4A" font-family="sans-serif" font-size="18">A store becomes FAULT_FLAG_WRITE. An instruction fetch becomes FAULT_FLAG_INSTRUCTION.</text>
+  <text x="32" y="440" fill="#1D4E89" font-family="sans-serif" font-size="18">0x15 is an AArch64 syscall class. It is not an x86 page-fault error code.</text>
+  <text x="500" y="492" fill="#1B2A4A" font-family="sans-serif" font-size="18" text-anchor="middle">Three status words. One resolver after the architecture file translates them.</text>
+</svg>

@@ -117,11 +117,22 @@ Prepared follow-on Linux userspace modules:
   `EAGAIN`, page-cache visibility versus an `fsync` request, pipes, `dup2`,
   and backpressure, `select`/`poll`/`epoll`, `mmap`, and bounded I/O failure
   reports.
+- [Week 13](../13-virtual-memory-faults-and-reclaim/overview.md): virtual
+  address spaces, VMAs, page tables and the TLB, demand paging and zero-fill,
+  copy-on-write and mapping protection, allocators, the buddy model and NUMA,
+  reclaim, writeback, swap, OOM selection, and bounded VM observation.
+- [Week 14](../14-kernel-entry-contexts-and-interrupts/overview.md): kernel
+  tree navigation, syscall and exception entry, page-fault return, hardware
+  interrupts, deferred work, preemption and sleepability rules, and
+  read-only tracing. Scheduler selection remains a Week 15 topic.
 
-Weeks 10 and 11 use the shared
+Weeks 10–11 use the shared
 [`projects/linux-system-programming`](../projects/linux-system-programming/)
 C17/POSIX lab. Week 12 uses
-[`projects/linux-io`](../projects/linux-io/). These packages are prepared
+[`projects/linux-io`](../projects/linux-io/), Week 13 uses
+[`projects/linux-vm`](../projects/linux-vm/), and Week 14 uses
+[`projects/linux-kernel-contexts`](../projects/linux-kernel-contexts/).
+These packages are prepared
 navigation targets, not evidence of mastery or permission to bypass Gates A–C.
 The deterministic suites are the portable core; optional analysis tools may be
 missing. ThreadSanitizer is unavailable on the prepared host/runtime and its

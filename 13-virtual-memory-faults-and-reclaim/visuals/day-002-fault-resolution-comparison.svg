@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>Anonymous, file, and copy-on-write fault resolution</title>
+  <desc>Three columns compare a private anonymous fault, a file fault, and a copy-on-write fault. Rows show the trigger, the source of the bytes, the PTE result, the usual task counter, and who owns the page afterward.</desc>
+  <defs>
+    <pattern id="cmpHatch" patternUnits="userSpaceOnUse" width="8" height="8">
+      <rect width="8" height="8" fill="#FFFFFF"/>
+      <path d="M0 8 L8 0" stroke="#1D4E89" stroke-width="1.1"/>
+    </pattern>
+    <pattern id="cmpDots" patternUnits="userSpaceOnUse" width="8" height="8">
+      <rect width="8" height="8" fill="#E3F6EB"/>
+      <circle cx="2" cy="2" r="1.1" fill="#17693F"/>
+    </pattern>
+    <pattern id="cmpStripe" patternUnits="userSpaceOnUse" width="8" height="8">
+      <rect width="8" height="8" fill="#FFF6E8"/>
+      <path d="M0 0 L0 8" stroke="#8A4B00" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="24" y="34" font-size="22" fill="#1B2A4A" font-weight="700">Three ways a fault gets its bytes</text>
+  <text x="24" y="58" font-size="18" fill="#1B2A4A">Columns differ by fill pattern, not by color alone. Rows are the same question.</text>
+
+  <rect x="196" y="74" width="250" height="52" rx="6" fill="url(#cmpHatch)" stroke="#1D4E89" stroke-width="3"/>
+  <text x="321" y="106" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">A  anonymous</text>
+
+  <rect x="458" y="74" width="250" height="52" rx="6" fill="url(#cmpDots)" stroke="#17693F" stroke-width="3"/>
+  <text x="583" y="106" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">B  file cache</text>
+
+  <rect x="720" y="74" width="256" height="52" rx="6" fill="url(#cmpStripe)" stroke="#8A4B00" stroke-width="3"/>
+  <text x="848" y="106" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">C  copy on write</text>
+
+  <rect x="16" y="140" width="172" height="64" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="102" y="178" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">Trigger</text>
+  <rect x="196" y="140" width="250" height="64" rx="4" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2"/>
+  <text x="321" y="168" font-size="18" fill="#1B2A4A" text-anchor="middle">missing private PTE</text>
+  <text x="321" y="190" font-size="18" fill="#1B2A4A" text-anchor="middle">do_anonymous_page</text>
+  <rect x="458" y="140" width="250" height="64" rx="4" fill="#FFFFFF" stroke="#17693F" stroke-width="2"/>
+  <text x="583" y="168" font-size="18" fill="#1B2A4A" text-anchor="middle">missing file PTE</text>
+  <text x="583" y="190" font-size="18" fill="#1B2A4A" text-anchor="middle">filemap_fault</text>
+  <rect x="720" y="140" width="256" height="64" rx="4" fill="#FFFFFF" stroke="#8A4B00" stroke-width="2"/>
+  <text x="848" y="168" font-size="18" fill="#1B2A4A" text-anchor="middle">present, not writable</text>
+  <text x="848" y="190" font-size="18" fill="#1B2A4A" text-anchor="middle">wp_page_copy</text>
+
+  <rect x="16" y="214" width="172" height="64" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="102" y="252" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">Byte source</text>
+  <rect x="196" y="214" width="250" height="64" rx="4" fill="url(#cmpHatch)" stroke="#1D4E89" stroke-width="2"/>
+  <text x="321" y="242" font-size="18" fill="#1B2A4A" text-anchor="middle">zero page, or a</text>
+  <text x="321" y="264" font-size="18" fill="#1B2A4A" text-anchor="middle">fresh zeroed folio</text>
+  <rect x="458" y="214" width="250" height="64" rx="4" fill="url(#cmpDots)" stroke="#17693F" stroke-width="2"/>
+  <text x="583" y="242" font-size="18" fill="#1B2A4A" text-anchor="middle">folio already cached,</text>
+  <text x="583" y="264" font-size="18" fill="#1B2A4A" text-anchor="middle">or read_folio</text>
+  <rect x="720" y="214" width="256" height="64" rx="4" fill="url(#cmpStripe)" stroke="#8A4B00" stroke-width="2"/>
+  <text x="848" y="242" font-size="18" fill="#1B2A4A" text-anchor="middle">copy of the old folio</text>
+  <text x="848" y="264" font-size="18" fill="#1B2A4A" text-anchor="middle">or a fresh zero folio</text>
+
+  <rect x="16" y="288" width="172" height="64" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="102" y="326" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">PTE names</text>
+  <rect x="196" y="288" width="250" height="64" rx="4" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2"/>
+  <text x="321" y="316" font-size="18" fill="#1B2A4A" text-anchor="middle">shared zero page, or</text>
+  <text x="321" y="338" font-size="18" fill="#1B2A4A" text-anchor="middle">the new anon folio</text>
+  <rect x="458" y="288" width="250" height="64" rx="4" fill="#FFFFFF" stroke="#17693F" stroke-width="2"/>
+  <text x="583" y="316" font-size="18" fill="#1B2A4A" text-anchor="middle">the page-cache folio</text>
+  <text x="583" y="338" font-size="18" fill="#1B2A4A" text-anchor="middle">read and write share it</text>
+  <rect x="720" y="288" width="256" height="64" rx="4" fill="#FFFFFF" stroke="#8A4B00" stroke-width="2"/>
+  <text x="848" y="316" font-size="18" fill="#1B2A4A" text-anchor="middle">the writer's new folio</text>
+  <text x="848" y="338" font-size="18" fill="#1B2A4A" text-anchor="middle">the other task keeps the old</text>
+
+  <rect x="16" y="362" width="172" height="64" rx="4" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="102" y="390" font-size="18" fill="#1B2A4A" text-anchor="middle" font-weight="700">Usual counter</text>
+  <text x="102" y="412" font-size="18" fill="#1B2A4A" text-anchor="middle">if no retry</text>
+  <rect x="196" y="362" width="250" height="64" rx="4" fill="#FFFFFF" stroke="#1D4E89" stroke-width="2"/>
+  <text x="321" y="400" font-size="18" fill="#1B2A4A" text-anchor="middle">min_flt</text>
+  <rect x="458" y="362" width="250" height="64" rx="4" fill="#FFFFFF" stroke="#17693F" stroke-width="2"/>
+  <text x="583" y="390" font-size="18" fill="#1B2A4A" text-anchor="middle">min_flt if cached</text>
+  <text x="583" y="412" font-size="18" fill="#1B2A4A" text-anchor="middle">maj_flt if read from disk</text>
+  <rect x="720" y="362" width="256" height="64" rx="4" fill="#FFFFFF" stroke="#8A4B00" stroke-width="2"/>
+  <text x="848" y="400" font-size="18" fill="#1B2A4A" text-anchor="middle">min_flt</text>
+
+  <text x="24" y="462" font-size="18" fill="#1B2A4A">A is hatched. B is dotted. C is striped. A retry completion counts as maj_flt even when the folio was cached.</text>
+  <text x="24" y="490" font-size="18" fill="#1B2A4A">SIGSEGV and SIGBUS are not a fourth column: they finish without installing a PTE for the access.</text>
+</svg>

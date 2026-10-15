@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" font-family="sans-serif">
+  <title>preempt_count fields and a hardirq to softirq nesting example</title>
+  <desc>One preempt_count word holds preemption in bits 0 to 7, softirq in bits 8 to 15, hardirq in bits 16 to 19, and NMI in bits 20 to 23. A hardirq adds HARDIRQ_OFFSET. On the way out, a pending softirq adds SOFTIRQ_OFFSET.</desc>
+  <rect x="0" y="0" width="1000" height="520" fill="#FBF9F4"/>
+  <rect x="2" y="2" width="996" height="516" fill="none" stroke="#1B2A4A" stroke-width="2"/>
+  <text x="500" y="32" fill="#1B2A4A" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle">preempt_count nesting</text>
+  <text x="500" y="62" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">Linux 6.12 include/linux/preempt.h field layout</text>
+  <rect x="20" y="84" width="200" height="88" rx="6" fill="#E3F6EB" stroke="#17693F" stroke-width="2.2"/>
+  <text x="120" y="118" fill="#17693F" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">bits 0-7</text>
+  <text x="120" y="148" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">preempt</text>
+  <rect x="230" y="84" width="230" height="88" rx="6" fill="#E8F0FA" stroke="#1D4E89" stroke-width="2.2"/>
+  <text x="345" y="118" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">bits 8-15</text>
+  <text x="345" y="148" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">softirq</text>
+  <rect x="470" y="84" width="230" height="88" rx="6" fill="#F8E8E8" stroke="#9E2A2A" stroke-width="2.2"/>
+  <text x="585" y="118" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">bits 16-19</text>
+  <text x="585" y="148" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">hardirq</text>
+  <rect x="710" y="84" width="270" height="88" rx="6" fill="#FFF4E0" stroke="#8A4B00" stroke-width="2.2"/>
+  <text x="845" y="118" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="700" text-anchor="middle">bits 20-23</text>
+  <text x="845" y="148" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">NMI</text>
+  <rect x="20" y="196" width="960" height="250" rx="8" fill="#F3F6FA" stroke="#1B2A4A" stroke-width="1.6"/>
+  <text x="40" y="232" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="700">1. Task context. Interrupt fields are clear. Preempt may be nonzero.</text>
+  <text x="40" y="272" fill="#9E2A2A" font-family="sans-serif" font-size="18" font-weight="400">2. IRQ entry adds HARDIRQ_OFFSET. in_hardirq becomes true.</text>
+  <text x="40" y="312" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400">3. irq_exit subtracts that offset, then may run softirq.</text>
+  <text x="40" y="352" fill="#1D4E89" font-family="sans-serif" font-size="18" font-weight="400">4. Softirq adds SOFTIRQ_OFFSET. in_serving_softirq is that bit.</text>
+  <text x="40" y="392" fill="#8A4B00" font-family="sans-serif" font-size="18" font-weight="400">5. An NMI adds NMI_OFFSET above hardirq and softirq.</text>
+  <text x="40" y="428" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400">Bit 31 is PREEMPT_NEED_RESCHED. Week 15 covers the scheduler.</text>
+  <text x="500" y="488" fill="#1B2A4A" font-family="sans-serif" font-size="18" font-weight="400" text-anchor="middle">local_irq_disable changes the CPU mask. It is a separate count.</text>
+</svg>
