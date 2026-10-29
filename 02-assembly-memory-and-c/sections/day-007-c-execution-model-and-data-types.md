@@ -225,6 +225,10 @@ A type helps determine:
 
 This is why “`int` is four bytes” is not an adequate definition of `int`.
 
+![C abstract-machine layers of object, type, value, and representation](../visuals/day-007-c-object-type-value-representation.svg)
+
+*An identifier names an abstract object; its type, value, and bytes are related layers, not interchangeable terms.*
+
 ---
 
 ## 4. C bytes and the character types
@@ -427,6 +431,10 @@ declared operand types
 
 Do this before running the Day 7 lab. It is slower than guessing once and
 much faster than debugging a signed/unsigned bug later.
+
+![Integer promotions and conversion to machine operation width](../visuals/day-007-integer-promotions-machine-width.svg)
+
+*Promotion and common-type rules determine the operation domain before a backend chooses machine width and condition codes.*
 
 ---
 

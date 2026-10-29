@@ -234,6 +234,10 @@ Also distinguish a union's overlapping storage from strict-aliasing rules
 applied through unrelated pointer types. A pointer cast does not create an
 object of the target type.
 
+![Structure padding and tagged union states](../visuals/day-002-struct-padding-and-tagged-union.svg)
+
+*The ABI determines structure offsets; software must keep a union's tag consistent with its active member.*
+
 ---
 
 ## 4. Function pointers are typed code-entry references
@@ -335,6 +339,10 @@ stream object
 This is runtime polymorphism without language-level classes. It works because
 each implementation honors the same function signatures and semantic
 contract.
+
+![Callback dispatch through an operations table and owned context](../visuals/day-002-callback-ops-context-ownership.svg)
+
+*Typed dispatch protects the call shape; the owner must keep callback context alive for every invocation.*
 
 Linux relies on this shape extensively: `struct file_operations`, network
 device operations, filesystem inode operations, clocks, buses, and many

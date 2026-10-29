@@ -33,6 +33,10 @@ mapped executable, interpreter, initial stack, and auxiliary vector
 relocations → constructors → main → exit/atexit → kernel termination
 ```
 
+![Week 3 roadmap from typed C through startup and exit](visuals/week-03-source-to-startup-roadmap.svg)
+
+*Responsibility changes at every boundary: language, toolchain, kernel, runtime, application, then kernel again.*
+
 The connections matter more than the list. A pointer names an object whose
 lifetime and type constrain valid accesses. The optimizer relies on those
 constraints while producing instructions. Separate translation leaves

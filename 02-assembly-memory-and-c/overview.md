@@ -31,6 +31,10 @@ cache lines, sets, placement, and coherence
 CPU executes generated operations on representations
 ```
 
+![Week 2 causal roadmap from C semantics to execution](visuals/week-02-causal-roadmap.svg)
+
+*Each boundary changes the vocabulary, but preserves a causal obligation from the layer above.*
+
 The causal order matters. Assembly makes architectural state visible. Calling
 conventions show that interoperability depends on contracts beyond the ISA.
 RISC-V comparison separates universal machine problems from x86-64's

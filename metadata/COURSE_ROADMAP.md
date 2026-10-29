@@ -105,7 +105,7 @@ profiles. Week 7 does not claim isolated user processes; Week 8 adds one
 deliberately bounded user process, and Week 9 does not claim a production
 filesystem, storage stack, or driver.
 
-Prepared follow-on Linux userspace modules:
+Prepared follow-on Linux modules:
 - [Week 10](../10-linux-processes-and-signals/overview.md): Linux processes,
   `fork`/`exec`/`wait`, lifetime and job-control structure, signals, `/proc`,
   `strace`, and GDB.
@@ -124,7 +124,12 @@ Prepared follow-on Linux userspace modules:
 - [Week 14](../14-kernel-entry-contexts-and-interrupts/overview.md): kernel
   tree navigation, syscall and exception entry, page-fault return, hardware
   interrupts, deferred work, preemption and sleepability rules, and
-  read-only tracing. Scheduler selection remains a Week 15 topic.
+  read-only tracing.
+- [Week 15](../15-linux-scheduler-evolution/overview.md): task states,
+  wait/wakeup, per-CPU runqueues, selection and context switching, historical
+  scheduler evolution through Linux 6.12 EEVDF, scheduler classes and
+  guarantees, SMP placement, topology/NUMA/cgroup/KVM relationships, and an
+  evidence-led debugging report.
 
 Weeks 10–11 use the shared
 [`projects/linux-system-programming`](../projects/linux-system-programming/)
@@ -132,6 +137,8 @@ C17/POSIX lab. Week 12 uses
 [`projects/linux-io`](../projects/linux-io/), Week 13 uses
 [`projects/linux-vm`](../projects/linux-vm/), and Week 14 uses
 [`projects/linux-kernel-contexts`](../projects/linux-kernel-contexts/).
+Week 15 uses
+[`projects/linux-scheduler`](../projects/linux-scheduler/).
 These packages are prepared
 navigation targets, not evidence of mastery or permission to bypass Gates A–C.
 The deterministic suites are the portable core; optional analysis tools may be

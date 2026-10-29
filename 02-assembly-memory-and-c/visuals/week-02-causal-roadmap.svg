@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 760" role="img" aria-labelledby="title desc">
+  <title id="title">Week 2 causal roadmap from C semantics to execution</title>
+  <desc id="desc">A worked causal chain shows how C semantics constrain compiler choices, ABI and ISA operations, addresses, hierarchy and cache behavior, and finally representation and observed execution.</desc>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ffd166"/></marker><style>text{font-family:sans-serif;fill:#f7fbff}.h{font-size:32px;font-weight:700}.t{font-size:22px;font-weight:700}.s{font-size:18px}.box{fill:#12304a;stroke:#8ecae6;stroke-width:3}.flow{stroke:#ffd166;stroke-width:4;fill:none;marker-end:url(#arrow)}</style></defs>
+  <rect width="1190" height="760" fill="#071521"/>
+  <text class="h" x="595" y="48" text-anchor="middle">One program crosses six contracts and mechanisms</text>
+  <g text-anchor="middle"><rect class="box" x="40" y="105" width="330" height="145" rx="14"/><text class="t" x="205" y="150">C semantics</text><text class="s" x="205" y="185">int load -> value + side effects</text><text class="s" x="205" y="218">language constrains behavior</text>
+  <rect class="box" x="430" y="105" width="330" height="145" rx="14"/><text class="t" x="595" y="150">Compiler choices</text><text class="s" x="595" y="185">lower, optimize, select width</text><text class="s" x="595" y="218">many valid instruction sequences</text>
+  <rect class="box" x="820" y="105" width="330" height="145" rx="14"/><text class="t" x="985" y="150">ABI + ISA</text><text class="s" x="985" y="185">arguments, registers, operations</text><text class="s" x="985" y="218">binary contract + visible machine</text>
+  <rect class="box" x="820" y="390" width="330" height="145" rx="14"/><text class="t" x="985" y="435">Addresses</text><text class="s" x="985" y="470">base + index x scale + displacement</text><text class="s" x="985" y="503">virtual location of object bytes</text>
+  <rect class="box" x="430" y="390" width="330" height="145" rx="14"/><text class="t" x="595" y="435">Hierarchy + cache</text><text class="s" x="595" y="470">line, set, locality, ownership</text><text class="s" x="595" y="503">cost depends on access pattern</text>
+  <rect class="box" x="40" y="390" width="330" height="145" rx="14"/><text class="t" x="205" y="435">Representation + execution</text><text class="s" x="205" y="470">alignment, byte order, values</text><text class="s" x="205" y="503">CPU performs required effects</text></g>
+  <path class="flow" d="M370 177H420"/><path class="flow" d="M760 177H810"/><path class="flow" d="M985 250V380"/><path class="flow" d="M820 462H770"/><path class="flow" d="M430 462H380"/>
+  <rect x="95" y="610" width="1000" height="88" rx="12" fill="#284b63" stroke="#ffd166" stroke-width="3"/><text class="t" x="595" y="647" text-anchor="middle">Worked thread:  sum += values[i]</text><text class="s" x="595" y="678" text-anchor="middle">defined C result -> legal lowering -> ABI registers -> load address -> cache-line path -> represented value</text>
+</svg>

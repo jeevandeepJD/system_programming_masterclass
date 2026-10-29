@@ -108,6 +108,10 @@ movl $1, %eax       # RAX becomes 0x0000000000000001
 Writing `ax` or `al` preserves the other bits. Predicting this distinction is
 part of register tracking.
 
+![x86-64 register and subregister write effects](../visuals/day-001-register-subregister-effects.svg)
+
+*The destination spelling determines both the written slice and whether untouched high bits survive.*
+
 ### `RIP`: where fetch continues
 
 `RIP` names the next architectural instruction location. Ordinary execution
@@ -278,6 +282,10 @@ ret
 Create a table with columns `RIP`, `RAX`, `RCX`, `RDI`, `ZF/SF/OF`, and “next
 instruction.” A loop is not one event. It is repeated state transitions and a
 backward next-`RIP` choice.
+
+![Effective address, flags, and branch flow on x86-64](../visuals/day-001-effective-address-flags-branch.svg)
+
+*Address generation feeds a possible memory access; flag generation feeds a later control-flow decision.*
 
 ## 7. Lab — write, predict, step
 

@@ -116,6 +116,10 @@ unreachable allocation     → definite leak
 two claimed owners         → double-free risk
 ```
 
+![Ownership, borrowing, reachability, and lifetime](../visuals/day-003-ownership-borrow-reachability.svg)
+
+*Reachability answers whether an address can be found; ownership answers who must end the lifetime.*
+
 A linked graph can be fully reachable but have no documented component
 responsible for destruction. A reference-counted object can have many aliases
 and a precise shared-ownership rule. A cache may intentionally keep reachable
@@ -296,6 +300,10 @@ Tradeoffs:
 - alignment and overflow must be correct.
 
 This is an ownership strategy, not a replacement for every allocator.
+
+![Failure-safe realloc, reverse cleanup, and arena lifetime](../visuals/day-003-realloc-arena-cleanup.svg)
+
+*Preserve the old owner until resize succeeds, and make every failure edge reach a valid cleanup policy.*
 
 ---
 

@@ -31,6 +31,10 @@ assembly text
 relocatable ELF object
 ```
 
+![Preprocessing, compilation, assembly, and object pipeline](../visuals/day-005-translation-pipeline.svg)
+
+*Each stopping point is a different artifact produced under a different tool contract.*
+
 The object already contains machine instructions and data. It is not yet a
 complete process image: some addresses and external definitions remain for a
 linker to resolve.
@@ -294,6 +298,10 @@ objdump -dr source.o
 
 `objdump -dr` is powerful because it places relocation annotations beside
 the instruction bytes they qualify.
+
+![ELF object sections, symbol, and instruction relocation](../visuals/day-005-object-symbol-relocation.svg)
+
+*A relocation ties one instruction field to a symbol and an ABI-defined calculation.*
 
 ## Architecture lens — x86-64, AArch64, and RISC-V
 

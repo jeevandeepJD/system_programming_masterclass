@@ -171,9 +171,118 @@ Use exercises to expose gaps rather than merely generate a score.
 - Specialization pivots, proof-of-fit sprints, active upstream issue
   selection, and ToyOS expansion are planned but deferred until their
   foundation gates.
-- Weeks 6–11, the continuous `projects/toyos/` kernel, and the shared
-  `projects/linux-system-programming/` lab are prepared but inactive;
-  preparation does not advance the Week 1 resume point or any gate.
+- Weeks 2–15 and their supporting projects are prepared but inactive.
+  Preparation does not advance the Week 1 resume point, prove learner
+  understanding, or complete any confidence gate.
+
+## Prepared repository state
+
+“Prepared” below means that learner-facing source material and a consolidated
+PDF exist. It does **not** mean that the learner has studied, attempted,
+explained, drawn, observed, built, or mastered the material.
+
+### Prepared weekly modules
+
+1. `01-foundations-to-cpu/` — physical state, representation, Boolean logic,
+   arithmetic/state circuits, a minimal CPU, ISA/machine code, control flow,
+   privilege, exceptions, and system calls. A visual pass added fifteen SVG
+   diagrams without replacing the lesson text.
+2. `02-assembly-memory-and-c/` — x86-64 and RISC-V assembly, ABI reasoning,
+   memory hierarchy, cache/layout/NUMA foundations, and the C execution model.
+3. `03-c-toolchain-and-startup/` — pointers and lifetime through preprocessing,
+   compilation, linking, ELF loading, and process startup.
+4. `04-cpu-and-chip-design/` — the transistor/CMOS and timing depth needed for
+   systems work, with bounded RTL and synthesis observation.
+5. `05-riscv-cpu-microarchitecture/` — datapath/control, a runnable RV32I
+   subset, pipelining and hazards, caches, TLB/MMU, and a C-to-hardware trace.
+6. `06-toyos-bootstrap-and-exceptions/` — freestanding kernel startup,
+   Multiboot2/GRUB2, serial output, descriptor tables, exceptions, QEMU, and
+   GDB.
+7. `07-memory-processes-and-scheduling/` — ToyOS frame allocation, paging,
+   heap ownership, ring-0 tasks, context switching, timer handling, and
+   bounded scheduling.
+8. `08-user-mode-syscalls-and-ipc/` — one ring-3 process, per-process page
+   tables, embedded ELF loading, checked user copies, educational `int 0x80`,
+   descriptors, and a bounded pipe.
+9. `09-filesystems-and-virtual-devices/` — tiny ramfs/VFS plus PCI discovery,
+   BAR mapping, and checked QEMU EDU MMIO. IRQ operation, DMA, a real block
+   layer, page cache, and journaling remain explicitly unimplemented.
+10. `10-linux-processes-and-signals/` — process identity and lifetime,
+    `fork`/`exec`/`wait`, job-control structure, signals, `/proc`, `strace`,
+    and GDB.
+11. `11-threads-and-concurrency/` — pthread lifetime and ownership, races,
+    mutexes, condition variables, queues, C11 atomics, memory ordering,
+    deadlock, false sharing, and debugging.
+12. `12-linux-io-and-readiness/` — descriptors and open-file state, short and
+    interrupted I/O, nonblocking operation, page-cache visibility and
+    durability boundaries, pipes/backpressure, readiness APIs, `mmap`, and
+    bounded debugging evidence.
+13. `13-virtual-memory-faults-and-reclaim/` — VMAs, page tables and the TLB,
+    demand paging and zero-fill, `mmap`/`mprotect`/COW, allocator lifetime,
+    zones, the buddy allocator, NUMA, reclaim, writeback, swap, OOM selection,
+    and VM observation. It contains fifteen SVG diagrams and a bounded
+    `projects/linux-vm/` lab; it does not induce host reclaim or OOM.
+14. `14-kernel-entry-contexts-and-interrupts/` — kernel-tree navigation,
+    syscall and exception entry/return, page-fault entry, hardware IRQs,
+    descriptors and handlers, softirqs, threaded IRQs, workqueues,
+    preemption/atomic-context/sleepability rules, and tracing discipline. It
+    contains fifteen SVG diagrams and the read-only
+    `projects/linux-kernel-contexts/` lab. Scheduler selection is deliberately
+    deferred.
+15. `15-linux-scheduler-evolution/` — the scheduling problem and task-state
+    loop, wait/wakeup and `try_to_wake_up`, per-CPU runqueues, selection and
+    context switching, evolution from Linux 0.12 through O(1) and CFS to
+    Linux 6.12 EEVDF, scheduler classes and guarantees, SMP placement,
+    topology/NUMA/cgroup/KVM relationships, and an evidence-led debugging
+    report. It contains fifteen SVG diagrams and the bounded
+    `projects/linux-scheduler/` lab.
+
+### Prepared implementation and lab continuity
+
+- `projects/toyos/` is one continuous kernel with preserved milestone
+  profiles for Weeks 6–9; do not fork it per lesson.
+- `projects/linux-system-programming/` supports Weeks 10–11.
+- `projects/linux-io/` supports Week 12.
+- `projects/linux-vm/` supports Week 13 with host-safe observations and
+  simulators for buddy/NUMA and reclaim/OOM policy.
+- `projects/linux-kernel-contexts/` supports Week 14 with userspace
+  observations and read-only checks against the pinned kernel source.
+- `projects/linux-scheduler/` supports Week 15 with a teaching runqueue
+  simulator, bounded wakeup/context-switch/affinity/inversion observations,
+  a self-only report, and read-only pinned-source checks. It does not request
+  real-time policy, edit cgroups, mount tracefs, offline CPUs, or induce
+  sustained host pressure.
+- The modern teaching source is local Linux 6.12, tag `v6.12`, commit
+  `adc218676eef25575469234709c2d87185ca223a`. Linux 5.10 is no longer the
+  primary modern reference.
+- Kernel mechanism lessons use the order:
+  **required syntax → Linux 0.12 → why it evolved → ToyOS boundary →
+  Linux 6.12/current behavior → bounded observation**.
+- The Linux 0.12 source is the first small implementation used to expose the
+  whole mechanism. Linux 6.12 is the implementation reference for modern
+  claims. Runtime output proves only what the lab actually observes.
+
+## Explicit pending work
+
+1. **Learner progress remains at Week 1.** No prepared week may be marked
+   complete until the learner provides Explain/Draw/Observe/Build evidence.
+   Gates A, B, and C remain open.
+2. **Week 15 is prepared, not mastered.** Its deterministic wrappers and
+   source checks are authoring validation only. Learner predictions,
+   Explain/Draw/Observe/Build answers, optional scheduler traces, controlled
+   measurements, and the final debugging report remain unattempted.
+3. **Visual retrofit remains pending for Weeks 4–12.** Weeks 1–3 and
+   Weeks 13–15 have completed dedicated visual passes. For the others, audit existing
+   visuals and add only diagrams that materially clarify a relationship or
+   execution path; do not regenerate the lesson prose.
+4. **Post-scheduler kernel depth remains pending:** synchronization/RCU,
+   modules and drivers, device model/sysfs, DMA/IOMMU, storage/block/VFS
+   depth, networking, eBPF/perf tracing, KVM/virtio/SEV-SNP, namespaces,
+   cgroups, and the contribution pathway defined in
+   `metadata/COURSE_ROADMAP.md`.
+5. **No mastery, specialization, upstream contribution, or interview-readiness
+   claim has been earned merely by generating these files.** Preserve the
+   distinction between repository preparation and learner evidence.
 
 ## Decision and Update Log
 
@@ -738,3 +847,70 @@ to the deterministic suites.
 These packages are prepared, not mastered. The authoritative current module
 remains Week 1, and no confidence gate, learner status, time, or completion is
 advanced by their existence.
+
+### 2026-10-15 — Kernel source teaching sequence
+
+For kernel mechanism lessons, teach the minimum required C/assembly syntax
+first, then Linux 0.12 as the small visible implementation, explain the
+pressure that caused the design to evolve, identify what ToyOS does or does
+not implement, and only then read Linux 6.12/current source. Linux 5.10 is not
+the primary modern reference. Prefer short verified excerpts from local
+Linux 6.12 at commit `adc218676eef25575469234709c2d87185ca223a`.
+
+### 2026-10-15 — Visual learning policy
+
+The user requested relevant pictures and diagrams because visual explanations
+make the material easier and more enjoyable to learn. Add visuals in place at
+the section where they explain a path, hierarchy, state transition, ownership
+relationship, or comparison. Do not regenerate otherwise accepted prose.
+Week 1 was the visual-format test; Weeks 13 and 14 apply the same policy with
+fifteen accessible SVGs each. Weeks 2–12 still need a targeted visual audit.
+
+### 2026-10-15 — Weeks 12–14 prepared
+
+Week 12 now covers Linux I/O and readiness with `projects/linux-io/`.
+Week 13 covers virtual memory, including zones, buddy allocation, and NUMA,
+with `projects/linux-vm/`. Week 14 covers kernel entry, exceptions,
+interrupts, deferred work, and context/sleepability rules with
+`projects/linux-kernel-contexts/`. GCC and Clang deterministic suites passed,
+the generated PDFs were checked, and Week 13–14 source excerpts were verified
+against the pinned Linux 6.12 tree. These are prepared modules, not evidence
+of learner mastery.
+
+### 2026-10-15 — Scheduler boundary and next module
+
+Week 14 intentionally stops after wakeup/reschedule context. Scheduler
+evolution and selection belong to the unprepared Week 15. That module must
+connect Linux 0.12, ToyOS, historical scheduler evolution, and Linux
+6.12/current fair EEVDF, RT, deadline, topology, NUMA, cgroup, and
+virtualization behavior with bounded measurement evidence.
+
+### 2026-10-15 — Branch consolidation
+
+The completed Week 1 visual and Weeks 10–14 preparation branches were
+fast-forwarded into `master`, their merged `test/*` branches were removed,
+and local `master` was pushed to remote `jdssh` at commit `3c3e905`. The
+separate `test/c-practice-track` worktree and its untracked learner files were
+not modified.
+
+### 2026-10-29 — Week 15 scheduler evolution prepared
+
+`15-linux-scheduler-evolution/` and `projects/linux-scheduler/` are prepared.
+The module follows the required syntax → Linux 0.12 → evolution → ToyOS →
+Linux 6.12/current order and covers the task-state loop, wait/wakeup,
+per-CPU runqueues, selection/context switching, O(1)/CFS historical context,
+Linux 6.12 EEVDF, scheduler classes, SMP placement, topology, NUMA, cgroups,
+KVM relationships, and scheduler debugging. It has fifteen accessible SVG
+diagrams, seven quizzes/wrappers, bounded strict-C labs, and a consolidated
+PDF. Generation and deterministic test success do not advance the Week 1
+resume point or establish scheduler mastery.
+
+### 2026-10-29 — Week 2–3 visual passes
+
+Weeks 2 and 3 now each contain one overview roadmap and two distinct,
+topic-specific SVG diagrams per day. The visual additions were inserted into
+the existing lessons without regenerating their prose. Week 2 diagrams cover
+assembly/ABI, ISA comparison, locality/cache organization, layout/endianness,
+NUMA, and C representation. Week 3 diagrams cover pointers/layout/lifetime,
+qualifiers/atomics, object files/relocations, linking, ELF loading, startup,
+and exit. Dedicated visual retrofit remains pending for Weeks 4–12.

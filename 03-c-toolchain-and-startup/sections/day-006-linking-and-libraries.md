@@ -186,6 +186,10 @@ memory and lets compatible library updates serve multiple programs.
 The costs include startup work, a larger compatibility surface, runtime
 search policy, and the possibility of loading an unintended library.
 
+![Static archive extraction versus shared object dependency](../visuals/day-006-archive-vs-shared.svg)
+
+*Archive members are selected and copied at link time; shared definitions are mapped and completed at runtime.*
+
 ### PIC: code that tolerates different load addresses
 
 Position-independent code avoids embedding unnecessary fixed absolute
@@ -218,6 +222,10 @@ Not every external call must use a classic PLT. `-fno-plt`, symbol visibility,
 direct binding, architecture, and linker optimizations alter the shape.
 Modern systems may use eager binding (`-z now` or `LD_BIND_NOW=1`). Observe
 your binary:
+
+![PIC call through PLT, GOT, resolver, and dynamic relocation](../visuals/day-006-pic-got-plt-relocation.svg)
+
+*PIC keeps the call site movable while runtime relocation installs the selected function address.*
 
 ```bash
 objdump -d -j .plt program

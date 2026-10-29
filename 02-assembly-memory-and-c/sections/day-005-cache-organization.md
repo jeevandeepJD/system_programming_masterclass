@@ -178,6 +178,10 @@ Now solve before running:
 That third spacing is a **cache-sized stride per way**: the offset and index
 repeat while the tag changes. Enough such addresses can contend for one set.
 
+![Address tag, set, and offset mapping](../visuals/day-005-address-tag-set-offset.svg)
+
+*The index selects one set, the tag identifies a resident line, and the offset selects bytes within that line.*
+
 ---
 
 ## 3. Hit, fill, eviction
@@ -296,6 +300,10 @@ sharing**: logically independent writable data shares a coherence unit.
 It is “false” only at the source-level sharing model; the hardware traffic is
 real. Padding or separating hot fields may help, but consumes memory and can
 harm locality elsewhere. Measure the actual workload.
+
+![Coherence ownership movement caused by false sharing](../visuals/day-005-coherence-false-sharing.svg)
+
+*Two independent counters still move one ownership unit because coherence operates at cache-line granularity.*
 
 Run the safe C11-atomic experiment:
 

@@ -158,6 +158,10 @@ alias.” Use that slogan only as an initial intuition; reason about which
 objects are accessed, whether they are modified, and which pointer
 expressions those accesses are based on.
 
+![Const, volatile, and restrict contracts](../visuals/day-004-qualifier-contracts.svg)
+
+*The three qualifiers constrain different actors and do not substitute for one another.*
+
 ---
 
 ## 2. Four behavior categories
@@ -358,6 +362,10 @@ producer actions sequenced before release
       happen before
 consumer actions sequenced after matching acquire
 ```
+
+![Release acquire publication and the undefined behavior boundary](../visuals/day-004-release-acquire-ub-boundary.svg)
+
+*Release/acquire creates a publication edge; undefined behavior removes the source guarantees an optimizer preserves.*
 
 When an acquire operation reads the value from the relevant release sequence,
 the release synchronizes with the acquire. Earlier producer actions then

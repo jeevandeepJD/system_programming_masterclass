@@ -58,6 +58,10 @@ I/O rather than ordinary CPU loads; and virtual memory may make storage back
 some pages. The durable idea is that each level tries to make the next, slower
 level less visible.
 
+![Memory hierarchy latency and capacity path](../visuals/day-004-memory-hierarchy-latency-capacity.svg)
+
+*Increasing capacity generally increases access distance, while each hit prevents a trip to lower levels.*
+
 ### The historical problem path
 
 Early machines repeatedly changed storage technology because each design hit a
@@ -220,6 +224,10 @@ Sequential access tends to:
 Random access tends to waste neighboring fetched bytes and defeat simple
 prefetching. A **dependent** random chain additionally prevents the next
 address from being known until the previous load completes.
+
+![Sequential, strided, and random access versus cache-line use](../visuals/day-004-locality-cache-line-use.svg)
+
+*Access order determines both how much of each fetched line is useful and how much latency can overlap.*
 
 But random does not automatically mean slow. A small random working set can
 remain in cache. Conversely, a sequential stream larger than cache still

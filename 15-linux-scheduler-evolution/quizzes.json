@@ -1,0 +1,355 @@
+{
+  "week": 15,
+  "days": [
+    {
+      "day": 1,
+      "title": "Scheduler Purpose, Causal Loop, and Architecture",
+      "questions": [
+        {
+          "prompt": "Which statement correctly distinguishes a task's __state, on_rq, and on_cpu fields?",
+          "options": [
+            "__state describes sleep eligibility, on_rq records runqueue representation, and on_cpu records current execution",
+            "__state names the owning CPU, on_rq records priority, and on_cpu records affinity",
+            "All three fields are aliases for whether the task is TASK_RUNNING",
+            "on_rq and on_cpu are mutually exclusive whenever __state is TASK_RUNNING"
+          ],
+          "answer": 0,
+          "explanation": "The fields preserve separate state, queue-membership, and CPU-execution facts needed for concurrent scheduling and wakeup."
+        },
+        {
+          "prompt": "A task has __state == TASK_RUNNING and on_rq set, but on_cpu clear. What does that describe?",
+          "options": [
+            "A sleeping task that has been removed from all queues",
+            "A runnable queued task that is not currently executing",
+            "A task currently executing without runqueue ownership",
+            "A task guaranteed to be selected at the next tick"
+          ],
+          "answer": 1,
+          "explanation": "TASK_RUNNING covers runnable and running tasks; on_rq and on_cpu distinguish queued competition from actual execution."
+        },
+        {
+          "prompt": "Which component supplies the policy for choosing among runnable tasks in modern Linux?",
+          "options": [
+            "The architecture's return-to-userspace instruction",
+            "The context-switch assembly alone",
+            "The scheduler class picker invoked by the common scheduler core",
+            "The wait queue that originally woke every candidate"
+          ],
+          "answer": 2,
+          "explanation": "The core manages common state and locking, while class callbacks implement selection policy."
+        },
+        {
+          "prompt": "Linux enters the scheduling path and pick_next_task() returns prev. What follows?",
+          "options": [
+            "switch_to() must switch away and immediately switch back",
+            "The task must be placed into a sleeping state",
+            "The kernel must return directly to userspace",
+            "Reschedule bookkeeping can complete without an architecture context switch"
+          ],
+          "answer": 3,
+          "explanation": "Selection and switching are distinct: the switch path is taken only when prev and next differ."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Blocking, Wait Queues, and Wakeups",
+      "questions": [
+        {
+          "prompt": "Why does a correct wait pattern recheck the condition after publishing the wait entry and task state?",
+          "options": [
+            "To close the race in which the condition changes just before the task would sleep",
+            "To make the task immediately own the condition after wakeup",
+            "To force the waker to execute on the waiter's CPU",
+            "To avoid taking the wait-queue lock during cleanup"
+          ],
+          "answer": 0,
+          "explanation": "Publish-then-recheck prevents an event between the first test and sleeping from becoming a lost wakeup."
+        },
+        {
+          "prompt": "Which interleaving is the classic lost-wakeup race?",
+          "options": [
+            "The waiter publishes sleep, the producer changes the condition, and the wake function finds it",
+            "The waiter sees false, the producer makes it true and wakes, then the waiter publishes sleep",
+            "The waiter wakes, reacquires the condition lock, and finds another consumer won",
+            "The producer wakes two exclusive waiters instead of one"
+          ],
+          "answer": 1,
+          "explanation": "If sleep publication occurs after the wake scan, the waiter can sleep despite the condition already being true."
+        },
+        {
+          "prompt": "What is try_to_wake_up() responsible for after a wait-queue callback identifies a candidate?",
+          "options": [
+            "Guaranteeing that the task runs before the waker returns",
+            "Transferring ownership of the waited-for resource to the task",
+            "Matching task state, resolving queue/CPU races, selecting a legal CPU, and arranging activation",
+            "Returning the task directly to its userspace instruction"
+          ],
+          "answer": 2,
+          "explanation": "The wakeup path makes a matching task runnable and places it; later class selection determines execution."
+        },
+        {
+          "prompt": "Why can Linux place a remote wakeup on the destination CPU's wake list?",
+          "options": [
+            "To bypass the destination runqueue and execute the task without selection",
+            "To make every remote wakeup migrate the task to CPU 0",
+            "To preserve the task's sleeping state until a timer tick",
+            "To let the destination CPU perform activation under its own runqueue lock"
+          ],
+          "answer": 3,
+          "explanation": "Wake-list handoff avoids having the waker directly lock and modify a remote runqueue in that path."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Per-CPU Runqueues and Context Switch",
+      "questions": [
+        {
+          "prompt": "What does a per-CPU runqueue lock protect during scheduling?",
+          "options": [
+            "Queue membership, class queue updates, and the local current-task transition",
+            "Every task state and runqueue on every CPU",
+            "Only the userspace affinity mask",
+            "Only architecture registers after switch_to()"
+          ],
+          "answer": 0,
+          "explanation": "Per-CPU ownership scales scheduling, but each runqueue still needs serialization for its local transitions."
+        },
+        {
+          "prompt": "Which sequence best separates selection from execution transfer in __schedule()?",
+          "options": [
+            "switch_to chooses the class; pick_next_task restores registers",
+            "pick_next_task chooses next; context_switch handles MM state and invokes switch_to",
+            "context_switch publishes the wait condition; switch_to chooses a CPU",
+            "pick_next_task returns directly to userspace before context_switch"
+          ],
+          "answer": 1,
+          "explanation": "The picker makes the policy choice; context_switch and switch_to perform common and architecture-specific transfer."
+        },
+        {
+          "prompt": "What happens at switch_to(prev, next, prev) on x86-64?",
+          "options": [
+            "The kernel selects the next scheduler class by numeric priority",
+            "The next task is guaranteed to enter userspace immediately",
+            "The kernel changes saved register and stack context, later resuming a saved kernel continuation",
+            "The destination CPU acquires every system runqueue lock"
+          ],
+          "answer": 2,
+          "explanation": "switch_to crosses the machine-context boundary; resumed kernel work and return-to-user handling remain separate."
+        },
+        {
+          "prompt": "What does successful completion of the 32-round pipe ping-pong lab establish?",
+          "options": [
+            "Exactly 64 kernel context switches occurred",
+            "Both processes remained on one CPU throughout",
+            "The pinned Linux 6.12 picker ran on the host",
+            "The protocol completed and blocking operations created switch opportunities, but the exact switch count is unknown"
+          ],
+          "answer": 3,
+          "explanation": "Completion is userspace evidence; buffering, preemption, migration, and unrelated work prevent an exact kernel-switch inference."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Fair Scheduling: Counters to EEVDF",
+      "questions": [
+        {
+          "prompt": "Under EEVDF, which runnable fair entity is selected?",
+          "options": [
+            "The eligible entity with the earliest virtual deadline",
+            "The entity with the earliest deadline even when it has negative lag",
+            "The entity with the largest remaining Linux 0.12 counter",
+            "The entity with the highest PELT utilization"
+          ],
+          "answer": 0,
+          "explanation": "Eligibility first excludes entities that have run ahead; deadline order then prioritizes among those owed service."
+        },
+        {
+          "prompt": "At virtual time V=20, equal-weight A has vruntime 18 and deadline 24, B has vruntime 20 and deadline 21, and C has vruntime 22 and deadline 20.5. Who wins?",
+          "options": [
+            "C, because its deadline is smallest regardless of lag",
+            "B, because C is ineligible and B has the earlier deadline among eligible entities",
+            "A, because its vruntime is smallest",
+            "A and C tie because both differ from V by two"
+          ],
+          "answer": 1,
+          "explanation": "A and B have non-negative lag; C has run ahead, so B's deadline 21 wins the eligible set."
+        },
+        {
+          "prompt": "Which sequence correctly identifies the historical fair-scheduling eras?",
+          "options": [
+            "Linux 0.12 EEVDF; O(1) deadline tree; classic CFS counters; Linux 6.12 FIFO",
+            "Linux 0.12 CFS; O(1) counters; classic CFS RT arrays; Linux 6.12 CBS",
+            "Linux 0.12 counter scan; O(1) active/expired arrays; classic CFS vruntime tree; Linux 6.12 EEVDF",
+            "All four eras selected the leftmost vruntime entity"
+          ],
+          "answer": 2,
+          "explanation": "Each era used a distinct representation and picker; classic CFS's vruntime rule is not the complete Linux 6.12 EEVDF rule."
+        },
+        {
+          "prompt": "What is the correct role of PELT and utilization clamping relative to local EEVDF selection?",
+          "options": [
+            "PELT directly chooses the earliest virtual deadline",
+            "Utilization clamping grants a SCHED_DEADLINE reservation",
+            "Both replace fair weights with fixed RT priorities",
+            "They inform utilization, placement, and capacity decisions; they do not define EEVDF lag or virtual deadlines"
+          ],
+          "answer": 3,
+          "explanation": "PELT and uclamp matter around placement and capacity, not as substitutes for EEVDF eligibility and deadline accounting."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Scheduler Classes and Guarantees",
+      "questions": [
+        {
+          "prompt": "What is the base scheduler-class precedence in pinned Linux 6.12?",
+          "options": [
+            "stop, deadline, RT, fair, idle",
+            "deadline, stop, fair, RT, idle",
+            "RT, deadline, stop, idle, fair",
+            "fair, RT, deadline, stop, idle"
+          ],
+          "answer": 0,
+          "explanation": "The linker-defined class order makes stop highest and idle the final fallback, with deadline above fixed-priority RT."
+        },
+        {
+          "prompt": "How do SCHED_FIFO and SCHED_RR differ at the same RT priority?",
+          "options": [
+            "FIFO uses EEVDF deadlines; RR uses CBS reservations",
+            "RR rotates equal-priority peers by quantum; FIFO has no scheduler timeslice",
+            "RR always yields CPU time to fair-class tasks after each quantum",
+            "FIFO has a shorter fixed quantum than RR"
+          ],
+          "answer": 1,
+          "explanation": "Both use RT priority ordering, but RR adds timeslice rotation among peers while FIFO runs until another defined event intervenes."
+        },
+        {
+          "prompt": "Which statement correctly distinguishes SCHED_DEADLINE from fair-class EEVDF?",
+          "options": [
+            "Both are names for the same fair-class virtual deadline",
+            "EEVDF outranks the RT class, while SCHED_DEADLINE is below fair",
+            "SCHED_DEADLINE is an admitted runtime/deadline/period reservation; EEVDF uses virtual deadlines to rank eligible fair work",
+            "SCHED_DEADLINE has no bandwidth accounting, while EEVDF uses CBS"
+          ],
+          "answer": 2,
+          "explanation": "Deadline-class CBS/EDF contracts use real-time parameters; EEVDF deadlines are internal virtual-time ordering values."
+        },
+        {
+          "prompt": "How does priority inheritance address a high-priority task blocked on a mutex held by a low-priority task?",
+          "options": [
+            "It transfers mutex ownership immediately to the waiter",
+            "It permanently changes the owner's normal scheduling policy",
+            "It guarantees a latency bound even with unbounded critical sections",
+            "It temporarily raises the owner's effective priority so the owner can release the mutex sooner"
+          ],
+          "answer": 3,
+          "explanation": "PI donates effective priority through the blocking chain; it neither unlocks the mutex nor replaces bounded critical-section analysis."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "SMP Placement, Topology, and Control",
+      "questions": [
+        {
+          "prompt": "What determines whether an ordinary userspace task may be placed on a CPU?",
+          "options": [
+            "Its effective affinity after affinity intent, cpuset restrictions, and CPU availability are applied",
+            "Whether that CPU is idle, regardless of masks",
+            "Only the mask last requested with taskset",
+            "Only whether the CPU is online"
+          ],
+          "answer": 0,
+          "explanation": "Placement preferences operate only among legal CPUs in the currently enforceable effective mask."
+        },
+        {
+          "prompt": "Why can choosing an idle CPU on another NUMA node be a tradeoff rather than an obvious win?",
+          "options": [
+            "Scheduling domains prohibit every cross-node migration",
+            "It may add CPU capacity while losing cache warmth and increasing remote-memory cost",
+            "NUMA nodes always have equal capacity and identical memory latency",
+            "An idle CPU is outside every task's effective affinity"
+          ],
+          "answer": 1,
+          "explanation": "Scheduling domains expose widening topology choices; balancing capacity against cache and NUMA locality requires workload evidence."
+        },
+        {
+          "prompt": "A runnable task is affinity-legal but pauses in bursts. Which cgroup evidence specifically supports CPU quota throttling?",
+          "options": [
+            "A low cpu.weight value by itself",
+            "A wide Cpus_allowed_list",
+            "Increasing nr_throttled or throttled_usec in its cgroup's cpu.stat",
+            "A single migration event"
+          ],
+          "answer": 2,
+          "explanation": "cpu.max can exhaust bandwidth; changing throttling counters support that mechanism, whereas weight alone is proportional competition."
+        },
+        {
+          "prompt": "What does pinning a task to guest vCPU 0 establish about host-side KVM placement?",
+          "options": [
+            "The host vCPU thread is pinned to physical CPU 0",
+            "All QEMU threads and guest memory are colocated automatically",
+            "Guest steal time must become zero",
+            "Only guest placement; host vCPU, emulator, and I/O thread placement require separate host evidence"
+          ],
+          "answer": 3,
+          "explanation": "A guest affinity choice does not control host scheduler placement or service of the QEMU/KVM threads that implement the VM."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Observation and Debugging Report",
+      "questions": [
+        {
+          "prompt": "A process's voluntary context-switch counter increased during a test. What is the strongest supported interpretation?",
+          "options": [
+            "Cumulative voluntary switches increased; the counter alone does not identify their individual causes",
+            "Every increase was caused by a pipe read",
+            "The process migrated once per switch",
+            "The fair picker selected the process immediately after every wakeup"
+          ],
+          "answer": 0,
+          "explanation": "Counters establish aggregate change, not ordered event causality, runqueue placement, or a specific kernel branch."
+        },
+        {
+          "prompt": "What evidence best measures runnable delay from wakeup to execution?",
+          "options": [
+            "Measure the entire blocking syscall once",
+            "Correlate sched_wakeup for a TID with the next sched_switch that names it as next",
+            "Read one lifetime context-switch total",
+            "Find the sched_wakeup definition in source"
+          ],
+          "answer": 1,
+          "explanation": "Ordered, task-correlated events bound wakeup-to-switch latency; they still do not prove later userspace execution."
+        },
+        {
+          "prompt": "Which observations distinguish cgroup throttling from guest vCPU steal?",
+          "options": [
+            "A low cpu.weight proves both mechanisms",
+            "A sched_switch event proves quota throttling but rules out steal",
+            "Cgroup cpu.stat throttling deltas support quota exhaustion; guest /proc/stat steal deltas support unavailable host CPU service",
+            "A narrow affinity mask uniquely identifies both mechanisms"
+          ],
+          "answer": 2,
+          "explanation": "The mechanisms have different accounting evidence, and neither counter alone names the exact competing task or root cause."
+        },
+        {
+          "prompt": "A scheduler tracing tool is absent or access is denied. How should the report record the trace result?",
+          "options": [
+            "Infer the expected events from pinned source and report them as captured",
+            "Change host-wide tracing policy until collection succeeds",
+            "Treat the missing trace as proof that no scheduler event occurred",
+            "SKIP with the concrete availability or permission reason, while leaving event-level claims unknown"
+          ],
+          "answer": 3,
+          "explanation": "An honest SKIP preserves the evidence boundary; source structure and unavailable probes cannot substitute for observed events."
+        }
+      ]
+    }
+  ]
+}

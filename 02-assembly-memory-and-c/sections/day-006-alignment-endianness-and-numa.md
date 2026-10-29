@@ -301,6 +301,10 @@ Endianness does not mean that bits run backward inside each byte. It does not
 by itself specify bit-field layout, instruction encoding, text encoding, or
 the order in which a CPU performs operations.
 
+![Structure padding, alignment, and byte order](../visuals/day-006-structure-padding-alignment-byte-order.svg)
+
+*ABI padding places members at suitable addresses; endianness separately orders each multi-byte value's representation.*
+
 Observe an object's representation legally through `unsigned char` bytes or
 `memcpy`:
 
@@ -546,6 +550,10 @@ that later process each region often establishes better locality.
 
 First touch is not a source-level ownership rule, and it does not guarantee a
 page stays put forever.
+
+![CPU package, NUMA first-touch, and local versus remote paths](../visuals/day-006-numa-first-touch-path.svg)
+
+*Allocation-time CPU and policy choose an initial locality; execution-time CPU placement determines whether access is local or remote.*
 
 ### Linux NUMA policy
 

@@ -278,6 +278,10 @@ arr      decays to  int *          → +1 moves 4 bytes
 `0x...cf0 + 20 = 0x...d04`. The pointer type, not the address, decided
 the stride.
 
+![Typed pointer stride and array decay](../visuals/day-001-pointer-stride-and-decay.svg)
+
+*The pointer type preserves stride; array decay preserves an address but loses the element count.*
+
 ### Decay is a design decision with a cost
 
 Why would a language throw away the length like that?
@@ -554,6 +558,10 @@ segfaults, because `.rodata` lands in a read-only mapping — which is a
 *loader* decision you will watch being made on Day 7, not a language
 guarantee. Declare literal pointers `const char *` so the compiler
 catches the mistake instead of the MMU.
+
+![Multidimensional layout, NUL termination, and lifetime](../visuals/day-001-grid-string-lifetime.svg)
+
+*Contiguous layout, a terminator convention, and object lifetime are separate parts of pointer validity.*
 
 ---
 

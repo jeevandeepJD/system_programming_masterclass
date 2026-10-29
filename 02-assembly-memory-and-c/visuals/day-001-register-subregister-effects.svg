@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 760" role="img" aria-labelledby="title desc">
+  <title id="title">x86-64 register and subregister write effects</title>
+  <desc id="desc">Three worked writes compare RAX, EAX, AX, and AL, showing that a 32-bit EAX write zeros the high 32 bits while 16-bit and 8-bit writes preserve unaffected bits.</desc>
+  <defs><style>text{font-family:monospace;fill:#f8fbff}.h{font:700 32px sans-serif}.t{font-size:22px;font-weight:700}.s{font-size:18px}.hi{fill:#315a88}.lo{fill:#176b72}.chg{fill:#9a6518}.box{stroke:#d8f3ff;stroke-width:3}</style></defs><rect width="1190" height="760" fill="#071521"/>
+  <text class="h" x="595" y="48" text-anchor="middle">Subregister spelling changes the write semantics</text>
+  <text class="t" x="55" y="105">Initial RAX = 0x1122334455667788</text>
+  <g><rect class="box hi" x="55" y="135" width="540" height="70"/><rect class="box lo" x="595" y="135" width="540" height="70"/><text class="s" x="325" y="178" text-anchor="middle">high 32: 11223344</text><text class="s" x="865" y="178" text-anchor="middle">EAX / low 32: 55667788</text></g>
+  <text class="t" x="55" y="270">movl $1, %eax</text><rect class="box chg" x="55" y="290" width="1080" height="70"/><text class="t" x="595" y="334" text-anchor="middle">RAX = 0x0000000000000001  &lt;- upper 32 forced to zero</text>
+  <text class="t" x="55" y="420">movw $1, %ax</text><rect class="box hi" x="55" y="440" width="810" height="70"/><rect class="box chg" x="865" y="440" width="270" height="70"/><text class="s" x="460" y="482" text-anchor="middle">preserved: 112233445566</text><text class="s" x="1000" y="482" text-anchor="middle">AX: 0001</text>
+  <text class="t" x="55" y="570">movb $1, %al</text><rect class="box hi" x="55" y="590" width="945" height="70"/><rect class="box chg" x="1000" y="590" width="135" height="70"/><text class="s" x="527" y="632" text-anchor="middle">preserved: 11223344556677</text><text class="s" x="1067" y="632" text-anchor="middle">AL: 01</text>
+  <text class="s" x="595" y="715" text-anchor="middle">Reading a name selects bits; writing it may also define what happens outside those bits.</text>
+</svg>

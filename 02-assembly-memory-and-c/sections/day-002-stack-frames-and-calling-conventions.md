@@ -214,6 +214,10 @@ With `rbp` established, every local has a fixed negative offset from `rbp`
 and every stack argument has a fixed positive offset, regardless of how `rsp`
 moves afterwards. That is the entire point of a frame pointer.
 
+![Call, stack-frame, and return anatomy](../visuals/day-002-call-ret-stack-frame.svg)
+
+*The prologue creates one activation record; the epilogue reverses those mutations before `ret` consumes the saved address.*
+
 ### Reading it in GDB
 
 ```bash
@@ -328,6 +332,10 @@ when the address was sixteen-byte aligned. Making it an ABI rule means a
 function can spill a vector register to its own frame without checking
 anything at runtime. It is a small tax paid everywhere to remove a check from
 the hot path.
+
+![System V AMD64 register ownership and stack alignment](../visuals/day-002-abi-register-ownership-alignment.svg)
+
+*Preservation responsibility and stack alignment are separate ABI promises that meet at the call boundary.*
 
 This is also the single most common way hand-written assembly breaks
 mysteriously. Push an odd number of registers before a `call` and the callee

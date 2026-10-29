@@ -85,6 +85,10 @@ The second command ends with a section-to-segment mapping. Several sections
 can share one segment because they need compatible file placement and memory
 permissions.
 
+![ELF sections grouped into PT_LOAD process mappings](../visuals/day-007-sections-segments-mappings.svg)
+
+*Sections organize the file for tools; program headers provide the kernel's mapping recipe.*
+
 ### `PT_LOAD`: the mapping recipe
 
 A loadable segment gives the kernel values such as:
@@ -584,6 +588,10 @@ Linux kernel
   ▼
 shell observes 23
 ```
+
+![Execve, initial stack, dynamic startup, main, and exit](../visuals/day-007-exec-stack-startup-exit.svg)
+
+*Kernel setup hands one replaced process to user-space startup, which reaches `main` and later returns status through the kernel.*
 
 There may be no scheduler switch to a different process at every arrow.
 “Kernel” and “user” here describe privilege and responsibility, not

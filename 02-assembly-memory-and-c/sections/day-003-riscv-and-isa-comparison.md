@@ -408,6 +408,10 @@ zero under the base alignment model, so it need not consume an encoded bit.
 This is not beautiful for a human decoder. It is a trade: regular register
 field placement and encoding overlap versus contiguous immediate notation.
 
+![RISC-V instruction field decoding](../visuals/day-003-riscv-instruction-field-decoding.svg)
+
+*Stable register fields and reconstructed immediates make the encoding budget visible in a worked decode.*
+
 ### U-type — twenty upper bits
 
 ```text
@@ -801,6 +805,10 @@ Both are plausible. A real compiler may transform more aggressively when C
 overflow, aliasing, vector extensions, and optimization settings permit.
 Assembly comparison is about preserved semantics, not matching one canonical
 answer.
+
+![Equivalent x86-64 and RISC-V load, add, and branch paths](../visuals/day-003-equivalent-isa-paths.svg)
+
+*The architectures expose different decompositions of the same required work; instruction count alone is not a performance result.*
 
 ### Comparison worksheet
 
