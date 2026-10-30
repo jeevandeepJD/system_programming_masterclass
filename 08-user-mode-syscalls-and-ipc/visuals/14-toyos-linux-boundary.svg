@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">ToyOS and Linux syscall boundary comparison</title>
+  <desc id="desc">A boundary map contrasts ToyOS Week 8's single process, int 0x80 path, stable page tables, fixed descriptors, global linear pipe, and QEMU exit with Linux production mechanisms.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.toy{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.linux{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.row{fill:#f8fafc;stroke:#6b7c93;stroke-width:2}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">Keep conclusions inside the demonstrated boundary</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">ToyOS exposes causality; Linux manages production-scale lifecycles.</text>
+  <rect class="toy" x="45" y="140" width="335" height="95" rx="12"/>
+  <text x="212" y="181" text-anchor="middle" font-weight="700">ToyOS Week 8</text>
+  <text class="sub" x="212" y="214" text-anchor="middle">selected teaching contracts</text>
+  <rect class="linux" x="414" y="140" width="335" height="95" rx="12"/>
+  <text x="582" y="181" text-anchor="middle" font-weight="700">Linux</text>
+  <text class="sub" x="582" y="214" text-anchor="middle">richer current-kernel policy</text>
+  <g>
+    <rect class="row" x="45" y="270" width="704" height="120" rx="8"/>
+    <text x="68" y="307" font-weight="700">Process and memory</text>
+    <text x="68" y="345">one process; stable pages</text><text x="437" y="345">threads, VMAs, faults, COW, SMP</text>
+    <text class="sub" x="68" y="375">no teardown</text><text class="sub" x="437" y="375">lifetime + synchronization</text>
+    <rect class="row" x="45" y="410" width="704" height="120" rx="8"/>
+    <text x="68" y="447" font-weight="700">Syscall entry</text>
+    <text x="68" y="485">DPL3 int 0x80 + iretq</text><text x="437" y="485">x86 entry paths + mitigations</text>
+    <text class="sub" x="68" y="515">interrupts disabled in handler</text><text class="sub" x="437" y="515">per-CPU state and tracing</text>
+    <rect class="row" x="45" y="550" width="704" height="120" rx="8"/>
+    <text x="68" y="587" font-weight="700">User copy</text>
+    <text x="68" y="625">software page walk</text><text x="437" y="625">architecture-aware helpers</text>
+    <text class="sub" x="68" y="655">Boolean partial failure</text><text class="sub" x="437" y="655">fault recovery + short counts</text>
+    <rect class="row" x="45" y="690" width="704" height="120" rx="8"/>
+    <text x="68" y="727" font-weight="700">Descriptors and pipe</text>
+    <text x="68" y="765">fixed fd 3/4; global 64 B</text><text x="437" y="765">FD/open-file objects; lifecycle</text>
+    <text class="sub" x="68" y="795">linear, immediate return</text><text class="sub" x="437" y="795">blocking, polling, wakeups</text>
+    <rect class="row" x="45" y="830" width="704" height="120" rx="8"/>
+    <text x="68" y="867" font-weight="700">Exit and evidence</text>
+    <text x="68" y="905">QEMU debug-exit + markers</text><text x="437" y="905">per-task exit + observability</text>
+    <text class="sub" x="68" y="935">no process reclamation</text><text class="sub" x="437" y="935">resource cleanup and accounting</text>
+  </g>
+  <rect class="toy" x="90" y="1000" width="614" height="80" rx="12"/>
+  <text x="397" y="1033" text-anchor="middle" font-weight="700">Comparison question: which invariant does each feature add?</text>
+  <text class="sub" x="397" y="1064" text-anchor="middle">Do not import Linux guarantees into ToyOS evidence.</text>
+</svg>

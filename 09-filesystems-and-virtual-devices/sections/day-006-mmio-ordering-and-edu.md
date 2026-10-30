@@ -20,6 +20,10 @@ operation.
 
 ## 2. Understand the C expression and the bus operation
 
+![Layered MMIO ordering responsibilities for C volatile, compiler emission, CPU and memory mapping rules, and device protocol completion.](../visuals/day-06-mmio-ordering.svg)
+
+*Ordering responsibilities. Volatile addresses compiler behavior only; architecture accessors, memory attributes, synchronization, and device semantics establish the remaining relations.*
+
 `edu_mmio` has type `volatile uint32_t *`. Indexing by
 `offset / sizeof(uint32_t)` forms a 32-bit access at the selected register.
 The `volatile` qualification tells the compiler that accesses are observable:
@@ -94,6 +98,10 @@ functional check. The project does not present this as a portable ordering
 library.
 
 ## 5. The EDU operation and evidence
+
+![QEMU EDU mapped-register path reading identification, issuing a checked liveness command, reading inverse status, and stopping before IRQ or DMA claims.](../visuals/day-06-edu-command-status.svg)
+
+*EDU command/status path. The implemented evidence is one validated, polled liveness exchange; offset rejection occurs before MMIO, and neither IRQ nor DMA is enabled.*
 
 The sequence is:
 

@@ -100,6 +100,10 @@ body to the highest supply, then visually suppress the body connection. Do
 not forget that it exists. Body voltage can shift threshold through the
 **body effect**, and source/drain junctions create parasitic diodes.
 
+![NMOS terminals, gate-controlled channel, and body-diode caveat](../visuals/day-001-mosfet-terminals-channel.svg)
+
+*The insulated gate controls channel conductivity; the body terminal and parasitic junction diodes still matter.*
+
 For a first nMOS model, use:
 
 ```text
@@ -268,6 +272,10 @@ Therefore:
 ```text
 dV/dt = I/C
 ```
+
+![PMOS pull-up and NMOS pull-down moving charge on a capacitive node](../visuals/day-001-pullup-pulldown-capacitive-node.svg)
+
+*Current moves charge into or out of capacitance; the resulting charge change produces the node-voltage change.*
 
 A finite current needs finite time to change voltage across capacitance. This
 is the physical seed of propagation delay.

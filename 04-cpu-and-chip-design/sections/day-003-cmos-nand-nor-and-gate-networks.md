@@ -334,6 +334,10 @@ the physical face of De Morgan's laws:
 ¬(A ∨ B) = ¬A ∧ ¬B
 ```
 
+![Two-input CMOS NAND and NOR pull-up and pull-down networks](../visuals/day-003-cmos-nand-nor-networks.svg)
+
+*NAND and NOR exchange series and parallel topology between their complementary pull-up and pull-down networks.*
+
 ---
 
 ## 7. Why static CMOS directly gives inverted functions
@@ -417,6 +421,10 @@ By De Morgan:
 ```
 
 The two derivations agree.
+
+![Dual-network derivation and physical facts omitted by truth tables](../visuals/day-003-dual-network-derivation.svg)
+
+*Deriving the output-LOW conduction condition exposes topology, while the truth table omits resistance, capacitance, fan-in, and delay.*
 
 ### A reusable derivation procedure
 

@@ -20,6 +20,10 @@ panic rather than emit a dedicated expected marker.
 
 ## 2. Configuration mechanism #1 on x86
 
+![PCI configuration mechanism one transaction scanning bus zero, devices zero through thirty-one, function zero, for vendor 1234 and device 11e8.](../visuals/day-05-pci-enumeration.svg)
+
+*Enumeration transaction. ToyOS forms config-port addresses, reads one identity dword per slot, and binds the first exact EDU match within its deliberately narrow scan.*
+
 ToyOS uses legacy PCI configuration mechanism #1:
 
 ```text
@@ -66,6 +70,10 @@ numbers or resources, enable bus mastering, negotiate MSI/MSI-X, or preserve
 firmware topology.
 
 ## 4. Decode BAR0 without overgeneralizing
+
+![BAR lifecycle from raw configuration dword through memory type and conceptual sizing, physical base decode, and kernel virtual mapping ownership.](../visuals/day-05-bar-ownership.svg)
+
+*BAR ownership and mapping. ToyOS decodes an already assigned 32-bit memory BAR; general sizing, 64-bit handling, and explicit device-memory attributes are outside this implementation.*
 
 At configuration offset `0x10`, BAR0 describes an I/O or memory resource. Bit
 0 distinguishes I/O space from memory space. ToyOS asserts bit 0 is clear and

@@ -90,6 +90,10 @@ tools and three systems
   ToyOS tasks, a teaching-OS sleep, Linux tasks plus the C model
 ```
 
+![Week 11 roadmap from shared process resources through races, synchronization, ordering, liveness, cache behavior, and debugging](visuals/week-11-concurrency-roadmap.svg)
+
+*The week follows one causal chain: shared state creates ordering questions, synchronization answers them, and layered evidence tests each claim.*
+
 ## Daily roadmap
 
 Each day below follows the order above: the syntax that source needs, the

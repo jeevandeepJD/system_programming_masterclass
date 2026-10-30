@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">From C expression to compiler transformation and CPU execution</title>
+<desc id="desc">A three-layer funnel contrasts source-level counter increments, a compiler-collapsed unlocked add, and CPU load-compute-store behavior with cache coherence, showing why a lost update is narrower than undefined behavior.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#ffd166"/></marker><style>text{font-family:Arial,sans-serif;fill:#f8fbff}.t{font-size:37px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:19px}.lang{fill:#552d3d;stroke:#ff8ea0;stroke-width:3}.comp{fill:#493b68;stroke:#d0b2ff;stroke-width:3}.cpu{fill:#123f5b;stroke:#83d9ff;stroke-width:3}.cache{fill:#185047;stroke:#7be2bc;stroke-width:3}.edge{stroke:#ffd166;stroke-width:5;fill:none;marker-end:url(#a)}.split{stroke:#ff8ea0;stroke-width:4;fill:none}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="70">The source interleaving is not the whole execution</text>
+<rect class="lang" x="80" y="145" width="1030" height="260" rx="28"/>
+<text class="h" x="120" y="195">C ABSTRACT MACHINE</text>
+<text class="b" x="120" y="242">for 200000 iterations: unsafe_counter++</text>
+<text class="b" x="120" y="286">plain load + modify + store; workers conflict without happens-before</text>
+<text class="b" x="120" y="330">permission after a data race: no requirements for this execution</text>
+<path class="edge" d="M595 405V500"/>
+<rect class="comp" x="145" y="500" width="900" height="270" rx="28"/>
+<text class="h" x="185" y="550">COMPILER (one legal build choice)</text>
+<text class="b" x="185" y="602">200000 source increments  ->  one unlocked addq $200000, counter</text>
+<text class="b" x="185" y="646">loop operations were combined before any scheduler interleaving</text>
+<text class="b" x="185" y="690">volatile could preserve accesses; it still would not add atomicity</text>
+<path class="edge" d="M595 770V865"/>
+<rect class="cpu" x="70" y="865" width="500" height="390" rx="28"/>
+<text class="h" x="105" y="915">CORE 0</text>
+<text class="b" x="105" y="970">read memory: M</text><text class="b" x="105" y="1015">ALU computes M + 200000</text><text class="b" x="105" y="1060">write memory: M + 200000</text>
+<rect class="cpu" x="620" y="865" width="500" height="390" rx="28"/>
+<text class="h" x="655" y="915">CORE 1</text>
+<text class="b" x="655" y="970">read memory: M</text><text class="b" x="655" y="1015">ALU computes M + 200000</text><text class="b" x="655" y="1060">write memory: M + 200000</text>
+<path class="split" d="M520 1110C575 1170 615 1170 670 1110"/>
+<rect class="cache" x="180" y="1315" width="830" height="190" rx="26"/>
+<text class="h" x="220" y="1365">COHERENT FINAL LINE</text>
+<text class="b" x="220" y="1410">both cores agree on M + 200000; one update was overwritten</text>
+<text class="b" x="220" y="1452">coherence orders bytes, not source intent or C happens-before</text>
+<text class="b" x="85" y="1585">Lost update: one concrete machine outcome  |  Undefined behavior: the wider language boundary</text>
+</svg>

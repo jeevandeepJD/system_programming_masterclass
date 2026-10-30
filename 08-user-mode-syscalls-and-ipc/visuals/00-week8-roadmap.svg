@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">Week 8 user-to-kernel roadmap</title>
+  <desc id="desc">A six-stage roadmap from a ring 3 process and ELF image through int 0x80, checked user copying, descriptors and a pipe, to trace evidence and a report.</desc>
+  <rect width="794" height="1123" fill="#ffffff"/>
+  <style>
+    text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px} .h{font-size:34px;font-weight:700}.s{font-size:19px;fill:#334e68}.n{font-size:25px;font-weight:700;fill:#fff}.b{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.a{stroke:#9a3412;stroke-width:5;fill:none}
+  </style>
+  <text class="h" x="397" y="66" text-anchor="middle">Week 8: one request, six boundaries</text>
+  <text class="s" x="397" y="101" text-anchor="middle">Architecture moves privilege; ABI names registers; policy validates effects.</text>
+  <path class="a" d="M397 228V270 M397 391V433 M397 554V596 M397 717V759 M397 880V922"/>
+  <g>
+    <rect class="b" x="92" y="130" width="610" height="98" rx="14"/>
+    <circle cx="137" cy="179" r="27" fill="#174ea6"/><text class="n" x="137" y="188" text-anchor="middle">1</text>
+    <text x="185" y="168" font-weight="700">Ring 3 process + address space</text>
+    <text class="s" x="185" y="201">ELF image, user pages, user stack, process-owned PML4</text>
+  </g>
+  <g>
+    <rect class="b" x="92" y="293" width="610" height="98" rx="14"/>
+    <circle cx="137" cy="342" r="27" fill="#174ea6"/><text class="n" x="137" y="351" text-anchor="middle">2</text>
+    <text x="185" y="331" font-weight="700">Educational syscall entry</text>
+    <text class="s" x="185" y="364">DPL3 int 0x80 gate -&gt; TSS RSP0 -&gt; saved frame</text>
+  </g>
+  <g>
+    <rect class="b" x="92" y="456" width="610" height="98" rx="14"/>
+    <circle cx="137" cy="505" r="27" fill="#174ea6"/><text class="n" x="137" y="514" text-anchor="middle">3</text>
+    <text x="185" y="494" font-weight="700">Checked user copy</text>
+    <text class="s" x="185" y="527">Range + overflow + page walk + partial-copy boundary</text>
+  </g>
+  <g>
+    <rect class="b" x="92" y="619" width="610" height="98" rx="14"/>
+    <circle cx="137" cy="668" r="27" fill="#174ea6"/><text class="n" x="137" y="677" text-anchor="middle">4</text>
+    <text x="185" y="657" font-weight="700">Descriptor policy</text>
+    <text class="s" x="185" y="690">fd 1 serial; fd 3/4 bounded pipe endpoints</text>
+  </g>
+  <g>
+    <rect class="b" x="92" y="782" width="610" height="98" rx="14"/>
+    <circle cx="137" cy="831" r="27" fill="#174ea6"/><text class="n" x="137" y="840" text-anchor="middle">5</text>
+    <text x="185" y="820" font-weight="700">Return to user</text>
+    <text class="s" x="185" y="853">Result in saved RAX -&gt; restore registers -&gt; iretq</text>
+  </g>
+  <g>
+    <rect class="b" x="92" y="945" width="610" height="98" rx="14"/>
+    <circle cx="137" cy="994" r="27" fill="#174ea6"/><text class="n" x="137" y="1003" text-anchor="middle">6</text>
+    <text x="185" y="983" font-weight="700">Trace and report</text>
+    <text class="s" x="185" y="1016">Correlate source, ELF, serial/QEMU, and GDB evidence</text>
+  </g>
+</svg>

@@ -202,6 +202,10 @@ signal(the other CV)          # still holding M, in this lab
 unlock(M)
 ```
 
+![Condition-variable state machine for predicate testing, atomic unlock-and-sleep, relock, and recheck](../visuals/day-004-condition-wait-loop.svg)
+
+*Every return from the wait is permission to recheck the predicate, not permission to consume the resource.*
+
 The atomicity that matters is the pair "release M" and "become a published
 waiter." POSIX assigns that pair to `pthread_cond_wait`. A program that
 unlocks by hand and only then calls the wait has opened the gap itself.
@@ -377,6 +381,10 @@ after five more successful puts, count == 8, tail == head:
 a put must wait on not_full
 a get waits on not_empty only when count == 0
 ```
+
+![Eight-slot bounded ring in empty, occupied, and full states with both condition predicates](../visuals/day-004-bounded-queue-states.svg)
+
+*The count disambiguates equal head and tail indices, while each transition signals the predicate it may have made true.*
 
 When `count` is 0, `head == tail` and the ring is empty. When `count` is 8,
 `head == tail` and the ring is full. The pointers alone do not say which.

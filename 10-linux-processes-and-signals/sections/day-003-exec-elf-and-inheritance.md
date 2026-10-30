@@ -1,5 +1,9 @@
 # Day 3 — Exec Replaces the Image and Keeps the Task
 
+![Exec image replacement from ELF through startup](../visuals/day-003-exec-image-replacement.svg)
+
+*Replacement path — The loader installs ELF mappings, an interpreter when present, and a startup stack under the existing process identity.*
+
 **Target time:** approximately 3 hours
 
 > A child has just called `execve("/bin/sh", ...)`. The call succeeds. Which
@@ -450,6 +454,10 @@ image's job, after it begins running.
 ---
 
 ## 8. `FD_CLOEXEC` closes one descriptor index
+
+![Exec inheritance, closure, reset, and replacement table](../visuals/day-003-exec-inheritance-reset.svg)
+
+*Exec boundary table — PID, descriptors, masks, dispositions, and mappings follow different retain, close, reset, or replace rules.*
 
 Day 2's `dup_fd` copied the `close_on_exec` bitmap into the child's private
 `files_struct`. The bit lives beside the descriptor index. `struct file`

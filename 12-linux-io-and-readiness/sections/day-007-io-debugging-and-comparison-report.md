@@ -395,6 +395,10 @@ is no VMA, and `do_user_addr_fault` takes `bad_area_nosemaphore` before
 
 ## 7. One failure, all the way through
 
+![Evidence workflow from symptom and hypothesis to regression](../visuals/day-007-evidence-debug-workflow.svg)
+
+*Figure 1. Debugging proceeds from symptom to a falsifiable hypothesis, runtime and source evidence, measurement, mitigation, and a regression that protects both success and failure paths.*
+
 The shape is fixed. Symptom, hypothesis, evidence, root cause, fix,
 regression. The evidence column names its layer: source, API, trace,
 proc, or GDB.
@@ -536,6 +540,10 @@ passing read. A load after `munmap` is a segmentation fault instead,
 which shows the two faults stayed distinct.
 
 ## 10. What each layer is allowed to prove
+
+![Matrix separating runtime observation source proof ToyOS and Linux](../visuals/day-007-observation-source-proof.svg)
+
+*Figure 2. Runtime observation proves what a run did; identified source explains a mechanism. ToyOS and Linux require separate claims because they implement and expose different evidence.*
 
 ```text
 layer      answers                                      does not answer

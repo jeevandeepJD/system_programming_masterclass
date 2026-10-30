@@ -214,6 +214,10 @@ load after the block is installed. The software-visible operation is still a
 load; the miss is a microarchitectural event caused by where a copy was—or
 was not—present.
 
+![6T SRAM feedback, 1T1C DRAM sensing, and hierarchy use](../visuals/day-005-sram-dram-hierarchy.svg)
+
+*SRAM retains state with feedback, while DRAM charge requires sensing, restoration, and refresh; each serves a different hierarchy role.*
+
 ---
 
 ## 3. A latch is open for a level; a flip-flop samples around an edge
@@ -446,6 +450,10 @@ An RTL simulator models discrete values and scheduling rules. It may show
 `X` when drivers conflict or a value is unknown, but it does not solve the
 analog differential equations of a metastable storage node. Conversely, a
 clean zero/one simulation does not prove metastability safety.
+
+![Register path timing and two-flop metastability risk reduction](../visuals/day-005-register-timing-metastability.svg)
+
+*Setup, hold, skew, and jitter bound synchronous capture; a two-flop synchronizer buys resolution time without eliminating risk.*
 
 ### Why ordinary synchronous paths avoid it
 

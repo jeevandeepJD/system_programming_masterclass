@@ -307,6 +307,10 @@ the file, not in a bit the user has to pass on every call.
 
 ## 7. `fork` plus `dup2` is how a shell aims the queue
 
+![Pipe ring with endpoint lifetime atomic writes EOF SIGPIPE and backpressure](../visuals/day-004-pipe-ring-lifetimes.svg)
+
+*Figure 1. The finite ring creates backpressure; endpoint reference counts determine EOF and broken-pipe behavior, while `PIPE_BUF` atomicity does not turn the stream into messages.*
+
 A pipe inside one process is only a queue the process can use to talk
 to itself. A pipeline needs a second task whose standard input or
 standard output is one of the two ends. [Week 10's fork](../../10-linux-processes-and-signals/sections/day-002-fork-cow-and-lineage.md)
@@ -346,6 +350,10 @@ own later read will not see end-of-file. Section 9 is that rule in
 `pipe_release`.
 
 ## 8. Three bytes, from the user buffer to the other user buffer
+
+![Shell pipeline redirection using fork dup2 close and one bounded pipe](../visuals/day-004-dup2-pipeline-redirection.svg)
+
+*Figure 2. Each child uses `dup2` to aim a standard descriptor at the correct endpoint, then closes inherited extras so EOF and `SIGPIPE` reflect real ownership.*
 
 Take a blocking pipe, one writer, one reader, and a three-byte write of
 `'a'`, `'b'`, `'c'`. `pipe_write` locks the pipe. `readers` is 1, so it

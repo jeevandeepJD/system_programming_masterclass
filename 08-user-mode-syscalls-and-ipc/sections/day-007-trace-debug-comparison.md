@@ -27,6 +27,10 @@ owner, buffer owner, interrupt state, and evidence type. This prevents a
 common mistake: saying the CPU “calls the C syscall function.” The CPU enters
 an assembly gate; software constructs the C boundary.
 
+![Integrated user instruction to int 0x80 dispatch serial output and iretq trace with source ELF GDB and QEMU evidence](../visuals/13-instruction-to-evidence-trace.svg)
+
+*Figure 1. Each trace event needs the evidence type that can actually support it, from source and ELF bytes through saved-state observations and QEMU output.*
+
 Repeat the trace for `pipe`, pipe `write`, pipe `read`, and `exit`. Note that
 `exit` never returns and QEMU termination substitutes for process teardown.
 
@@ -145,6 +149,10 @@ The comparison should not become a feature checklist detached from the
 trace. For each richer mechanism, name the invariant it addresses:
 per-CPU stack ownership, concurrent mapping changes, endpoint lifetime,
 partial-copy recovery, or asynchronous user-return modification.
+
+![ToyOS and Linux boundary comparison across process memory syscall entry user copy descriptors pipe and exit](../visuals/14-toyos-linux-boundary.svg)
+
+*Figure 2. The comparison preserves ToyOS's demonstrated boundary while naming the lifecycle, concurrency, and recovery invariants Linux must add.*
 
 ## 7. State ToyOS conclusions narrowly
 

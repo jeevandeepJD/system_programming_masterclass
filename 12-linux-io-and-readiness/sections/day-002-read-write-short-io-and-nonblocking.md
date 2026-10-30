@@ -133,6 +133,10 @@ kind of object that supplies `file_operations`.
 
 ## 5. Three results, and the libc translation
 
+![Short I/O retry loop with progress EOF EINTR and EAGAIN](../visuals/day-002-short-io-retry-loop.svg)
+
+*Figure 1. A correct transfer loop advances only by the positive count returned, retries the untouched tail after `EINTR`, and hands `EAGAIN` back to the readiness policy.*
+
 Inside the kernel the return is an `ssize_t`:
 
 - a positive value is the number of bytes moved;
@@ -626,6 +630,10 @@ ssize_t in the return register
 ```
 
 ## 12. A loop that means what it says
+
+![Nonblocking stream state machine and byte-stream boundary warning](../visuals/day-002-nonblocking-stream-state.svg)
+
+*Figure 2. Nonblocking I/O alternates between attempts and readiness waits; none of those states creates message boundaries in an ordinary byte stream.*
 
 This is the caller side of the contract. `read` here is libc: `-1` and
 `errno`, not the kernel's negative `ssize_t`. The cursor `got` is the

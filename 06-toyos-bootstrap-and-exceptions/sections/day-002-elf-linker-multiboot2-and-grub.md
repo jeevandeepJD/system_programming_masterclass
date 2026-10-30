@@ -5,6 +5,14 @@
 > The compiler produced object files. What makes the result a kernel image
 > that GRUB can recognize rather than merely another ELF file?
 
+![ELF views and linker addresses](../visuals/day-02-elf-layout.svg)
+
+*Connects input sections to linker-selected addresses and loadable program headers.*
+
+![Multiboot2 recognition and handoff](../visuals/day-02-multiboot-grub.svg)
+
+*Separates the Multiboot2 header, GRUB loading, and transfer to the ELF entry.*
+
 The ELF container, linker script, Multiboot2 header, GRUB configuration, and
 ISO each answer a different question. Keep them separate.
 

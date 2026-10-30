@@ -216,6 +216,10 @@ CPI = cycles / instructions = 10 / 6 ≈ 1.67
 As `N` becomes large, ideal CPI approaches 1. It does not equal 1 for a short
 cold sequence, and Day 6 will add bubbles that keep real CPI above the ideal.
 
+![Five-stage space-time pipeline showing fill, steady state, and drain](../visuals/day-005-five-stage-space-time.svg)
+
+*Six instructions need ten cycles: five stages plus six instructions minus one.*
+
 ### Batch speedup
 
 For 100 independent instructions:
@@ -330,6 +334,10 @@ validity, a number arriving at WB would not say whether it should update
 
 The values in these registers are microarchitectural state. Software observes
 their eventual architectural effects, not the registers themselves.
+
+![Latency, throughput, stage imbalance, boundary overhead, and carried identity](../visuals/day-005-latency-throughput-identity.svg)
+
+*Shorter stage work improves throughput only after paying boundary overhead and preserving identity.*
 
 ---
 

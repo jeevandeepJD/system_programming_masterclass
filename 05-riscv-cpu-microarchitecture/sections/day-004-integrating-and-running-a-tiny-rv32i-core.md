@@ -128,6 +128,10 @@ The Python statements execute sequentially because software must simulate
 the model somehow. The represented hardware relationships are combinational
 settling followed by simultaneous-looking state capture.
 
+![One sum-loop iteration from state through candidates to commit boundaries](../visuals/day-004-state-candidates-commit.svg)
+
+*Each instruction computes candidates from old state and commits only enabled effects.*
+
 ### `x0` is an invariant
 
 The decoder may identify `rd=0`, and the ALU may calculate a result. The
@@ -191,6 +195,10 @@ times. Two final memory instructions execute once:
 `BNE` is taken three times and not taken once. A wrong prediction here often
 reveals an off-by-one error about whether decrement happens before the
 condition is tested.
+
+![Hand-encoded sum loop timeline with final store, load-back, and trap boundary](../visuals/day-004-sum-loop-model-trap-boundary.svg)
+
+*Four load/add iterations produce 23; a host-model error is not a precise architectural trap.*
 
 ---
 

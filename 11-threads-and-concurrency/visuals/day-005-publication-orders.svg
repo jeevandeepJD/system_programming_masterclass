@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">Relaxed versus release acquire publication</title>
+<desc id="desc">Two message-passing timelines contrast relaxed flag operations, which do not publish a non-atomic payload, with a release store and matching acquire load that create a happens-before edge.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#7ce2bc"/></marker><style>text{font-family:Arial,sans-serif;fill:#f8fbff}.t{font-size:37px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:19px}.bad{fill:#612e3c;stroke:#ff8d9e;stroke-width:3}.good{fill:#174f45;stroke:#7ce2bc;stroke-width:3}.op{fill:#143f5a;stroke:#83d9ff;stroke-width:3}.line{stroke:#83d9ff;stroke-width:5}.hb{stroke:#7ce2bc;stroke-width:6;fill:none;marker-end:url(#a)}.miss{stroke:#ff8d9e;stroke-width:6;stroke-dasharray:14 10}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="70">Atomic flag is not automatic payload publication</text>
+<rect class="bad" x="55" y="135" width="1080" height="650" rx="28"/><text class="h" x="95" y="185">RELAXED FLAG  |  atomic, but no synchronizes-with edge</text>
+<text class="h" x="210" y="255">WRITER</text><line class="line" x1="270" y1="285" x2="270" y2="700"/>
+<text class="h" x="820" y="255">READER</text><line class="line" x1="880" y1="285" x2="880" y2="700"/>
+<rect class="op" x="105" y="340" width="330" height="105" rx="18"/><text class="b" x="140" y="404">payload = 42  |  plain store</text>
+<rect class="op" x="105" y="510" width="330" height="120" rx="18"/><text class="b" x="140" y="555">flag.store(1, relaxed)</text><text class="b" x="140" y="595">atomic modification order only</text>
+<rect class="op" x="715" y="420" width="330" height="120" rx="18"/><text class="b" x="750" y="465">flag.load(relaxed) == 1</text><text class="b" x="750" y="505">then payload read</text>
+<line class="miss" x1="435" y1="575" x2="715" y2="480"/><text class="b" x="480" y="690">no edge  ->  plain payload accesses race</text>
+<rect class="good" x="55" y="850" width="1080" height="690" rx="28"/><text class="h" x="95" y="900">RELEASE / ACQUIRE  |  publication protocol</text>
+<text class="h" x="210" y="970">WRITER</text><line class="line" x1="270" y1="1000" x2="270" y2="1450"/>
+<text class="h" x="820" y="970">READER</text><line class="line" x1="880" y1="1000" x2="880" y2="1450"/>
+<rect class="op" x="105" y="1050" width="330" height="105" rx="18"/><text class="b" x="140" y="1114">payload = 42  |  plain store</text>
+<rect class="op" x="105" y="1230" width="330" height="120" rx="18"/><text class="b" x="140" y="1275">flag.store(1, release)</text><text class="b" x="140" y="1315">publishes earlier accesses</text>
+<rect class="op" x="715" y="1135" width="330" height="120" rx="18"/><text class="b" x="750" y="1180">flag.load(acquire) == 1</text><text class="b" x="750" y="1220">reads the release value</text>
+<rect class="op" x="715" y="1330" width="330" height="105" rx="18"/><text class="b" x="750" y="1394">read payload  ->  42</text>
+<path class="hb" d="M435 1290C555 1210 620 1195 715 1195"/>
+<text class="b" x="445" y="1490">release synchronizes-with matching acquire; payload happens-before read</text>
+</svg>

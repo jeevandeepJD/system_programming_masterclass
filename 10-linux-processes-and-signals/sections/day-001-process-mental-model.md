@@ -1,5 +1,9 @@
 # Day 1 — A Process Is a Live Task
 
+![Layered ownership across task, process, address space, and resources](../visuals/day-001-task-process-thread-ownership.svg)
+
+*Ownership map — A task’s execution state points into process-shared objects, an address space, and reference-counted kernel resources.*
+
 **Target time:** approximately 3 hours
 
 - Why a task object exists, beside the ELF file: 35 minutes
@@ -573,6 +577,10 @@ resolves the reader.
 ---
 
 ## 10. Descriptors, credentials, and lifetime are referenced objects
+
+![Execution state and resource lifetime through reap](../visuals/day-001-state-resource-lifetime.svg)
+
+*Lifetime map — Runnable state, resource ownership, and task-object lifetime end at different points.*
 
 A descriptor number is an index in the `fdtable` hung off `files_struct`.
 In `include/linux/fdtable.h` the table has a reference count, a pointer to

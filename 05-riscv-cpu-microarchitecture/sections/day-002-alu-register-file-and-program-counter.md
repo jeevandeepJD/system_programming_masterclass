@@ -77,6 +77,10 @@ SLTU  → 0x00000000    because 4294967295 < 1 is false
 No register carries a permanent signed/unsigned tag. The control signal
 selecting `SLT` or `SLTU` gives the comparator its meaning.
 
+![ALU modulo result, signed SLT, unsigned SLTU, and no architectural flags](../visuals/day-002-alu-comparison-no-flags.svg)
+
+*Identical operand bits produce different comparisons only when control selects their interpretation.*
+
 ### Modulo arithmetic is the RV32I result
 
 `ADD`, `ADDI`, and `SUB` ignore arithmetic overflow in the sense that no
@@ -323,6 +327,10 @@ pc <= next_pc;
 
 Do not say that the PC “increments itself.” An adder creates a candidate
 `pc+4`; control selects it; the PC register captures it.
+
+![Two-read one-write register file and selected next-PC edge capture](../visuals/day-002-register-file-pc-capture.svg)
+
+*Reads and next-PC candidates are combinational; writes and PC replacement occur at the edge.*
 
 ### Current PC and link value
 

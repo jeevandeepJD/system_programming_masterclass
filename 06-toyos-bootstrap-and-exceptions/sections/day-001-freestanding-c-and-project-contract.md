@@ -5,6 +5,14 @@
 > Before `kernel_main` can print one byte, which guarantees come from C, which
 > come from the compiler ABI, and which has ToyOS built for itself?
 
+![Hosted and freestanding contracts](../visuals/day-01-hosted-freestanding.svg)
+
+*Contrasts inherited hosted services with the explicit ToyOS freestanding contract.*
+
+![Source, build, and project boundary](../visuals/day-01-project-boundary.svg)
+
+*Shows how source declarations cross the build boundary into the canonical ToyOS project.*
+
 An ordinary Linux process inherits a loader, virtual address space, stack,
 C runtime, file descriptors, and system-call boundary. ToyOS begins under a
 bootloader with none of libc's hosted environment. “Freestanding” is not a

@@ -265,6 +265,10 @@ than merely stopping. The teaching decoder has no privilege or trap
 machinery, so it reports illegality while proving that write enables remain
 low.
 
+![Format-dependent immediate reconstruction and safe control bundle](../visuals/day-003-immediate-control-safe-decode.svg)
+
+*Legality, immediate construction, selects, and enables must agree before state may change.*
+
 ---
 
 ## 5. One instruction through the complete path
@@ -317,6 +321,10 @@ path, plus clocking uncertainty. The load often dominates a textbook
 single-cycle design because it crosses two modeled memories and the ALU.
 An `ADD` does not need the data-memory access, but it still waits for the same
 global clock edge.
+
+![Complete single-cycle load critical path and timing condition](../visuals/day-003-single-cycle-load-critical-path.svg)
+
+*The load crosses both modeled memories, so its full path can set the global period.*
 
 A branch has its own competition:
 

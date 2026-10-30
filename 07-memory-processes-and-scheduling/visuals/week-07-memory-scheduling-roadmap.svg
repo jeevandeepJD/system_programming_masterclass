@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 840" role="img" aria-labelledby="title desc">
+<title id="title">Week 7 memory and scheduling ownership roadmap</title>
+<desc id="desc">A causal roadmap from the boot memory map through frame allocation, page tables, heap objects, task stacks, cooperative switching, timer preemption, and the final evidence report.</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ffd166"/></marker><style>text{font-family:Arial,sans-serif;fill:#f7fbff}.t{font-size:34px;font-weight:700}.h{font-size:22px;font-weight:700}.b{font-size:18px}.box{fill:#173b57;stroke:#8fd3ff;stroke-width:3}.alt{fill:#573b69;stroke:#e1b8ff;stroke-width:3}.line{stroke:#ffd166;stroke-width:4;fill:none;marker-end:url(#a)}.note{fill:#0e6b63;stroke:#83f4cd;stroke-width:2}</style></defs>
+<rect width="1190" height="840" fill="#08131e"/><text class="t" x="40" y="55">Week 7: from firmware facts to scheduler evidence</text>
+<g text-anchor="middle"><rect class="box" x="45" y="115" width="245" height="105" rx="14"/><text class="h" x="168" y="150">Boot memory map</text><text class="b" x="168" y="182">normalize usable ranges</text>
+<rect class="box" x="345" y="115" width="245" height="105" rx="14"/><text class="h" x="468" y="150">Frame allocator</text><text class="b" x="468" y="182">physical ownership bits</text>
+<rect class="box" x="645" y="115" width="245" height="105" rx="14"/><text class="h" x="768" y="150">Page tables</text><text class="b" x="768" y="182">virtual meaning + TLB</text>
+<rect class="box" x="945" y="115" width="200" height="105" rx="14"/><text class="h" x="1045" y="150">Heap</text><text class="b" x="1045" y="182">object lifetime</text>
+<path class="line" d="M290 168H345"/><path class="line" d="M590 168H645"/><path class="line" d="M890 168H945"/>
+<rect class="alt" x="45" y="350" width="245" height="105" rx="14"/><text class="h" x="168" y="385">Task stacks</text><text class="b" x="168" y="417">saved context owner</text>
+<rect class="alt" x="345" y="350" width="245" height="105" rx="14"/><text class="h" x="468" y="385">Cooperative switch</text><text class="b" x="468" y="417">yield + ABI boundary</text>
+<rect class="alt" x="645" y="350" width="245" height="105" rx="14"/><text class="h" x="768" y="385">PIT/PIC preemption</text><text class="b" x="768" y="417">IRQ + EOI boundary</text>
+<rect class="alt" x="945" y="350" width="200" height="105" rx="14"/><text class="h" x="1045" y="385">Report</text><text class="b" x="1045" y="417">reproducible evidence</text>
+<path class="line" d="M1045 220V285H168V350"/><path class="line" d="M290 403H345"/><path class="line" d="M590 403H645"/><path class="line" d="M890 403H945"/></g>
+<rect class="note" x="125" y="610" width="940" height="130" rx="16"/><text class="h" x="595" y="650" text-anchor="middle">One question at every boundary</text><text class="b" x="595" y="688" text-anchor="middle">Who owns the frame, mapping, object, stack, registers, CPU, and evidence now?</text><text class="b" x="595" y="720" text-anchor="middle">Architecture rule + ABI rule + ToyOS policy + observed proof</text>
+</svg>

@@ -21,6 +21,10 @@ only for MMIO liveness. No block storage path is claimed.
 
 ## 2. Build the conceptual read path
 
+![Conceptual VFS to page cache to filesystem to block layer to driver to storage device stack beside the implemented direct ToyOS ramfs path.](../visuals/day-04-storage-stack.svg)
+
+*Storage-stack comparison. The full cached path explains ownership a persistent design would need; ToyOS ends at authoritative static inode bytes.*
+
 In a conventional cached filesystem, a buffered user read may follow this
 conceptual chain:
 
@@ -50,6 +54,10 @@ inode byte array a “page cache” would be false: it is the authoritative
 storage for this boot, not a cached copy of another object.
 
 ## 3. What a page cache contributes
+
+![Evidence boundary separating implemented ramfs byte copies from unimplemented page cache, writeback, block requests, storage driver, and journal.](../visuals/day-04-implemented-vs-concept.svg)
+
+*Implementation boundary. Page-cache and block-layer vocabulary is used only for comparison and must not be attached to the executed Week 9 path.*
 
 A page cache stores file content in memory in page-sized units and coordinates
 reads, writes, mappings, reclaim, and writeback. It must answer questions that

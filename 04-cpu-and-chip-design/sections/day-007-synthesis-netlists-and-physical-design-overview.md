@@ -256,6 +256,10 @@ floorplan → place → clock-tree synthesis → route
 - **Signoff** checks timing and physical/electrical requirements using much
   richer models.
 
+![RTL through synthesis and the physical-design flow](../visuals/day-007-synthesis-physical-flow.svg)
+
+*A mapped netlist still lacks placement, clock distribution, routed wires, extracted parasitics, and signoff.*
+
 This concise map is enough for our boundary: synthesis has not performed
 these steps. FPGA implementation likewise still packs, places, and routes
 the mapped resources before producing configuration data, but it targets a
@@ -327,6 +331,10 @@ It does **not** establish:
 - manufacturability or signoff.
 
 That limitation is part of the lesson, not a weakness to hide.
+
+![Evidence ladder from analog models through final implementation](../visuals/day-007-evidence-ladder.svg)
+
+*ngspice, HDL simulation, synthesis, and final implementation answer different bounded questions; no rung silently proves the next.*
 
 ---
 

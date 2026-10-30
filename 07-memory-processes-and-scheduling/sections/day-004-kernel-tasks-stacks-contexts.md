@@ -12,6 +12,10 @@ same page tables, global variables, kernel code, devices, and privilege.
 They are not processes and do not provide isolation. Calling them processes
 would hide exactly what Week 8 must add.
 
+![Task record, saved ABI context, dedicated kernel stack, and live CPU ownership](../visuals/day-004-task-stack-context-ownership.svg)
+
+*Inactive tasks own saved contexts and stacks; only `current` owns the CPU's live register and stack state.*
+
 Each `kernel_task` contains a saved `context`, state, identifier, entry
 function, and stack pointer. The static `tasks[2]` array is a tiny fixed run
 queue; `current` identifies the task whose stack and execution stream own the
@@ -76,6 +80,10 @@ created → RUNNABLE → RUNNING
 RUNNING → RUNNABLE during a switch
 RUNNING → BLOCKED on completion
 ```
+
+![ToyOS transitions among runnable, running, and permanently blocked task states](../visuals/day-004-task-state-machine.svg)
+
+*Selection and switching form a two-way runnable/running edge, while completion has no wakeup path.*
 
 There is no separate ready-list node, sleep queue, priority, fairness
 accounting, or idle task. If the other task is blocked, `schedule` may return

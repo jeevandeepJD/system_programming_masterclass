@@ -50,6 +50,10 @@ returns `5 + slot`.
 
 ## 3. Build an ownership ledger
 
+![Ownership chain from user descriptor value to a kernel open-file slot with its own offset, then to a shared static inode and exact path name.](../visuals/day-01-fd-file-inode.svg)
+
+*Descriptor-to-inode ownership. The descriptor selects; the file slot owns per-open position; the inode owns shared bytes and metadata; ToyOS has no dentry object.*
+
 The two arrays in `vfs.c` have static storage duration. They are kernel-global
 and exist for the life of the kernel. `vfs_init` assigns two pointers to
 string literals and initializes inode contents. No allocation or destruction
@@ -80,6 +84,10 @@ object that remains open. ToyOS has none of those transitions, so do not infer
 them from its type names.
 
 ## 4. Path resolution is policy, not string equality
+
+![Reference lifetime ledger showing ToyOS static objects, open transitions, the absent close transition, and conceptual reference-counted VFS lifetimes.](../visuals/day-01-reference-lifetimes.svg)
+
+*References and lifetimes. Current pointers remain valid because every object is static, but the missing close and reference transitions prevent safe reclaim or sharing.*
 
 ToyOS's lookup loops over two inodes and compares the supplied string to each
 stored absolute path. That is bounded only indirectly by the syscall's

@@ -1,5 +1,9 @@
 # Week 10 — Linux Processes and Signals
 
+![Roadmap of process identity, lifecycle, control, and evidence](visuals/week-10-process-lifecycle-roadmap.svg)
+
+*Roadmap — Track which identities and resources survive each transition from a live task to observation and debugging.*
+
 **Format:** seven daily sections, each a mechanism lesson with one bounded
 wrapper in [`projects/linux-system-programming`](../projects/linux-system-programming/)
 

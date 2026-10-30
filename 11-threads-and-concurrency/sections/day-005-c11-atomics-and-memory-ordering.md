@@ -266,6 +266,10 @@ atomic_store(&flag, 1, release)     if (atomic_load(&flag, acquire) == 1)
                                       read payload bytes
 ```
 
+![Relaxed flag operations contrasted with release-acquire publication of a payload](../visuals/day-005-publication-orders.svg)
+
+*Atomicity of the flag is not enough: publication requires the reader to acquire the value written by the release.*
+
 If the acquire load reads the value the release store wrote, or a later
 value in that object's modification order from the release sequence the
 standard defines, the release synchronizes with the acquire. Happens-before
@@ -339,6 +343,10 @@ only after you inspect that binary's operations and the compiler's mapping.
 Seq_cst is also the default for the convenience functions that do not take
 an explicit order. The lab's checked paths pass an explicit order so the
 source states the promise in place.
+
+![Relaxed atomic read-modify-write modification order and message-passing outcomes under relaxed and sequentially consistent orders](../visuals/day-005-rmw-message-ordering.svg)
+
+*A relaxed RMW preserves every update to one object, while seq_cst additionally constrains operations across objects with one total order.*
 
 Seq_cst is sufficient for a great many publication patterns and stricter
 than release/acquire. The counter does not need it. A single-flag message

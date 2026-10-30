@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">ELF segment map copy zero and entry stack</title>
+  <desc id="desc">A file-backed PT_LOAD extent is rounded to user pages, file bytes are copied, the memory-only tail remains zero, and the entry and four-page stack define initial user execution.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.file{fill:#fef3c7;stroke:#92400e;stroke-width:3}.copy{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.zero{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.stack{fill:#f3e8ff;stroke:#6b21a8;stroke-width:3}.a{stroke:#9a3412;stroke-width:5;fill:none}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">One PT_LOAD becomes owned user memory</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">File extent and memory extent are related, but not identical.</text>
+  <text x="84" y="165" font-weight="700">Embedded ELF file</text>
+  <rect class="file" x="84" y="195" width="626" height="95" rx="10"/>
+  <text x="397" y="235" text-anchor="middle">p_offset  to  p_offset + p_filesz</text>
+  <text class="sub" x="397" y="267" text-anchor="middle">validated entirely inside image bytes</text>
+  <path class="a" d="M397 290V360"/>
+  <polygon points="397,380 384,354 410,354" fill="#9a3412"/>
+  <text x="430" y="340">copy</text>
+  <text x="84" y="425" font-weight="700">Rounded virtual page extent</text>
+  <rect class="copy" x="84" y="455" width="355" height="140" rx="10"/>
+  <rect class="zero" x="439" y="455" width="271" height="140" rx="10"/>
+  <text x="262" y="505" text-anchor="middle" font-weight="700">file-backed bytes</text>
+  <text class="sub" x="262" y="542" text-anchor="middle">copied from p_offset</text>
+  <text class="sub" x="262" y="574" text-anchor="middle">into mapped frames</text>
+  <text x="575" y="505" text-anchor="middle" font-weight="700">zero tail</text>
+  <text class="sub" x="575" y="542" text-anchor="middle">p_memsz - p_filesz</text>
+  <text class="sub" x="575" y="574" text-anchor="middle">from zeroed allocator</text>
+  <line x1="84" y1="635" x2="710" y2="635" stroke="#10243e" stroke-width="3"/>
+  <text x="84" y="680">segment virtual start e 0x40000000</text>
+  <text x="84" y="720">ELF entry RIP -&gt; accepted image address</text>
+  <path class="a" d="M397 750V815"/>
+  <rect class="stack" x="118" y="815" width="558" height="160" rx="14"/>
+  <text x="397" y="860" text-anchor="middle" font-weight="700">Initial four-page user stack</text>
+  <text x="397" y="900" text-anchor="middle">0x4001c000  to  0x4001ffff</text>
+  <text class="sub" x="397" y="936" text-anchor="middle">initial RSP = 0x40020000; stack grows downward</text>
+  <text class="sub" x="397" y="1038" text-anchor="middle">All mapped leaves are USER | WRITE in this teaching loader.</text>
+</svg>

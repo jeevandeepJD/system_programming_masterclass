@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">Atomic read modify write and message passing order choices</title>
+<desc id="desc">A modification-order chain for relaxed fetch-add sits above a two-object message-passing litmus, contrasting independent relaxed orders with the single total order required by sequential consistency.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#ffd166"/></marker><style>text{font-family:Arial,sans-serif;fill:#f8fbff}.t{font-size:37px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:19px}.rmw{fill:#174f45;stroke:#7ce2bc;stroke-width:3}.rel{fill:#143f5a;stroke:#83d9ff;stroke-width:3}.sc{fill:#4c3a68;stroke:#d2b2ff;stroke-width:3}.bad{fill:#612e3c;stroke:#ff8d9e;stroke-width:3}.edge{stroke:#ffd166;stroke-width:5;fill:none;marker-end:url(#a)}.cycle{stroke:#ff8d9e;stroke-width:5;fill:none;stroke-dasharray:12 8}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="70">Choose the order required by the protocol</text>
+<rect class="rmw" x="70" y="135" width="1050" height="390" rx="28"/>
+<text class="h" x="110" y="185">RELAXED ATOMIC RMW  |  one object, one modification order</text>
+<circle class="rel" cx="190" cy="330" r="62"/><text class="h" x="177" y="339">0</text>
+<circle class="rel" cx="430" cy="330" r="62"/><text class="h" x="417" y="339">1</text>
+<circle class="rel" cx="670" cy="330" r="62"/><text class="h" x="657" y="339">2</text>
+<circle class="rel" cx="1000" cy="330" r="62"/><text class="h" x="953" y="339">800000</text>
+<path class="edge" d="M252 330H368"/><path class="edge" d="M492 330H608"/><path class="edge" d="M732 330H928"/>
+<text class="b" x="110" y="455">each fetch_add reads its predecessor and writes the next value; no increment is lost</text>
+<rect class="rel" x="70" y="590" width="1050" height="430" rx="28"/>
+<text class="h" x="110" y="640">RELAXED MESSAGE-PASSING LITMUS  |  two independent objects</text>
+<text class="h" x="150" y="715">THREAD 0</text><text class="b" x="150" y="765">store x = 1, relaxed</text><text class="b" x="150" y="810">r0 = load y, relaxed</text>
+<text class="h" x="770" y="715">THREAD 1</text><text class="b" x="770" y="765">store y = 1, relaxed</text><text class="b" x="770" y="810">r1 = load x, relaxed</text>
+<path class="cycle" d="M360 780C520 680 650 680 800 780"/><path class="cycle" d="M800 825C650 925 520 925 360 825"/>
+<text class="b" x="265" y="930">x order: 0  ->  1</text><text class="b" x="720" y="930">y order: 0  ->  1</text>
+<text class="b" x="325" y="975">r0 = 0 and r1 = 0 is allowed; no cross-object total order</text>
+<rect class="sc" x="70" y="1085" width="1050" height="420" rx="28"/>
+<text class="h" x="110" y="1135">SEQ_CST  |  one total order forbids both-zero</text>
+<text class="b" x="165" y="1220">Sx before Ly</text><path class="edge" d="M340 1213H500"/>
+<text class="b" x="520" y="1220">Ly before Sy</text><path class="edge" d="M695 1213H855"/>
+<text class="b" x="800" y="1320">Sy before Lx</text><path class="edge" d="M820 1345C710 1440 500 1440 390 1345"/>
+<text class="b" x="165" y="1320">Lx before Sx</text>
+<text class="b" x="250" y="1470">The assumed both-zero outcome closes a cycle; a total order cannot.</text>
+<text class="b" x="105" y="1590">RMW atomicity, release/acquire publication, and seq_cst order are distinct promises.</text>
+</svg>

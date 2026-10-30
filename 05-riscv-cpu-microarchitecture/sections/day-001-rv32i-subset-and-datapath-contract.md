@@ -247,6 +247,10 @@ funct7  instruction[31:25]
 
 The format determines which fields have meaning.
 
+![RV32I R, I, S, B, U, and J fields with a worked branch decode](../visuals/day-001-rv32i-formats-worked-decode.svg)
+
+*Stable field positions support six formats; decode determines each slice's role.*
+
 ### R-type — register ALU
 
 ```text
@@ -495,6 +499,10 @@ refresh requirements. Neither structure is implied by the source-level
 `memory[address]` notation, and neither normally promises this lesson's
 single-cycle combinational timing. Day 7 follows one cache miss through that
 lower path and back to the waiting load.
+
+![Architectural state, teaching datapath, and request-port boundary](../visuals/day-001-state-datapath-port-boundary.svg)
+
+*The ISA owns visible transitions; the teaching ports stop before the memory implementation.*
 
 ---
 

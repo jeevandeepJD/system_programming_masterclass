@@ -45,6 +45,10 @@ MOSFET controlled conduction
   → MMU, privilege, exceptions, and operating systems
 ```
 
+![Week 4 causal roadmap from software and ISA through transistor switching](visuals/week-04-causal-roadmap.svg)
+
+*The physical-design boundary follows synthesis; timing, area, and power feed back into every implementation choice.*
+
 The transistor explanation tells us why voltage, charge, delay, and power
 cannot be ignored. The gate abstraction makes larger reasoning possible.
 Timed sequential elements create stable state boundaries. RTL describes data

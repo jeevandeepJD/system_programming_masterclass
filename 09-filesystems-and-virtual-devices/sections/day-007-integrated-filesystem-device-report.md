@@ -18,6 +18,10 @@ broader conclusion. Never present suggested GDB commands as observations.
 
 ## 2. Trace user open/read/write into ramfs
 
+![Integrated evidence workflow recording artifact identity, tracing filesystem and PCI MMIO chains independently, testing controlled rejections, and reporting explicit limits.](../visuals/day-07-evidence-workflow.svg)
+
+*Evidence workflow. Predictions become claims only after source, ELF, and runtime evidence agree, with owners and earliest detection boundaries recorded for both slices.*
+
 Begin at `_user_start` in the exact Week 9 user ELF:
 
 ```text
@@ -160,6 +164,10 @@ cache policy, and filesystem mapping. None is implied by the current liveness
 test.
 
 ## 8. State conclusions narrowly
+
+![Matrix distinguishing demonstrated filesystem and device mechanisms, conceptual comparisons, and explicitly absent persistence, page cache, block I/O, IRQ, and DMA.](../visuals/day-07-boundary-matrix.svg)
+
+*Final claim boundary. The report separates executed mechanisms from comparison concepts and explicit non-claims; EDU does not store ramfs data.*
 
 Week 9 demonstrates:
 

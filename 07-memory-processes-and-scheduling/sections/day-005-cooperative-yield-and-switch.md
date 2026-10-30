@@ -30,6 +30,10 @@ task exists. It then marks the old task runnable, selects an old-context
 destination, marks the new task running, updates `current`, and calls
 `context_switch`.
 
+![Voluntary yield flowing through scheduler choice, context save and load, then first entry or later resume](../visuals/day-005-yield-context-switch-resume.svg)
+
+*C chooses the next owner; assembly transfers the live CPU state to that task's saved continuation.*
+
 Updating `current` before assembly transfers control ensures the new task's
 trampoline and later code see the correct owner. It also means an interrupt
 at an unsafe point could observe partially transitioned scheduler state.
@@ -69,6 +73,10 @@ ABI obligations.
 
 The simple round-robin array is deterministic but not a general run queue.
 There is no priority, starvation protection, CPU affinity, or load balancing.
+
+![Yielding progress contrasted with CPU monopolization and the limits of cooperative evidence](../visuals/day-005-cooperative-scheduling-limits.svg)
+
+*Voluntary yields demonstrate context-switch mechanics, but they cannot establish forced progress or general interrupt safety.*
 
 ## 6. Diagnose context corruption
 

@@ -45,6 +45,10 @@ and data frames. It does not check canonicality before indexing. For the
 small accepted user range this is adequate, but a hardened walker would
 define address bounds and overflow behavior explicitly.
 
+![User-copy validation flow for length range overflow page walk and direction permission](../visuals/09-user-copy-validation.svg)
+
+*Figure 1. Safe copying combines range and overflow checks with a complete user-permitted page walk before each bounded run.*
+
 ## 3. Copy page by page
 
 `user_copy` loops until `length` reaches zero. For each iteration it translates
@@ -67,6 +71,10 @@ without reporting a count. For `copy_from_user`, the kernel's temporary
 buffer may contain a prefix that callers must ignore on failure. For
 `copy_to_user`, user memory may have been partially modified. Current small
 canonical requests do not expose a transactional guarantee.
+
+![A 32-byte user copy crossing from a mapped page into an absent page and leaving a partial prefix](../visuals/10-user-copy-page-boundary.svg)
+
+*Figure 2. Crossing a fault boundary can leave a copied prefix even though the Boolean helper reports failure; the current API is not transactional.*
 
 ## 4. Apply two independent bounds
 

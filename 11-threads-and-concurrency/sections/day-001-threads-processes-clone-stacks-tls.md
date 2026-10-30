@@ -185,6 +185,10 @@ one mm_struct
    FS base → TLS block A              FS base → TLS block B
 ```
 
+![Clone flags dividing shared process resources from private per-thread stacks, registers, signal masks, and TLS](../visuals/day-001-clone-shared-private.svg)
+
+*A pthread shares process-wide kernel objects while retaining the execution state needed to run independently.*
+
 Per task: general-purpose registers, kernel stack, user stack, TLS base,
 blocked-signal mask. Process-wide for a normal pthread: the `mm`, the file
 descriptor table, and the signal dispositions. The thread-group id, the
@@ -777,6 +781,10 @@ mode uses the same two edges around a heap object: the child writes
 `value *= 2` only after create, and the parent reads and `free`s only after
 join. Day 2 names the edge that is absent when two threads update one
 non-atomic object in between.
+
+![Thread lifecycle contrasting joinable result collection with detached automatic reclamation](../visuals/day-001-lifecycle-join-detach.svg)
+
+*Join combines lifetime collection with a happens-before edge; detach permits automatic reclamation but no later join.*
 
 ---
 

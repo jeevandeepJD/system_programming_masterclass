@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">Crafted iretq frame enters ring 3</title>
+  <desc id="desc">The kernel builds an iretq frame containing user SS, RSP, RFLAGS, CS, and RIP; iretq consumes it to enter ring 3, while a later interrupt uses TSS RSP0.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.f{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.u{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.k{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.a{stroke:#9a3412;stroke-width:5;fill:none}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">A controlled first entry with iretq</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">The frame is a kernel-authored less-privileged continuation.</text>
+  <rect class="k" x="58" y="145" width="300" height="785" rx="14"/>
+  <text x="208" y="188" text-anchor="middle" font-weight="700">Ring 0 kernel stack</text>
+  <text class="sub" x="208" y="220" text-anchor="middle">push order</text>
+  <g>
+    <rect class="f" x="91" y="270" width="234" height="80"/><text x="208" y="319" text-anchor="middle">SS = 0x1b</text>
+    <rect class="f" x="91" y="350" width="234" height="80"/><text x="208" y="399" text-anchor="middle">user RSP</text>
+    <rect class="f" x="91" y="430" width="234" height="80"/><text x="208" y="479" text-anchor="middle">RFLAGS  |  IF=1</text>
+    <rect class="f" x="91" y="510" width="234" height="80"/><text x="208" y="559" text-anchor="middle">CS = 0x23</text>
+    <rect class="f" x="91" y="590" width="234" height="80"/><text x="208" y="639" text-anchor="middle">ELF entry RIP</text>
+  </g>
+  <text class="sub" x="208" y="718" text-anchor="middle">RSP points here last</text>
+  <path class="a" d="M208 745V675"/>
+  <path class="a" d="M365 530H450"/>
+  <polygon points="470,530 444,517 444,543" fill="#9a3412"/>
+  <text x="417" y="500" text-anchor="middle" font-weight="700">iretq</text>
+  <rect class="u" x="470" y="300" width="270" height="420" rx="14"/>
+  <text x="605" y="350" text-anchor="middle" font-weight="700">Ring 3 begins</text>
+  <text x="500" y="410">CPL = 3</text>
+  <text x="500" y="460">RIP = ELF entry</text>
+  <text x="500" y="510">RSP = user top</text>
+  <text x="500" y="560">CS/SS = DPL3</text>
+  <text x="500" y="610">IF = enabled</text>
+  <text class="sub" x="500" y="665">Pages must be U/S.</text>
+  <rect class="k" x="88" y="965" width="618" height="90" rx="12"/>
+  <text x="397" y="1002" text-anchor="middle" font-weight="700">Later: int 0x80 crosses back to ring 0</text>
+  <text class="sub" x="397" y="1035" text-anchor="middle">CPU gets the trusted stack from TSS RSP0.</text>
+</svg>

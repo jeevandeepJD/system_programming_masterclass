@@ -50,6 +50,10 @@ memory never silently becomes allocatable.
 teaching bound, not an x86-64 limit. It keeps the static bitmap small and
 matches QEMU's configured RAM, while deliberately ignoring higher RAM.
 
+![Firmware ranges validated, page-rounded, clipped, and overlaid with live boot reservations](../visuals/day-001-firmware-range-normalization.svg)
+
+*Only validated, complete 4 KiB frames survive normalization; explicit reservations then reclaim live boot objects.*
+
 ## 4. Reserve live boot objects again
 
 After releasing usable ranges, `reserve_range` marks physical address zero
@@ -81,6 +85,10 @@ only the allocator changes frame ownership after initialization
 therefore follows explicit misuse policy instead of silently leaving the
 count unchanged. There is still no owner record, reference count, lock, or
 per-CPU cache. Callers must transfer ownership exactly once.
+
+![Bitmap ownership transitions from fail-closed initialization through allocation, free, and rejected double-free](../visuals/day-001-frame-bitmap-ownership.svg)
+
+*The bitmap bit and `free_frames` count move together, while ownership may transfer only once per allocation.*
 
 ## 6. Debug from the invariant outward
 

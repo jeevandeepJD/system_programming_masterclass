@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">Clone flags divide shared process resources from private thread state</title>
+<desc id="desc">A cutaway of one process showing a shared address space, files and signal dispositions, with two tasks that retain private registers, stacks, signal masks and TLS pointers.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#ffd166"/></marker><style>text{font-family:Arial,sans-serif;fill:#f7fbff}.t{font-size:36px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:19px}.s{fill:#123f5b;stroke:#75d9ff;stroke-width:3}.p{fill:#4b315f;stroke:#d9b5ff;stroke-width:3}.k{fill:#1d5148;stroke:#79e1bb;stroke-width:3}.w{fill:none;stroke:#ffd166;stroke-width:4;marker-end:url(#a)}.dash{fill:none;stroke:#a9c9ec;stroke-width:3;stroke-dasharray:10 8}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="68">pthread shape built by clone-family sharing</text>
+<rect class="s" x="70" y="130" width="1050" height="650" rx="28"/>
+<text class="h" x="105" y="178">ONE PROCESS-WIDE RESOURCE SET</text>
+<rect class="k" x="120" y="225" width="950" height="130" rx="18"/><text class="h" x="155" y="267">one mm_struct / page-table root</text><text class="b" x="155" y="305">text  |  global data  |  heap  |  mappings  |  both user-stack mappings  |  both TLS blocks</text>
+<rect class="k" x="120" y="390" width="450" height="120" rx="18"/><text class="h" x="155" y="434">files_struct</text><text class="b" x="155" y="474">shared descriptor table</text>
+<rect class="k" x="620" y="390" width="450" height="120" rx="18"/><text class="h" x="655" y="434">sighand + signal</text><text class="b" x="655" y="474">dispositions  |  tgid</text>
+<path class="dash" d="M595 545V745"/>
+<text class="b" x="205" y="590">user stack A</text><text class="b" x="760" y="590">user stack B</text>
+<path class="w" d="M300 610V720"/><path class="w" d="M850 610V720"/>
+<text class="b" x="205" y="755">TLS A</text><text class="b" x="760" y="755">TLS B</text>
+<path class="w" d="M300 780V880"/><path class="w" d="M850 780V880"/>
+<rect class="p" x="90" y="900" width="470" height="430" rx="26"/>
+<text class="h" x="125" y="950">task_struct A  |  TID A</text>
+<text class="b" x="125" y="1002">private architectural registers</text><text class="b" x="125" y="1041">private user stack pointer</text><text class="b" x="125" y="1080">private kernel stack</text><text class="b" x="125" y="1119">private blocked-signal mask</text><text class="b" x="125" y="1158">FS base  ->  TLS A</text>
+<rect class="p" x="630" y="900" width="470" height="430" rx="26"/>
+<text class="h" x="665" y="950">task_struct B  |  TID B</text>
+<text class="b" x="665" y="1002">private architectural registers</text><text class="b" x="665" y="1041">private user stack pointer</text><text class="b" x="665" y="1080">private kernel stack</text><text class="b" x="665" y="1119">private blocked-signal mask</text><text class="b" x="665" y="1158">FS base  ->  TLS B</text>
+<rect class="s" x="120" y="1390" width="950" height="170" rx="22"/>
+<text class="h" x="155" y="1438">Flag decisions</text>
+<text class="b" x="155" y="1480">CLONE_VM  |  CLONE_FILES  |  CLONE_SIGHAND  |  CLONE_THREAD  ->  share pointers</text>
+<text class="b" x="155" y="1519">new stack pointer  |  CLONE_SETTLS  ->  private execution context</text>
+</svg>

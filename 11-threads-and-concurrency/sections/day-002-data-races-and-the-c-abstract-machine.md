@@ -167,6 +167,10 @@ load / modify / store  ·······  load / modify / store
 parent: printf the counter
 ```
 
+![Happens-before graph showing create and join edges but no ordering between conflicting worker accesses](../visuals/day-002-happens-before-race.svg)
+
+*The parent is ordered with the workers, but the workers' conflicting non-atomic accesses remain unordered with each other.*
+
 The vertical edges are real. The parent's store of 0 happens-before every
 worker's first access, and each worker's termination happens-before the
 parent's `printf`. The horizontal edge is the one the program never
@@ -393,6 +397,10 @@ coherence   the line has one value afterward
             → agreement is a hardware fact, and the C execution
               still has no requirements
 ```
+
+![C source flowing through compiler transformation into CPU execution and coherent cache state](../visuals/day-002-compiler-cpu-boundary.svg)
+
+*A lost update is one machine outcome; undefined behavior is the wider permission that already shaped the binary.*
 
 The totals this binary usually prints come from the machine layer: overlapping
 unlocked adds of 200000 can drop a chunk of that size. Undefined behavior is

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">Descriptor to open object to bounded pipe ownership</title>
+  <desc id="desc">A general process descriptor table points to open endpoint objects and then a bounded pipe object; a contrasting ToyOS lane shows fixed descriptors 3 and 4 reaching one global 64-byte buffer without tables or open objects.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.model{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.toy{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.pipe{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.a{stroke:#174ea6;stroke-width:4;fill:none}.t{stroke:#9a3412;stroke-width:4;fill:none}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">Names, endpoint objects, and pipe storage</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">The scalable ownership model is richer than ToyOS Week 8.</text>
+  <text x="56" y="155" font-weight="700">General process descriptor model</text>
+  <rect class="model" x="56" y="185" width="215" height="225" rx="14"/>
+  <text x="164" y="225" text-anchor="middle" font-weight="700">Process FD table</text>
+  <text x="88" y="270">fd 3 -&gt; read end</text>
+  <text x="88" y="315">fd 4 -&gt; write end</text>
+  <text class="sub" x="88" y="365">per-process names</text>
+  <path class="a" d="M271 270H323 M271 315H323"/>
+  <rect class="model" x="323" y="185" width="215" height="225" rx="14"/>
+  <text x="431" y="225" text-anchor="middle" font-weight="700">Open objects</text>
+  <text x="355" y="270">read endpoint</text>
+  <text x="355" y="315">write endpoint</text>
+  <text class="sub" x="355" y="365">mode + references</text>
+  <path class="a" d="M538 297H590"/>
+  <rect class="pipe" x="590" y="185" width="150" height="225" rx="14"/>
+  <text x="665" y="225" text-anchor="middle" font-weight="700">Pipe</text>
+  <text x="665" y="270" text-anchor="middle">buffer</text>
+  <text x="665" y="315" text-anchor="middle">read/write</text>
+  <text class="sub" x="665" y="365" text-anchor="middle">bounded object</text>
+  <line x1="56" y1="470" x2="740" y2="470" stroke="#10243e" stroke-width="3"/>
+  <text x="56" y="525" font-weight="700">ToyOS Week 8 implementation</text>
+  <rect class="toy" x="56" y="555" width="280" height="230" rx="14"/>
+  <text x="196" y="598" text-anchor="middle" font-weight="700">Dispatcher convention</text>
+  <text x="88" y="650">fd 3 means pipe read</text>
+  <text x="88" y="695">fd 4 means pipe write</text>
+  <text class="sub" x="88" y="744">No per-process FD table.</text>
+  <path class="t" d="M336 670H430"/>
+  <rect class="toy" x="430" y="555" width="310" height="230" rx="14"/>
+  <text x="585" y="598" text-anchor="middle" font-weight="700">One global pipe state</text>
+  <text x="462" y="650">pipe_data[64]</text>
+  <text x="462" y="695">length + read_position</text>
+  <text class="sub" x="462" y="744">No open object or refcount.</text>
+  <rect class="pipe" x="112" y="865" width="570" height="145" rx="14"/>
+  <text x="397" y="907" text-anchor="middle" font-weight="700">Bounded IPC ownership</text>
+  <text class="sub" x="397" y="944" text-anchor="middle">user bytes -&gt; kernel staging buffer -&gt; global pipe bytes</text>
+  <text class="sub" x="397" y="977" text-anchor="middle">-&gt; kernel staging buffer -&gt; user bytes</text>
+  <text class="sub" x="397" y="1060" text-anchor="middle">The upper lane is a design boundary, not a claimed Week 8 feature.</text>
+</svg>

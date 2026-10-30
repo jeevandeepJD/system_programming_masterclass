@@ -5,6 +5,14 @@
 > A fault report is useful only when another person can reproduce its evidence,
 > distinguish fact from inference, and see where the model stops.
 
+![Injected fault to regression](../visuals/day-07-fault-report.svg)
+
+*Carries a deliberate fault through evidence, hypothesis, source inspection, fix, and regression.*
+
+![Evidence and claim boundary](../visuals/day-07-evidence-claim.svg)
+
+*Separates directly observed artifacts from inferences and unsupported claims in the final report.*
+
 Today combines the Week 6 artifacts into one bounded report. The goal is not
 more kernel code. It is a defensible chain from C source to architectural
 fault state, exception entry, diagnostics, and symbolized location.

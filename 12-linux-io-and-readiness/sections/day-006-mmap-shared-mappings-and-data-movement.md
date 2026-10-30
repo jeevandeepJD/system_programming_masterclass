@@ -515,6 +515,10 @@ brought in. The page cache is the meeting point.
 
 ## 7. Shared writes the cache page; private writes a copy
 
+![MAP_SHARED mappings and reads converging on one page-cache folio](../visuals/day-006-mmap-shared-page-cache.svg)
+
+*Figure 1. A `MAP_SHARED` PTE and buffered reads converge on the same page-cache folio, making stores visible before writeback while leaving synchronization and durability as separate concerns.*
+
 A write fault on a `MAP_SHARED` VMA takes `do_shared_fault`. The page
 `filemap_fault` returns is the cache page. `filemap_page_mkwrite`, the
 third op in `generic_file_vm_ops`, marks that page dirty so writeback
@@ -655,6 +659,10 @@ aimed at the same pages. The synchronization requirement does not get
 smaller because there are two page tables.
 
 ## 10. The copy and the fault win different cases
+
+![Side-by-side mmap fault path and read write copying path](../visuals/day-006-mmap-versus-copy-path.svg)
+
+*Figure 2. `read` and `write` copy between a cache folio and an anonymous user buffer; `mmap` builds a VMA, faults in that folio, installs a PTE, and retries the instruction.*
 
 A single sequential pass the program will not share is often cheaper
 as `read`. One syscall copies many pages, readahead runs either way,

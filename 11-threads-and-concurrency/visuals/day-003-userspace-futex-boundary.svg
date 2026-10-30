@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">Mutex userspace fast path and futex wait wake slow path</title>
+<desc id="desc">A split user and kernel diagram follows an uncontended compare-and-swap entirely in userspace, then a contended waiter through futex recheck, enqueue, schedule, wake, and retry.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#ffd166"/></marker><style>text{font-family:Arial,sans-serif;fill:#f8fbff}.t{font-size:37px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:19px}.user{fill:#123f5b;stroke:#83d9ff;stroke-width:3}.kern{fill:#493865;stroke:#d1b1ff;stroke-width:3}.fast{fill:#174f45;stroke:#7ce2bc;stroke-width:3}.slow{fill:#5d451c;stroke:#ffd166;stroke-width:3}.edge{stroke:#ffd166;stroke-width:5;fill:none;marker-end:url(#a)}.boundary{stroke:#ff8c9d;stroke-width:5;stroke-dasharray:18 10}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="70">Futex: sleep only after the user-word protocol fails</text>
+<rect class="user" x="60" y="130" width="1070" height="710" rx="28"/><text class="h" x="95" y="180">USERSPACE  |  shared mutex word</text>
+<rect class="fast" x="105" y="250" width="420" height="230" rx="22"/><text class="h" x="140" y="300">UNCONTENDED LOCK</text><text class="b" x="140" y="347">atomic CAS: free  ->  held</text><text class="b" x="140" y="390">success  ->  critical section</text><text class="b" x="140" y="433">no system call</text>
+<rect class="slow" x="665" y="250" width="420" height="230" rx="22"/><text class="h" x="700" y="300">CONTENDED LOCK</text><text class="b" x="700" y="347">CAS observes held</text><text class="b" x="700" y="390">mark waiter state</text><text class="b" x="700" y="433">futex_wait(word, expected)</text>
+<path class="edge" d="M525 365H665"/>
+<rect class="fast" x="105" y="570" width="420" height="170" rx="22"/><text class="h" x="140" y="620">FAST UNLOCK</text><text class="b" x="140" y="665">store free; no waiter marked</text><text class="b" x="140" y="704">return entirely in userspace</text>
+<rect class="slow" x="665" y="570" width="420" height="170" rx="22"/><text class="h" x="700" y="620">WAKE NEEDED</text><text class="b" x="700" y="665">store free; waiter marked</text><text class="b" x="700" y="704">futex_wake(word, 1)</text>
+<line class="boundary" x1="60" y1="875" x2="1130" y2="875"/><text class="h" x="70" y="920">SYSCALL BOUNDARY</text>
+<rect class="kern" x="60" y="960" width="1070" height="570" rx="28"/><text class="h" x="95" y="1010">KERNEL  |  futex hash bucket and scheduler</text>
+<rect class="kern" x="105" y="1070" width="300" height="330" rx="22"/><text class="h" x="140" y="1120">WAIT</text><text class="b" x="140" y="1165">hash user address</text><text class="b" x="140" y="1205">lock bucket</text><text class="b" x="140" y="1245">re-read word</text><text class="b" x="140" y="1285">enqueue iff equal</text><text class="b" x="140" y="1325">schedule out</text>
+<rect class="kern" x="445" y="1070" width="300" height="330" rx="22"/><text class="h" x="480" y="1120">WAKE</text><text class="b" x="480" y="1165">hash same key</text><text class="b" x="480" y="1205">lock bucket</text><text class="b" x="480" y="1245">match full key</text><text class="b" x="480" y="1285">wake one waiter</text>
+<rect class="fast" x="785" y="1070" width="300" height="330" rx="22"/><text class="h" x="820" y="1120">RETRY</text><text class="b" x="820" y="1165">return to libc</text><text class="b" x="820" y="1205">CAS free  ->  held</text><text class="b" x="820" y="1245">another thread may win</text><text class="b" x="820" y="1285">sleep again if needed</text>
+<path class="edge" d="M405 1235H445"/><path class="edge" d="M745 1235H785"/>
+<text class="b" x="105" y="1470">Re-reading under the bucket lock prevents sleeping after the value already changed.</text>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">Safe user-copy validation</title>
+  <desc id="desc">A decision path checks length, user address range and addition overflow, then walks each page requiring present and user bits plus write permission for copy_to_user.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.b{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.ok{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.bad{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.a{stroke:#174ea6;stroke-width:4;fill:none}.r{stroke:#9a3412;stroke-width:4;fill:none}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">Treat the pointer as untrusted arithmetic</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">Validation precedes byte access and repeats at every page boundary.</text>
+  <rect class="b" x="145" y="140" width="504" height="95" rx="14"/>
+  <text x="397" y="178" text-anchor="middle" font-weight="700">Request: user_start + length + direction</text>
+  <text class="sub" x="397" y="210" text-anchor="middle">copy_from_user or copy_to_user</text>
+  <path class="a" d="M397 235V285"/>
+  <rect class="b" x="145" y="285" width="504" height="105" rx="14"/>
+  <text x="397" y="327" text-anchor="middle" font-weight="700">Range checks</text>
+  <text class="sub" x="397" y="360" text-anchor="middle">length d 4096  |  end does not overflow  |  user bounds</text>
+  <path class="r" d="M649 337H710"/><text x="680" y="315" text-anchor="middle">fail</text>
+  <rect class="bad" x="674" y="350" width="90" height="65" rx="8"/><text x="719" y="392" text-anchor="middle">false</text>
+  <path class="a" d="M397 390V440"/>
+  <rect class="b" x="145" y="440" width="504" height="145" rx="14"/>
+  <text x="397" y="482" text-anchor="middle" font-weight="700">user_translate(current address)</text>
+  <text class="sub" x="397" y="517" text-anchor="middle">PML4E -&gt; PDPTE -&gt; PDE -&gt; PTE</text>
+  <text class="sub" x="397" y="550" text-anchor="middle">require P + U/S at all levels; reject huge pages</text>
+  <path class="a" d="M397 585V635"/>
+  <rect class="b" x="145" y="635" width="504" height="115" rx="14"/>
+  <text x="397" y="677" text-anchor="middle" font-weight="700">Direction permission</text>
+  <text class="sub" x="397" y="712" text-anchor="middle">copy_to_user additionally requires writable leaf</text>
+  <path class="a" d="M397 750V800"/>
+  <rect class="ok" x="145" y="800" width="504" height="130" rx="14"/>
+  <text x="397" y="842" text-anchor="middle" font-weight="700">Copy one bounded run</text>
+  <text class="sub" x="397" y="877" text-anchor="middle">count = min(remaining, bytes left in page)</text>
+  <text class="sub" x="397" y="908" text-anchor="middle">advance addresses and remaining length</text>
+  <path class="a" d="M397 930V980"/>
+  <rect class="ok" x="220" y="980" width="354" height="80" rx="12"/>
+  <text x="397" y="1013" text-anchor="middle" font-weight="700">remaining = 0 -&gt; success</text>
+  <text class="sub" x="397" y="1044" text-anchor="middle">otherwise walk the next page</text>
+</svg>

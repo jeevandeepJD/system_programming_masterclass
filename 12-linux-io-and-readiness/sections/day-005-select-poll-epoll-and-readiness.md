@@ -334,6 +334,10 @@ number of files.
 
 ## 8. `epoll` stores the interest set and wakes from a ready list
 
+![Comparison of select poll and epoll registration and wakeup paths](../visuals/day-005-readiness-registration.svg)
+
+*Figure 1. `select` copies bitmaps, `poll` copies a list, and `epoll` retains registrations and a ready list; all still require the I/O call to recheck the object.*
+
 `epoll_ctl` is the call that edits the interest set. `do_epoll_ctl`
 rejects a bad epoll descriptor or a bad target with `-EBADF`, and a
 file whose operations cannot poll with `-EPERM`. The operation switch
@@ -578,6 +582,10 @@ A trace that stops at `epoll_wait` returning 1 has not observed the
 byte. A trace that stops at `read` returning 1 has.
 
 ## 10. Level trigger, edge trigger, and the `EAGAIN` drain
+
+![Level-triggered repetition and edge-triggered drain until EAGAIN](../visuals/day-005-level-edge-drain-rule.svg)
+
+*Figure 2. Level triggering repeats while the condition remains; edge triggering requires nonblocking reads until `EAGAIN`. In neither mode does readiness mean the requested transfer completed.*
 
 After an event is copied out, `ep_send_events_proc` decides whether the
 item stays interesting. Lines 1750–1762 re-poll with a null qproc, so

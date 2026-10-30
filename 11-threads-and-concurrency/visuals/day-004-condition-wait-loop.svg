@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">Condition predicate loop and atomic wait transition</title>
+<desc id="desc">A circular state machine shows lock, predicate test, atomic unlock and waiter publication, sleep, wake, mutex reacquisition, and predicate recheck, including spurious and stolen wakeups.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#ffd166"/></marker><style>text{font-family:Arial,sans-serif;fill:#f8fbff}.t{font-size:37px;font-weight:700}.h{font-size:24px;font-weight:700}.b{font-size:19px}.state{fill:#123f5b;stroke:#82d9ff;stroke-width:3}.atomic{fill:#5a421b;stroke:#ffd166;stroke-width:4}.go{fill:#174f45;stroke:#7ce2bc;stroke-width:3}.warn{fill:#632d3c;stroke:#ff8d9e;stroke-width:3}.edge{stroke:#ffd166;stroke-width:5;fill:none;marker-end:url(#a)}.loop{stroke:#ff8d9e;stroke-width:5;fill:none;marker-end:url(#a)}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="70">Condition wait means "wake, then look again"</text>
+<rect class="state" x="400" y="150" width="390" height="150" rx="25"/><text class="h" x="440" y="200">1  |  lock mutex M</text><text class="b" x="440" y="246">predicate state is now stable</text>
+<path class="edge" d="M595 300V390"/>
+<polygon class="state" points="595,390 815,520 595,650 375,520"/><text class="h" x="485" y="510">2  |  predicate true?</text><text class="b" x="520" y="550">checked under M</text>
+<path class="edge" d="M815 520H980V720"/><text class="b" x="835" y="500">YES</text>
+<rect class="go" x="775" y="720" width="350" height="205" rx="25"/><text class="h" x="815" y="770">3  |  transition state</text><text class="b" x="815" y="815">signal relevant condvar</text><text class="b" x="815" y="855">unlock M and proceed</text>
+<path class="edge" d="M375 520H205V710"/><text class="b" x="240" y="500">NO</text>
+<rect class="atomic" x="65" y="710" width="430" height="230" rx="25"/><text class="h" x="105" y="760">ATOMIC WAIT TRANSITION</text><text class="b" x="105" y="810">publish self as waiter</text><text class="b" x="105" y="850">release M</text><text class="b" x="105" y="890">sleep without a lost-wakeup gap</text>
+<path class="edge" d="M280 940V1030"/>
+<rect class="state" x="65" y="1030" width="430" height="190" rx="25"/><text class="h" x="105" y="1080">wake or spurious return</text><text class="b" x="105" y="1125">becomes runnable</text><text class="b" x="105" y="1165">resource is not reserved</text>
+<path class="edge" d="M495 1125H705"/>
+<rect class="state" x="705" y="1030" width="420" height="190" rx="25"/><text class="h" x="745" y="1080">reacquire M</text><text class="b" x="745" y="1125">another waiter may have won</text><text class="b" x="745" y="1165">return from cond_wait holding M</text>
+<path class="loop" d="M915 1030C1080 690 1010 370 790 225"/>
+<rect class="warn" x="155" y="1340" width="880" height="210" rx="26"/><text class="h" x="195" y="1390">WHY WHILE, NOT IF?</text><text class="b" x="195" y="1435">spurious wake: no logical event happened</text><text class="b" x="195" y="1475">stolen wake: event happened, but another thread consumed the resource</text><text class="b" x="195" y="1515">the predicate -- never the notification -- is permission to proceed</text>
+</svg>

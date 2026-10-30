@@ -1,5 +1,9 @@
 # Day 7 — `/proc`, strace, GDB, and the Comparison
 
+![Evidence layers from procfs, strace, and GDB](../visuals/day-007-evidence-layers.svg)
+
+*Evidence layers — A generated state snapshot, a syscall trace stop, and a symbolic debugger stop support different claims.*
+
 **Target time:** approximately 3 hours
 
 > The kernel objects from this week are real, and user code cannot see
@@ -429,6 +433,10 @@ claim inside what one trace can support.
 ---
 
 ## 9. GDB is the same stop, plus symbols
+
+![Evidence-driven Linux process debugging workflow](../visuals/day-007-debugging-workflow.svg)
+
+*Debugging workflow — Identify the running artifacts, predict a boundary, capture the right layer, correlate observations, and narrow at the first contradiction.*
 
 GDB attaches or launches through ptrace as well. The extra ingredient
 is the ELF symbol table and DWARF line table Week 3 produced at link

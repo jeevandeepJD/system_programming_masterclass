@@ -48,6 +48,10 @@ There is no process teardown, so there is no reclamation path. The TSS does
 not own the bytes; it holds the address the CPU will use on a ring-3-to-ring-0
 gate transition.
 
+![GDT user and kernel descriptors with the TSS RSP0 pointer to the process kernel stack](../visuals/01-gdt-tss-rsp0.svg)
+
+*Figure 1. Descriptor privilege authorizes ring-3 selectors, while the loaded TSS supplies the trusted kernel-stack address for the next privilege entry.*
+
 ## 3. Read the initial `iretq` frame bottom-up
 
 `process_start` first activates the process PML4. It then updates TSS `RSP0`
@@ -72,6 +76,10 @@ no earlier user interrupt to return from.
 The assembly ORs bit 9 into the saved flags, enabling maskable interrupts
 after the transition. It does not execute `sti` in ring 3. The kernel controls
 the future `RFLAGS` value through the crafted frame.
+
+![Crafted iretq frame containing user SS RSP RFLAGS CS and RIP for the transition to ring 3](../visuals/02-iret-ring3-transition.svg)
+
+*Figure 2. The kernel-authored `iretq` frame establishes the initial ring-3 continuation; a later `int 0x80` returns through TSS `RSP0`.*
 
 ## 4. Account for every prerequisite
 

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">Bounded pipe read write full and empty states</title>
+  <desc id="desc">A conceptual circular pipe ring shows read and write positions, empty and full conditions, while a lower panel explains that ToyOS Week 8 actually uses a 64-byte linear non-reusing buffer.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.cell{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.used{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.toy{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.a{stroke:#9a3412;stroke-width:5;fill:none}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">Bounded pipes need explicit state rules</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">Conceptual ring behavior above; exact ToyOS linear behavior below.</text>
+  <text x="397" y="155" text-anchor="middle" font-weight="700">Circular ring-buffer model</text>
+  <g>
+    <rect class="used" x="172" y="215" width="100" height="100" rx="12"/><text x="222" y="274" text-anchor="middle">A</text>
+    <rect class="used" x="284" y="215" width="100" height="100" rx="12"/><text x="334" y="274" text-anchor="middle">B</text>
+    <rect class="used" x="396" y="215" width="100" height="100" rx="12"/><text x="446" y="274" text-anchor="middle">C</text>
+    <rect class="cell" x="508" y="215" width="100" height="100" rx="12"/><text x="558" y="274" text-anchor="middle">free</text>
+    <rect class="cell" x="508" y="327" width="100" height="100" rx="12"/><text x="558" y="386" text-anchor="middle">free</text>
+    <rect class="cell" x="396" y="327" width="100" height="100" rx="12"/><text x="446" y="386" text-anchor="middle">free</text>
+    <rect class="cell" x="284" y="327" width="100" height="100" rx="12"/><text x="334" y="386" text-anchor="middle">free</text>
+    <rect class="cell" x="172" y="327" width="100" height="100" rx="12"/><text x="222" y="386" text-anchor="middle">free</text>
+  </g>
+  <path class="a" d="M132 265H172"/><text x="110" y="240">read</text>
+  <path class="a" d="M446 480V427"/><text x="446" y="515" text-anchor="middle">write next</text>
+  <rect class="cell" x="85" y="565" width="285" height="130" rx="14"/>
+  <text x="228" y="608" text-anchor="middle" font-weight="700">Empty</text>
+  <text class="sub" x="228" y="646" text-anchor="middle">used = 0</text>
+  <text class="sub" x="228" y="676" text-anchor="middle">read returns 0 now</text>
+  <rect class="used" x="424" y="565" width="285" height="130" rx="14"/>
+  <text x="566" y="608" text-anchor="middle" font-weight="700">Full</text>
+  <text class="sub" x="566" y="646" text-anchor="middle">used = capacity</text>
+  <text class="sub" x="566" y="676" text-anchor="middle">write blocks or fails by policy</text>
+  <line x1="70" y1="755" x2="724" y2="755" stroke="#10243e" stroke-width="3"/>
+  <rect class="toy" x="85" y="805" width="624" height="205" rx="14"/>
+  <text x="397" y="849" text-anchor="middle" font-weight="700">ToyOS Week 8: bounded linear array, not a ring</text>
+  <text x="120" y="895">write: append only if whole request fits</text>
+  <text x="120" y="935">read: advance pipe_read_position; empty returns 0</text>
+  <text x="120" y="975">consumed space is not reused; over-capacity returns -1</text>
+  <text class="sub" x="397" y="1060" text-anchor="middle">Capacity is 64 bytes; there is no blocking, wakeup, EOF, or close.</text>
+</svg>

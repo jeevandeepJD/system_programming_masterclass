@@ -5,6 +5,14 @@
 > If the current stack contributed to the fault, should the fault handler
 > trust it?
 
+![TSS and IST stack switch](../visuals/day-06-ist-switch.svg)
+
+*Shows an IDT IST index selecting a known-good stack from the loaded TSS.*
+
+![Page-fault diagnosis path](../visuals/day-06-page-fault-debug.svg)
+
+*Correlates architectural page-fault state with serial evidence and symbol-aware GDB inspection.*
+
 The x86-64 Task State Segment and Interrupt Stack Table let selected IDT gates
 switch to a known stack. ToyOS uses IST entry 1 for NMI, double fault, and page
 fault, then exposes enough state to diagnose a deliberate unmapped write.

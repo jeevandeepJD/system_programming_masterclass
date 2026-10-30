@@ -200,6 +200,10 @@ limits             one printed sentence        no exhaustive schedule, no fairne
                                                proof, no portability from one ISA
 ```
 
+![Comparison of deterministic assertions, sanitizers, Helgrind, GDB, and performance evidence with honest skip states](../visuals/day-007-evidence-comparison.svg)
+
+*Each instrument supports a bounded claim at one layer; a quiet, unavailable, or uninvoked tool cannot prove absence.*
+
 Read the trace as a stack of scopes. `WEEK11 PASS` means the patterns in
 `test-week11.sh` matched: create/join, the mutex counter 800000, the atomic
 counter 800000, ownership 42, the queue's while-predicate marker, the
@@ -558,6 +562,10 @@ shown. The race in the source is unchanged. Fill the comparison and the
 limits section from the source you read and the logs you have. Leave a blank
 row blank. A stack trace belongs to the binary that produced it, and a line
 number belongs to the revision you opened.
+
+![Branching concurrency diagnosis workflow from artifact identity through safety, liveness, or performance evidence](../visuals/day-007-diagnosis-workflow.svg)
+
+*A diagnosis ties reproducible symptoms to the source protocol and ends with a supported conclusion, an open question, or an honest skip.*
 
 ## 15. Mastery: Explain · Draw · Observe · Build
 

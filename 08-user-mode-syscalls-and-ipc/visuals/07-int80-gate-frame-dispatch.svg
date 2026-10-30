@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">ToyOS int 0x80 gate frame and dispatch</title>
+  <desc id="desc">A ring 3 int 0x80 instruction selects a DPL3 interrupt gate, switches to TSS RSP0, creates a uniform interrupt frame, dispatches by RAX, and returns with iretq.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.u{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.k{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.frame{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.a{stroke:#9a3412;stroke-width:5;fill:none}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">Educational syscall path: DPL3 int 0x80</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">IDT interrupt gate entry and iretq return--not SYSCALL/SYSRET.</text>
+  <rect class="u" x="82" y="140" width="630" height="110" rx="14"/>
+  <text x="397" y="182" text-anchor="middle" font-weight="700">Ring 3 user instruction</text>
+  <text class="sub" x="397" y="218" text-anchor="middle">RAX=number  |  RDI/RSI/RDX=args  |  int $0x80</text>
+  <path class="a" d="M397 250V310"/>
+  <rect class="k" x="82" y="310" width="630" height="125" rx="14"/>
+  <text x="397" y="352" text-anchor="middle" font-weight="700">IDT[128]  |  present DPL3 interrupt gate</text>
+  <text class="sub" x="397" y="386" text-anchor="middle">CPU checks gate privilege, clears IF, loads TSS RSP0</text>
+  <text class="sub" x="397" y="416" text-anchor="middle">hardware saves SS, RSP, RFLAGS, CS, RIP</text>
+  <path class="a" d="M397 435V495"/>
+  <rect class="frame" x="82" y="495" width="630" height="155" rx="14"/>
+  <text x="397" y="537" text-anchor="middle" font-weight="700">Uniform struct interrupt_frame</text>
+  <text class="sub" x="397" y="572" text-anchor="middle">stub adds vector 128 + synthetic error 0</text>
+  <text class="sub" x="397" y="604" text-anchor="middle">common assembly saves all GPRs and clears DF</text>
+  <text class="sub" x="397" y="636" text-anchor="middle">frame lives on the process kernel stack</text>
+  <path class="a" d="M397 650V710"/>
+  <rect class="k" x="82" y="710" width="630" height="125" rx="14"/>
+  <text x="397" y="752" text-anchor="middle" font-weight="700">C dispatch and policy</text>
+  <text class="sub" x="397" y="786" text-anchor="middle">interrupt_handler -&gt; syscall_dispatch(frame)</text>
+  <text class="sub" x="397" y="816" text-anchor="middle">validate request; write signed result to frame-&gt;RAX</text>
+  <path class="a" d="M397 835V895"/>
+  <rect class="u" x="82" y="895" width="630" height="125" rx="14"/>
+  <text x="397" y="937" text-anchor="middle" font-weight="700">Return to ring 3</text>
+  <text class="sub" x="397" y="971" text-anchor="middle">restore GPRs  |  discard vector/error  |  iretq</text>
+  <text class="sub" x="397" y="1003" text-anchor="middle">RAX=result; saved continuation resumes</text>
+  <text x="397" y="1080" text-anchor="middle" font-weight="700" fill="#9a3412">No fast-syscall MSRs, swapgs, SYSCALL, or SYSRET.</text>
+</svg>

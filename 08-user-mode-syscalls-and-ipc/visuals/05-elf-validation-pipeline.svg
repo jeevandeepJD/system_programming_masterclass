@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">Embedded ELF validation pipeline</title>
+  <desc id="desc">The ToyOS loader validates the ELF header and program-header table, checks each PT_LOAD file and memory extent, then maps pages, copies file bytes, preserves zero fill, and records the entry.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.b{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.v{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.warn{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.a{stroke:#9a3412;stroke-width:5;fill:none}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">ELF bytes cross a parser boundary</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">Validate lengths and arithmetic before trusting destinations.</text>
+  <rect class="b" x="92" y="140" width="610" height="105" rx="14"/>
+  <text x="397" y="182" text-anchor="middle" font-weight="700">Embedded image bounds</text>
+  <text class="sub" x="397" y="215" text-anchor="middle">user_elf_start  to  user_elf_end -&gt; image_size</text>
+  <path class="a" d="M397 245V295"/>
+  <rect class="v" x="92" y="295" width="610" height="135" rx="14"/>
+  <text x="397" y="337" text-anchor="middle" font-weight="700">ELF64 header checks</text>
+  <text class="sub" x="397" y="370" text-anchor="middle">magic  |  class  |  little-endian  |  x86-64</text>
+  <text class="sub" x="397" y="402" text-anchor="middle">program-header size/count/table range</text>
+  <path class="a" d="M397 430V480"/>
+  <rect class="v" x="92" y="480" width="610" height="165" rx="14"/>
+  <text x="397" y="522" text-anchor="middle" font-weight="700">For each PT_LOAD</text>
+  <text class="sub" x="397" y="557" text-anchor="middle">memsz e filesz  |  file range inside image</text>
+  <text class="sub" x="397" y="590" text-anchor="middle">virtual addition does not wrap</text>
+  <text class="sub" x="397" y="623" text-anchor="middle">user start d segment end  to lt; reserved stack</text>
+  <path class="a" d="M397 645V695"/>
+  <rect class="b" x="92" y="695" width="610" height="185" rx="14"/>
+  <text x="397" y="737" text-anchor="middle" font-weight="700">Materialize accepted segment</text>
+  <text class="sub" x="397" y="772" text-anchor="middle">round to pages -&gt; allocate zeroed frames</text>
+  <text class="sub" x="397" y="805" text-anchor="middle">map USER | WRITE -&gt; copy p_filesz bytes</text>
+  <text class="sub" x="397" y="838" text-anchor="middle">remaining p_memsz bytes stay zero</text>
+  <path class="a" d="M397 880V930"/>
+  <rect class="warn" x="92" y="930" width="610" height="125" rx="14"/>
+  <text x="397" y="972" text-anchor="middle" font-weight="700">Record e_entry; then build user stack</text>
+  <text class="sub" x="397" y="1007" text-anchor="middle">Limit: entry-in-executable-segment is not separately proved.</text>
+  <text class="sub" x="397" y="1038" text-anchor="middle">Limit: p_flags, W^X, and rollback are not implemented.</text>
+</svg>

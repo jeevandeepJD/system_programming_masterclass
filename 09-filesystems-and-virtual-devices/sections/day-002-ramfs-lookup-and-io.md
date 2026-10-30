@@ -41,6 +41,10 @@ read beyond a valid range when no zero exists.
 
 ## 3. Lookup is exact and linear
 
+![ToyOS exact whole-path scan contrasted with a conceptual directory component traversal and its absent dentry, link, mount, and normalization rules.](../visuals/day-02-path-component-lookup.svg)
+
+*Lookup boundary. ToyOS compares one complete absolute string against two inodes; component traversal is a comparison model, not an implemented path.*
+
 `vfs_open` starts with a null inode pointer, walks the two-element array, and
 uses `strings_equal`. A match selects the address of that static inode. If
 none matches, it returns `-2`, corresponding conceptually to `ENOENT`.
@@ -89,6 +93,10 @@ paths. When extending the design, make this precondition explicit before the
 unsigned subtraction.
 
 ## 5. Write combines permission, capacity, and position
+
+![Ramfs read and write byte ranges showing EOF, capacity checks, per-open offset movement, and shared inode size and data.](../visuals/day-02-offset-byte-io.svg)
+
+*Byte and offset state. A successful operation advances one file slot's offset while every open of that inode observes the same byte array and size.*
 
 `vfs_write` returns `-9` when the file slot is invalid, the source pointer is
 null, or the inode is not writable. Combining those conditions simplifies

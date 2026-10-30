@@ -47,6 +47,10 @@ the implementation is a fixed convention. Ownership is global: any code able
 to invoke the dispatcher with fd 3 or 4 reaches the same pipe state. Since
 there is only one process, cross-process access control is not tested.
 
+![General process FD table to open endpoint objects and pipe ownership contrasted with ToyOS fixed descriptors](../visuals/11-fd-open-object-pipe-ownership.svg)
+
+*Figure 1. A scalable descriptor design separates per-process names, open endpoint objects, and pipe storage; ToyOS intentionally collapses these into fixed fd policy and one global buffer.*
+
 Week 9 adds VFS descriptors for other numbers, but this week's wrappers build
 milestone 8 and must not import Week 9 behavior.
 
@@ -73,6 +77,10 @@ This is a bounded linear buffer, not a circular pipe. There is no blocking,
 wakeup, EOF, broken-pipe indication, atomic-write rule, concurrent reader,
 concurrent writer, or endpoint closure. Re-running `pipe` destroys previous
 global contents by resetting counters.
+
+![Conceptual pipe ring buffer read write full and empty states contrasted with the ToyOS linear buffer](../visuals/12-pipe-buffer-states.svg)
+
+*Figure 2. Ring buffers make reusable read/write positions explicit; ToyOS Week 8 instead uses a 64-byte linear buffer whose consumed space is not reused.*
 
 ## 4. Follow the canonical user round trip
 

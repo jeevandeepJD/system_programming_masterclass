@@ -1,5 +1,9 @@
 # Day 5 — Signals, Masks, and Safe Handlers
 
+![Signal generation, pending state, mask, handler, and return](../visuals/day-005-signal-delivery-return.svg)
+
+*Signal lifecycle — Generation records an event; the mask gates selection before delivery builds a handler frame and return restores context.*
+
 **Target time:** approximately 3 hours
 
 > The program is in the middle of an ordinary function. Something else —
@@ -441,6 +445,10 @@ post, observe `sigpending`, then unblock.
 ---
 
 ## 9. The handler is ordinary user code, entered asynchronously
+
+![Async-signal-safe self-pipe handoff](../visuals/day-005-self-pipe-safe-handler.svg)
+
+*Self-pipe pattern — The handler performs only a safe byte write, leaving logging, allocation, and state updates to ordinary control flow.*
 
 Once the frame is in place, exception return enters the handler with
 the user stack pointer aimed at that frame. The handler is a C function

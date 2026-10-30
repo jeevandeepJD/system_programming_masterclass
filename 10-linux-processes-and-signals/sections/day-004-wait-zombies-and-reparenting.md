@@ -1,5 +1,9 @@
 # Day 4 — Wait, Zombies, and Reparenting
 
+![Child exit through zombie and parent reap](../visuals/day-004-exit-zombie-wait.svg)
+
+*Exit and reap — The child image disappears before the retained exit word is copied to the parent and the task is released.*
+
 **Target time:** approximately 3 hours
 
 > The child has finished. Its instructions will never run again. The parent
@@ -511,6 +515,10 @@ same word.
 ---
 
 ## 10. Reparenting: the parent can disappear first
+
+![Grandchild reparenting to a child subreaper](../visuals/day-004-reparent-subreaper.svg)
+
+*Reparenting path — A subreaper can inherit both the child relationship and the later obligation to collect status.*
 
 A zombie is a task with an uncollected exit word. An orphan is a task
 whose `real_parent` has changed because the old parent exited while this

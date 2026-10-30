@@ -90,6 +90,10 @@ and `poll`. `fs/eventpoll.c` defines `EPOLLET` and wakes through
 
 ## Daily roadmap
 
+![Week 12 roadmap from descriptors to an evidence report](visuals/week-12-io-roadmap.svg)
+
+*Figure 1. The week follows one ownership chain from a process-local descriptor through byte movement, cached pages, waiting, mapped access, and finally an evidence-backed report.*
+
 ### Day 1 — Descriptors, open files, and offsets
 
 [Day 1](sections/day-001-descriptors-open-files-and-offsets.md) splits three

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">User copy across a page-fault boundary</title>
+  <desc id="desc">A 32-byte copy beginning 16 bytes before a page boundary copies a valid prefix from page A, then fails translation on absent page B, illustrating partial-copy semantics.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.ok{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.bad{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.buf{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.a{stroke:#174ea6;stroke-width:5;fill:none}.r{stroke:#9a3412;stroke-width:5;fill:none;stroke-dasharray:11 8}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">Page-wise safety permits a partial prefix</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">Example: 32 requested bytes; start is 16 bytes before a boundary.</text>
+  <text x="72" y="165" font-weight="700">User virtual range</text>
+  <rect class="ok" x="72" y="200" width="325" height="170" rx="12"/>
+  <rect class="bad" x="397" y="200" width="325" height="170" rx="12"/>
+  <text x="234" y="244" text-anchor="middle" font-weight="700">Page A  |  mapped</text>
+  <text class="sub" x="234" y="280" text-anchor="middle">P=1  |  U/S=1</text>
+  <text x="559" y="244" text-anchor="middle" font-weight="700">Page B  |  absent</text>
+  <text class="sub" x="559" y="280" text-anchor="middle">translation fails</text>
+  <rect class="buf" x="300" y="305" width="97" height="65"/>
+  <rect class="bad" x="397" y="305" width="97" height="65"/>
+  <text x="348" y="347" text-anchor="middle">16 B</text>
+  <text x="446" y="347" text-anchor="middle">16 B</text>
+  <line x1="397" y1="185" x2="397" y2="410" stroke="#10243e" stroke-width="4"/>
+  <text class="sub" x="397" y="445" text-anchor="middle">4 KiB page boundary</text>
+  <path class="a" d="M348 370V515"/>
+  <path class="r" d="M446 370V515"/>
+  <rect class="ok" x="72" y="515" width="325" height="150" rx="12"/>
+  <text x="234" y="558" text-anchor="middle" font-weight="700">Iteration 1</text>
+  <text class="sub" x="234" y="595" text-anchor="middle">translate Page A</text>
+  <text class="sub" x="234" y="628" text-anchor="middle">copy 16-byte prefix</text>
+  <rect class="bad" x="397" y="515" width="325" height="150" rx="12"/>
+  <text x="559" y="558" text-anchor="middle" font-weight="700">Iteration 2</text>
+  <text class="sub" x="559" y="595" text-anchor="middle">translate Page B</text>
+  <text class="sub" x="559" y="628" text-anchor="middle">return false</text>
+  <rect class="buf" x="72" y="735" width="650" height="170" rx="14"/>
+  <text x="397" y="780" text-anchor="middle" font-weight="700">Observable outcome</text>
+  <text x="110" y="825">copy_from_user: kernel buffer may hold a valid prefix</text>
+  <text x="110" y="865">copy_to_user: user memory may contain a changed prefix</text>
+  <text class="sub" x="110" y="897">Current Boolean API reports failure, not bytes completed.</text>
+  <rect class="bad" x="115" y="970" width="564" height="85" rx="12"/>
+  <text x="397" y="1005" text-anchor="middle" font-weight="700">Controlled validation failure--not necessarily #PF</text>
+  <text class="sub" x="397" y="1037" text-anchor="middle">The software walker can reject before dereferencing.</text>
+</svg>

@@ -220,6 +220,10 @@ unlock(counter_lock)  ─────────► lock(counter_lock)
                                  unlock(counter_lock)
 ```
 
+![Mutex critical section protecting an invariant and a global lock-rank order preventing cycles](../visuals/day-003-mutex-invariant-lock-order.svg)
+
+*Mutex ownership controls entry to the critical section; a global rank rule controls every path that needs multiple locks.*
+
 The arrow is the unlock and lock of `counter_lock`. An unlock of a
 different mutex leaves `mutex_counter` unpublished for a thread whose next
 step is to lock `counter_lock`. An uncontended lock still has the edge: the
@@ -314,6 +318,10 @@ unlock, waiters were marked
   store "free"
   futex_wake                              # syscall, wake one
 ```
+
+![Uncontended userspace mutex operations contrasted with futex wait, wake, and retry in the kernel](../visuals/day-003-userspace-futex-boundary.svg)
+
+*The common path updates a user word; only contention crosses into the kernel to sleep or wake a task.*
 
 The integers in the word are a libc encoding. In the comment below, the
 kernel waits and wakes on a user address. The invariant about

@@ -45,6 +45,10 @@ Audit assumptions the compact interface does not enforce:
 Those are ToyOS caller obligations. Production interfaces encode more of them
 and synchronize updates.
 
+![Four-level virtual-address walk showing intermediate table ownership, leaf installation, and TLB invalidation](../visuals/day-002-four-level-map-page.svg)
+
+*`map_page` may acquire frames for missing table levels before installing one leaf and invalidating its cached translation.*
+
 ## 4. Invalidate cached translation state
 
 After writing the PTE, ToyOS executes `invlpg` for the virtual address with a
@@ -65,6 +69,10 @@ The handler in `projects/toyos/src/arch.c` combines:
 ```text
 CR2 fault address + page-fault error bits + saved RIP + exact ELF
 ```
+
+![Mapped write path contrasted with the page-fault evidence tuple](../visuals/day-002-mapped-versus-fault-path.svg)
+
+*A present writable leaf reaches memory; an absent leaf produces architecture state that must be correlated with the exact ELF.*
 
 The expected result is vector 14, address `0x70000000`, and
 `not-present write supervisor`. A protection fault would mean the translation

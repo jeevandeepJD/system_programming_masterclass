@@ -282,6 +282,10 @@ simulation does not automatically account for clock-to-Q, setup, hold,
 routing, skew, or jitter. Those require timing constraints, implementation
 information, static timing analysis, and sometimes timing-aware simulation.
 
+![Combinational candidate and edge-captured state assignment model](../visuals/day-006-comb-ff-assignment-model.svg)
+
+*Blocking assignment computes a complete combinational candidate; nonblocking assignment schedules clocked state capture.*
+
 ---
 
 ## 6. The testbench is outside the synthesized design
@@ -337,6 +341,10 @@ testbench observes after #1
 This avoids a testbench/design race at the same rising edge and makes the
 waveform easy to read. It is not a physical setup-time proof; `#1` and `#5`
 are simulation delays in the testbench.
+
+![Testbench reset, enable, candidate, and captured-value waveform](../visuals/day-006-testbench-waveform-boundary.svg)
+
+*The testbench drives time and stimulus; synthesizable RTL computes candidates and captures enabled values at rising edges.*
 
 ---
 

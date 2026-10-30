@@ -26,6 +26,10 @@ directories, close, permissions, IRQ-driven EDU operation, or DMA.
 
 ## Daily roadmap
 
+![Week 9 roadmap connecting userspace file descriptors through VFS and ramfs, and PCI enumeration through BAR mapping to QEMU EDU MMIO, with absent storage, IRQ, and DMA boundaries.](visuals/week-09-roadmap.svg)
+
+*Week 9 roadmap. The filesystem and device slices are independently implemented; red dashed stages mark the absent page-cache/block path and the absent IRQ/DMA path.*
+
 ### Day 1 — Why VFS objects exist
 
 Start by inventorying `inode`, `file`, path, and descriptor state in the

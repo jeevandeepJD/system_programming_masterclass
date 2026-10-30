@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">Process address-space ownership</title>
+  <desc id="desc">A ToyOS process owns a private PML4 and user page-table branches while copied kernel entries point to shared supervisor mappings; CR3 selects the active root.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.p{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.u{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.k{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.a{stroke:#174ea6;stroke-width:4;fill:none}.dash{stroke:#9a3412;stroke-width:4;fill:none;stroke-dasharray:10 8}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">Private root, deliberately shared kernel reach</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">Ownership differs for roots, tables, mappings, and physical frames.</text>
+  <rect class="p" x="215" y="145" width="364" height="105" rx="14"/>
+  <text x="397" y="187" text-anchor="middle" font-weight="700">init_process.root</text>
+  <text class="sub" x="397" y="220" text-anchor="middle">private process-owned PML4</text>
+  <rect class="p" x="270" y="288" width="254" height="90" rx="12"/>
+  <text x="397" y="326" text-anchor="middle" font-weight="700">CR3</text>
+  <text class="sub" x="397" y="355" text-anchor="middle">active translation root</text>
+  <path class="a" d="M397 288V250"/>
+  <path class="a" d="M335 250C260 345 210 405 184 475"/>
+  <path class="dash" d="M459 250C534 345 584 405 610 475"/>
+  <rect class="u" x="58" y="475" width="300" height="170" rx="14"/>
+  <text x="208" y="518" text-anchor="middle" font-weight="700">Private user branch</text>
+  <text x="88" y="563">new lower-level tables</text>
+  <text x="88" y="604">U/S propagated on path</text>
+  <rect class="k" x="436" y="475" width="300" height="170" rx="14"/>
+  <text x="586" y="518" text-anchor="middle" font-weight="700">Shared kernel branch</text>
+  <text x="466" y="563">copied entry values</text>
+  <text x="466" y="604">supervisor-only leaves</text>
+  <path class="a" d="M208 645V735"/>
+  <path class="dash" d="M586 645V735"/>
+  <rect class="u" x="58" y="735" width="300" height="185" rx="14"/>
+  <text x="208" y="780" text-anchor="middle" font-weight="700">Process-owned frames</text>
+  <text x="88" y="825">ELF segment pages</text>
+  <text x="88" y="865">four-page user stack</text>
+  <text class="sub" x="88" y="899">No teardown in Week 8.</text>
+  <rect class="k" x="436" y="735" width="300" height="185" rx="14"/>
+  <text x="586" y="780" text-anchor="middle" font-weight="700">Kernel-owned frames</text>
+  <text x="466" y="825">code, data, heap</text>
+  <text x="466" y="865">process kernel stack</text>
+  <text class="sub" x="466" y="899">Reachable, not user-accessible.</text>
+  <text x="397" y="1000" text-anchor="middle" font-weight="700">A new PML4 alone is not isolation.</text>
+  <text class="sub" x="397" y="1036" text-anchor="middle">Every reachable entry and permission must support the claim.</text>
+</svg>

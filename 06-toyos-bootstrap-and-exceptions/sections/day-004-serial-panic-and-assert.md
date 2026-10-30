@@ -5,6 +5,14 @@
 > When the screen and filesystem do not exist, what evidence can the kernel
 > emit before it deliberately stops?
 
+![UART register and byte path](../visuals/day-04-uart-byte-path.svg)
+
+*Traces a diagnostic byte through COM1 polling to captured host output.*
+
+![Panic evidence and halt boundary](../visuals/day-04-panic-halt.svg)
+
+*Separates assertion policy, emitted evidence, expected host status, and the final halt boundary.*
+
 ToyOS uses the first 16550-compatible serial port, conventionally COM1 at I/O
 base `0x3f8`. QEMU connects that byte stream to the host process's standard
 output. This is both an early diagnostic path and the observable channel for

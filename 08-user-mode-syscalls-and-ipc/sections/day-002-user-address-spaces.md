@@ -29,6 +29,10 @@ qualification: many kernel mappings and their underlying physical frames are
 shared. The copied entries are values pointing at common tables. ToyOS relies
 on U/S permissions to keep CPL3 out.
 
+![Process-owned PML4 and user frames alongside shared supervisor kernel mappings](../visuals/03-process-address-space-ownership.svg)
+
+*Figure 1. Address-space ownership is layered: the process owns its root and user branches, while copied entries retain shared kernel reachability.*
+
 ## 2. Apply the U/S rule at every level
 
 For a user access to a 4 KiB page, the U/S bit must permit user access through
@@ -46,6 +50,10 @@ through an intermediate table whose parent was widened to user? Isolation
 still depends on each leaf's U/S bit, but broad parent changes should be
 audited. A mature kernel deliberately partitions user and kernel ranges and
 defines which upper-level structures may be shared.
+
+![Four-level x86 page walk requiring user permission at every level](../visuals/04-user-supervisor-page-walk.svg)
+
+*Figure 2. A ring-3 translation succeeds only when every paging level is present and user-accessible; any supervisor-only entry blocks it.*
 
 ## 3. Separate virtual ownership from physical ownership
 

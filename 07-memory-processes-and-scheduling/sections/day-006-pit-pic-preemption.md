@@ -24,6 +24,10 @@ The divisor 11932 against the traditional 1,193,182 Hz PIT input is roughly
 100 Hz. Emulation and host scheduling mean this is not a precision timing
 measurement.
 
+![PIT pulse through PIC IRQ, IDT entry, tick accounting, EOI, scheduler choice, switch, and eventual interrupt return](../visuals/day-006-pit-pic-preemption-chain.svg)
+
+*The PIC is acknowledged before policy switches stacks; the interrupted continuation resumes only after its task runs again.*
+
 ## 2. Account for interrupt context
 
 `isr_common` in `projects/toyos/src/isr.S` saves all general-purpose
@@ -81,6 +85,10 @@ ToyOS assumes one CPU. No other core can concurrently mutate `current`,
 states, the frame bitmap, or heap cursor. Interrupts are the only asynchronous
 writer, and task initialization completes before they are enabled in the
 first trampoline.
+
+![Interrupted stack ownership and operations inside or beyond the demonstrated interrupt-context safety boundary](../visuals/day-006-interrupt-context-boundary.svg)
+
+*Single-core execution narrows races, but blocking, allocation, locking, and reentrant services still need explicit IRQ contracts.*
 
 Adding a second CPU would require per-CPU current-task state, run-queue locks
 or ownership partitioning, TLB shootdowns, interrupt routing, and memory

@@ -75,6 +75,10 @@ Include:
 
 Separate “source states,” “ELF contains,” “QEMU emitted,” and “we infer.”
 
+![Source, artifact, runtime, and injected-fault evidence converging into a bounded scheduler report](../visuals/day-007-integrated-evidence-workflow.svg)
+
+*The report joins state, queue, switch, timer, and fault evidence while keeping observation separate from inference.*
+
 ## 4. Compare ToyOS with xv6-riscv
 
 Useful current-tree landmarks commonly include:
@@ -100,6 +104,10 @@ fault recovery.
 ToyOS's fixed two-element array can teach runnable/running ownership, but it
 does not model Linux fairness or SMP. Use current source navigation before
 naming functions; current paths are landmarks, not timeless contracts.
+
+![ToyOS and revision-checked Linux compared through shared questions without equating their mechanisms](../visuals/day-007-toyos-linux-report-comparison.svg)
+
+*Compare ownership and scheduling questions against evidence, then state where Linux's lifecycle, paging, synchronization, and SMP model diverge.*
 
 ## 6. Preview processes and threads for Week 8
 

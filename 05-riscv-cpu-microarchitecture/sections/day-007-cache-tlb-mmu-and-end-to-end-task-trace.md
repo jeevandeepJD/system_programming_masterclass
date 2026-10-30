@@ -384,6 +384,10 @@ The OS then applies policy:
 “The MMU kills the process” is wrong. The MMU reports an architectural fault;
 the OS decides the task-level response.
 
+![Virtual address translation, TLB and cache alternatives, waiting load, and precise fault](../visuals/day-007-translation-cache-fault-path.svg)
+
+*TLB and cache misses may wait and recover; denied or absent translations take the precise fault path.*
+
 ---
 
 ## 6. Ordering and coherence: boundary map only
@@ -804,6 +808,10 @@ C: s += a[i]
 
 The causal chain runs downward to physics and back upward through committed
 architectural state. No layer makes the others unnecessary.
+
+![C sum operation responsibility layers from compiler through gates and charge](../visuals/day-007-c-sum-responsibility-layers.svg)
+
+*Successful hit and fill paths converge on one ISA result; a fault commits no load value.*
 
 ### End-to-end evidence workflow using existing artifacts
 

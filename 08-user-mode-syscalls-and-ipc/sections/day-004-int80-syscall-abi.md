@@ -70,6 +70,10 @@ is not copied into the process structure. `syscall_dispatch` may update
 `frame->rax`; after the C call, assembly pops that modified value into live
 `RAX`, discards vector/error, and executes `iretq`.
 
+![DPL3 int 0x80 interrupt gate path through uniform frame dispatch and iretq](../visuals/07-int80-gate-frame-dispatch.svg)
+
+*Figure 1. ToyOS uses a DPL3 interrupt gate to obtain a trusted stack, normalize a C-visible frame, dispatch, and return through `iretq`.*
+
 Frame layout is an ABI between assembly and C. The syscall register convention
 is a second ABI between user and kernel. Mixing those two layers makes
 debugging offsets needlessly hard.
@@ -115,6 +119,10 @@ ToyOS implements none of that MSR/per-CPU entry machinery. Claiming that its
 factually wrong. The project deliberately chooses a DPL3 interrupt gate
 because the CPU then performs the validated TSS stack transition already
 supported by the kernel. It trades speed for a smaller, inspectable boundary.
+
+![Side-by-side comparison of ToyOS int 0x80 and the x86-64 SYSCALL mechanism](../visuals/08-int80-versus-syscall.svg)
+
+*Figure 2. `int 0x80` and `SYSCALL` have different entry, stack, saved-state, and return contracts; Week 8 implements only the former.*
 
 ## 6. Diagnose an unknown syscall
 

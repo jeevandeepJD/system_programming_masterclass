@@ -210,6 +210,10 @@ task C after fork (CLONE_FILES clear)
 
 ## 6. `struct file` is the open instance
 
+![Descriptor table entries sharing an open-file description and inode](../visuals/day-001-fd-open-file-ownership.svg)
+
+*Figure 1. Descriptor slots own references; the open-file description owns the offset and status flags; the inode owns file identity. A second `open` creates a new offset owner.*
+
 The pointer in `fd[i]` aims at `struct file` in `include/linux/fs.h`.
 This is the object Week 9 called an open-file slot, with a kernel
 lifetime of its own.
@@ -449,6 +453,10 @@ sets `FDPUT_POS_UNLOCK` in the `struct fd` word and takes `f_pos_lock`.
 lines 44–50).
 
 ## 9. Close clears one index and drops one reference
+
+![Parent and child descriptor tables sharing one offset owner after fork](../visuals/day-001-fork-shared-offset.svg)
+
+*Figure 2. `fork` copies descriptor slots into a new table, but both tables retain references to the same open-file description, so reads in either process advance one shared `f_pos`.*
 
 `sys_close` (`fs/open.c` lines 1552–1559) calls `file_close_fd`, which
 takes `file_lock` and calls `file_close_fd_locked`. `close_fd` (lines

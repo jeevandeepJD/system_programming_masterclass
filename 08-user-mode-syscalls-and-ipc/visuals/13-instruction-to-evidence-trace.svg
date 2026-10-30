@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">User instruction to syscall evidence trace</title>
+  <desc id="desc">An integrated trace follows a user instruction through int 0x80, gate entry, frame construction, dispatch, user copying, serial output, and iretq, with source, ELF, GDB, and QEMU evidence attached.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.event{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.ev{fill:#f3e8ff;stroke:#6b21a8;stroke-width:3}.evidence{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.a{stroke:#9a3412;stroke-width:5;fill:none}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">Trace claims to the evidence that supports them</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">No single artifact proves the complete user-&gt;kernel-&gt;user path.</text>
+  <path class="a" d="M285 205V955"/>
+  <g>
+    <rect class="event" x="60" y="145" width="450" height="100" rx="12"/>
+    <text x="82" y="184" font-weight="700">1  |  User prepares registers</text>
+    <text class="sub" x="82" y="218">RAX=1  |  fd=1  |  pointer  |  length</text>
+    <rect class="event" x="60" y="275" width="450" height="100" rx="12"/>
+    <text x="82" y="314" font-weight="700">2  |  int 0x80 crosses privilege</text>
+    <text class="sub" x="82" y="348">DPL3 gate  |  TSS RSP0  |  saved user state</text>
+    <rect class="event" x="60" y="405" width="450" height="100" rx="12"/>
+    <text x="82" y="444" font-weight="700">3  |  Assembly creates C frame</text>
+    <text class="sub" x="82" y="478">vector/error normalization + saved GPRs</text>
+    <rect class="event" x="60" y="535" width="450" height="100" rx="12"/>
+    <text x="82" y="574" font-weight="700">4  |  Dispatcher validates policy</text>
+    <text class="sub" x="82" y="608">bounds  |  descriptor  |  user-page walk</text>
+    <rect class="event" x="60" y="665" width="450" height="100" rx="12"/>
+    <text x="82" y="704" font-weight="700">5  |  Bytes reach COM1</text>
+    <text class="sub" x="82" y="738">kernel staging buffer owns copied bytes</text>
+    <rect class="event" x="60" y="795" width="450" height="100" rx="12"/>
+    <text x="82" y="834" font-weight="700">6  |  Result returns in RAX</text>
+    <text class="sub" x="82" y="868">restore frame  |  iretq  |  CPL3 continuation</text>
+  </g>
+  <rect class="evidence" x="545" y="145" width="200" height="150" rx="12"/>
+  <text x="645" y="183" text-anchor="middle" font-weight="700">Source + ELF</text>
+  <text class="sub" x="645" y="220" text-anchor="middle">intent, symbols,</text>
+  <text class="sub" x="645" y="251" text-anchor="middle">instructions, bytes</text>
+  <rect class="evidence" x="545" y="335" width="200" height="150" rx="12"/>
+  <text x="645" y="373" text-anchor="middle" font-weight="700">GDB</text>
+  <text class="sub" x="645" y="410" text-anchor="middle">saved frame, CR3,</text>
+  <text class="sub" x="645" y="441" text-anchor="middle">RSP, selectors</text>
+  <rect class="evidence" x="545" y="525" width="200" height="150" rx="12"/>
+  <text x="645" y="563" text-anchor="middle" font-weight="700">Serial / QEMU</text>
+  <text class="sub" x="645" y="600" text-anchor="middle">ordered markers,</text>
+  <text class="sub" x="645" y="631" text-anchor="middle">status, visible bytes</text>
+  <rect class="ev" x="545" y="715" width="200" height="180" rx="12"/>
+  <text x="645" y="753" text-anchor="middle" font-weight="700">Report</text>
+  <text class="sub" x="645" y="790" text-anchor="middle">observation</text>
+  <text class="sub" x="645" y="821" text-anchor="middle">versus inference</text>
+  <text class="sub" x="645" y="852" text-anchor="middle">plus limits</text>
+  <rect class="ev" x="92" y="970" width="610" height="92" rx="12"/>
+  <text x="397" y="1008" text-anchor="middle" font-weight="700">Record artifact hashes before interpreting the trace.</text>
+  <text class="sub" x="397" y="1041" text-anchor="middle">Evidence must belong to the exact kernel and user ELFs.</text>
+</svg>

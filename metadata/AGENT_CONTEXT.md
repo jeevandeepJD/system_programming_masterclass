@@ -271,10 +271,10 @@ explained, drawn, observed, built, or mastered the material.
    source checks are authoring validation only. Learner predictions,
    Explain/Draw/Observe/Build answers, optional scheduler traces, controlled
    measurements, and the final debugging report remain unattempted.
-3. **Visual retrofit remains pending for Weeks 4–12.** Weeks 1–3 and
-   Weeks 13–15 have completed dedicated visual passes. For the others, audit existing
-   visuals and add only diagrams that materially clarify a relationship or
-   execution path; do not regenerate the lesson prose.
+3. **The dedicated visual retrofit is complete for Weeks 1–15.** Each module
+   now has one overview roadmap and two topic-specific diagrams per day.
+   Future visual edits should correct a concrete teaching or rendering gap;
+   do not regenerate accepted prose or add decorative duplication.
 4. **Post-scheduler kernel depth remains pending:** synchronization/RCU,
    modules and drivers, device model/sysfs, DMA/IOMMU, storage/block/VFS
    depth, networking, eBPF/perf tracing, KVM/virtio/SEV-SNP, namespaces,
@@ -914,3 +914,31 @@ assembly/ABI, ISA comparison, locality/cache organization, layout/endianness,
 NUMA, and C representation. Week 3 diagrams cover pointers/layout/lifetime,
 qualifiers/atomics, object files/relocations, linking, ELF loading, startup,
 and exit. Dedicated visual retrofit remains pending for Weeks 4–12.
+
+### 2026-10-29 — Week 4 visual pass
+
+Week 4 now contains one causal roadmap and two distinct, topic-specific SVG
+diagrams per day. They connect MOSFET channel control, CMOS restoring gates,
+delay/power, SRAM/DRAM, sequential timing/metastability, RTL simulation, and
+synthesis/physical-design boundaries without replacing the existing lesson
+prose. Dedicated visual retrofit remains pending for Weeks 5–12.
+
+### 2026-10-29 — Week 5 visual pass
+
+Week 5 now contains one ownership roadmap and two distinct, topic-specific
+SVG diagrams per day. They connect RV32I decoding and architectural state to
+datapath/control, commit boundaries, pipelining, hazards, cache/TLB/MMU
+behavior, precise faults, and physical implementation layers without
+replacing the existing lesson prose. Dedicated visual retrofit remains
+pending for Weeks 6–12.
+
+### 2026-10-30 — Weeks 6–12 visual retrofit completed
+
+Weeks 6–12 now each contain one overview roadmap and two distinct,
+topic-specific SVG diagrams per day. The additions cover ToyOS boot,
+exceptions, memory, scheduling, user mode, syscalls, IPC, filesystems, PCI and
+MMIO, then Linux processes, signals, concurrency, I/O, readiness, and
+debugging evidence. Existing lesson prose was preserved. All PDFs and EPUBs
+were rebuilt with embedded visuals. Week 12 required an additional
+renderer-specific typography correction after PDF inspection exposed SVG
+font-shorthand scaling; all Week 12 SVGs now use explicit font properties.

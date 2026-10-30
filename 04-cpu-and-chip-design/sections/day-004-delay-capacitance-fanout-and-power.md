@@ -226,6 +226,10 @@ trise need not equal tfall
 
 The difference is physical, not a violation of the truth table.
 
+![Loaded gate RC waveforms with propagation, rise and fall timing](../visuals/day-004-loaded-gate-rc-waveforms.svg)
+
+*Fan-out increases capacitive load, stretching both threshold-to-threshold propagation delay and the output edge itself.*
+
 ---
 
 ## 5. Fan-out turns one decision into a load problem
@@ -347,6 +351,10 @@ charges, transitions, or cycles before comparing formulas or numbers.
 Voltage reduction also slows transistors and reduces noise margin, so
 dynamic-voltage/frequency scaling is a performance-reliability trade, not a
 free energy switch.
+
+![Dynamic power equation and voltage-frequency tradeoff boundaries](../visuals/day-004-dynamic-power-tradeoffs.svg)
+
+*The worked switching estimate is only one power component, and lower voltage trades energy against delay and noise headroom.*
 
 ---
 

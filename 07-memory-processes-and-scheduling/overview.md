@@ -20,6 +20,10 @@ ToyOS schedules two **ring-0 kernel tasks**, not user processes. They share
 one address space and privilege level. Ring 3, syscalls, user ELF loading,
 per-process page tables, and process isolation are Week 8 topics.
 
+![Week 7 roadmap from firmware memory facts through physical and virtual ownership to scheduling evidence](visuals/week-07-memory-scheduling-roadmap.svg)
+
+*The week follows each ownership transfer from boot memory discovery to a reproducible scheduler report.*
+
 ## Daily roadmap
 
 ### Day 1 — Boot memory map and physical frames

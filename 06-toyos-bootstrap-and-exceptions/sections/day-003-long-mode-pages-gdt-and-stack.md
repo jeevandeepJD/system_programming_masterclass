@@ -5,6 +5,14 @@
 > GRUB enters a 32-bit contract, but GCC emitted 64-bit kernel code. Which
 > state transitions make the first C call legal?
 
+![Page tables and long-mode transition](../visuals/day-03-long-mode.svg)
+
+*Orders page-table construction and control-register changes before the 64-bit far jump.*
+
+![GDT and stack state ownership](../visuals/day-03-gdt-stack.svg)
+
+*Distinguishes architecture state, bootstrap assembly ownership, and ABI obligations at the C call.*
+
 The transition in `projects/toyos/src/boot.S` is short because it assumes a
 specific starting contract and creates only the state this milestone needs.
 Read it as a dependency graph, not as magic register incantations.

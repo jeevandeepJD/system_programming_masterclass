@@ -255,6 +255,10 @@ wrong for a second path:          right for every path:
               when the two orders meet
 ```
 
+![Wait-for graphs distinguishing a deadlock cycle, starvation, and an acyclic global lock order](../visuals/day-006-liveness-wait-for.svg)
+
+*Deadlock closes a cycle, starvation permits system progress without one participant, and global ordering removes the backward edge.*
+
 The rule has to be global to be a rule. "Usually 0 before 1" leaves one
 error path, one callback, or one logging helper that takes them backward,
 and that path is enough to rebuild the cycle. The lab is small enough that
@@ -363,6 +367,10 @@ padded case
 +--------------+--------------+--------------+--------------+
   line A, thread 0 only        line B, thread 1 only
 ```
+
+![Adjacent atomic counters bouncing one cache line compared with padded counters on independent lines](../visuals/day-006-false-sharing-scalability.svg)
+
+*Padding leaves the C result unchanged while removing an unnecessary coherence dependency between independent writers.*
 
 The unused bytes in the adjacent line are the expensive part. The hardware
 has no field in the line that says "thread 0 promised to touch only the

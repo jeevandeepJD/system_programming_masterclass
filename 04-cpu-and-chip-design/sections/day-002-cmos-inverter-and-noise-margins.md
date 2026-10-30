@@ -98,6 +98,10 @@ In either stable state, the ideal model has no conducting path all the way
 from `VDD` to ground. This is the central static-power advantage of CMOS.
 Real devices leak, so “no path” means no intended strong DC path.
 
+![Complementary CMOS inverter conduction for LOW and HIGH inputs](../visuals/day-002-cmos-inverter-conduction.svg)
+
+*Complementary devices provide an active pull-up or pull-down in each stable state, with brief overlap current during transitions.*
+
 ### Why this is inversion
 
 The transistor network does not know logical NOT. It responds locally to
@@ -184,6 +188,10 @@ the VTC slope is `-1`. That is a useful way to extract margins from a smooth
 curve. Datasheet or standard-cell limits, however, are specifications backed
 by characterization; do not substitute a plot from a generic model for a
 manufacturer guarantee.
+
+![CMOS voltage-transfer curve with noise margins and restoration](../visuals/day-002-vtc-noise-margins-restoration.svg)
+
+*The worked VTC separates valid input ranges from the transition region and shows how margin enables restoration.*
 
 ---
 

@@ -47,6 +47,10 @@ C and compiler
   → gates and physical switching
 ```
 
+![Week 5 roadmap across architecture, microarchitecture, OS policy, and physical ownership](visuals/week-05-ownership-roadmap.svg)
+
+*The same computation crosses four ownership lanes while preserving a single causal chain.*
+
 ## Daily roadmap and exact files
 
 ### Day 1 — An RV32I Subset and Its Datapath Contract

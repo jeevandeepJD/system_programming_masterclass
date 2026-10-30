@@ -7,6 +7,10 @@
 > A kernel starts with fewer guarantees than an ordinary C program. Make each
 > guarantee explicit, then preserve enough evidence to debug when one fails.
 
+![Week 6 evidence roadmap](visuals/week-06-roadmap.svg)
+
+*Roadmap from freestanding source to an evidence-bounded fault report.*
+
 This week follows the existing freestanding x86-64 kernel in
 [`projects/toyos`](../projects/toyos/). You will trace GRUB's Multiboot2 handoff,
 the 32-bit bootstrap, long-mode entry, serial diagnostics, exception entry,

@@ -5,6 +5,14 @@
 > x86 exceptions do not all push the same fields. How can one C handler receive
 > one predictable structure without losing the hardware's meaning?
 
+![IDT gate to common handler](../visuals/day-05-idt-path.svg)
+
+*Traces a vector through its gate and assembly stub into the shared C exception handler.*
+
+![Uniform exception-frame normalization](../visuals/day-05-uniform-frame.svg)
+
+*Shows how stubs add a synthetic error code so C sees one stable frame layout.*
+
 ToyOS combines architecture-created state with assembly-created state. The
 `struct interrupt_frame` is correct only while its fields match the exact
 stack layout produced by both.

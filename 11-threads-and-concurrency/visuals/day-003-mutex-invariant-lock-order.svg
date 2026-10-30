@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">Mutex ownership, critical section, and global lock order</title>
+<desc id="desc">A mutex critical-section gate protects a counter invariant, followed by a lock-rank staircase that prevents a two-thread wait-for cycle.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#ffd166"/></marker><style>text{font-family:Arial,sans-serif;fill:#f8fbff}.t{font-size:37px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:19px}.inv{fill:#164f46;stroke:#7de3be;stroke-width:3}.thread{fill:#143d59;stroke:#80d8ff;stroke-width:3}.lock{fill:#5d461d;stroke:#ffd166;stroke-width:3}.bad{fill:#622d3c;stroke:#ff8b9c;stroke-width:3}.edge{stroke:#ffd166;stroke-width:5;fill:none;marker-end:url(#a)}.rank{stroke:#80d8ff;stroke-width:5}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="70">A mutex names an invariant and an owner</text>
+<rect class="inv" x="110" y="140" width="970" height="160" rx="24"/><text class="h" x="145" y="190">INVARIANT AT EVERY UNLOCK</text><text class="b" x="145" y="235">mutex_counter = number of completed protected increments</text><text class="b" x="145" y="270">only the successful locker may enter; that same thread unlocks</text>
+<rect class="thread" x="85" y="390" width="310" height="300" rx="24"/><text class="h" x="120" y="440">THREAD A</text><text class="b" x="120" y="490">lock(counter_lock)</text><text class="b" x="120" y="535">wait if owned</text>
+<rect class="lock" x="440" y="355" width="310" height="370" rx="28"/><text class="h" x="475" y="410">CRITICAL SECTION</text><text class="b" x="475" y="468">load counter</text><text class="b" x="475" y="510">add one</text><text class="b" x="475" y="552">store counter</text><text class="b" x="475" y="615">invariant restored</text><text class="b" x="475" y="657">unlock publishes</text>
+<rect class="thread" x="795" y="390" width="310" height="300" rx="24"/><text class="h" x="830" y="440">THREAD B</text><text class="b" x="830" y="490">later lock succeeds</text><text class="b" x="830" y="535">sees A's update</text>
+<path class="edge" d="M395 540H440"/><path class="edge" d="M750 540H795"/>
+<text class="h" x="70" y="845">GLOBAL ORDER FOR MULTIPLE LOCKS</text>
+<line class="rank" x1="140" y1="930" x2="980" y2="930"/><line class="rank" x1="980" y1="930" x2="980" y2="1200"/>
+<rect class="lock" x="130" y="870" width="300" height="150" rx="20"/><text class="h" x="165" y="920">rank 0  |  lock[0]</text><text class="b" x="165" y="965">always acquire first</text>
+<rect class="lock" x="650" y="1080" width="330" height="150" rx="20"/><text class="h" x="685" y="1130">rank 1  |  lock[1]</text><text class="b" x="685" y="1175">acquire second; release first</text>
+<path class="edge" d="M430 970C520 970 570 1120 650 1120"/>
+<rect class="bad" x="100" y="1330" width="990" height="220" rx="26"/>
+<text class="h" x="140" y="1380">FORBIDDEN BACK EDGE</text>
+<text class="b" x="140" y="1425">holding rank 1 while requesting rank 0 can close a wait-for cycle</text>
+<text class="b" x="140" y="1468">the order applies to every normal path, callback, and error return</text>
+</svg>

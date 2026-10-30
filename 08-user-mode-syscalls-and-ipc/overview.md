@@ -8,6 +8,10 @@
 > an ABI assigns meaning to registers and frames; kernel policy decides what a
 > valid request may do.
 
+![Week 8 roadmap from ring 3 and ELF loading through syscall entry, checked copying, bounded IPC, and evidence](visuals/00-week8-roadmap.svg)
+
+*Figure 1. The package roadmap keeps privilege mechanics, ABI meaning, kernel policy, ownership, and evidence connected across the full request path.*
+
 This package studies the existing
 [`projects/toyos`](../projects/toyos/) Week 8 milestone. Every practical
 challenge inspects or runs that canonical project; no challenge forks or

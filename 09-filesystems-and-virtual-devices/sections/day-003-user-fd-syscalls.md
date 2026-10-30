@@ -42,6 +42,10 @@ skipping validation.
 
 ## 3. Descriptors select policy
 
+![Open, read, and write syscall dispatch through bounded user-copy validation and kernel staging, with close explicitly absent.](../visuals/day-03-syscall-validation.svg)
+
+*Dispatch and validation. Each syscall crosses the user-memory boundary through checked copying before VFS operation; there is no close dispatch path.*
+
 ToyOS Week 9 has no per-process descriptor table. Instead, descriptor values
 have hard-coded meanings:
 
@@ -64,6 +68,10 @@ returned count to user memory. This staging ensures ramfs never directly
 dereferences a user pointer.
 
 ## 4. Trace ownership through read and write
+
+![Two independent ToyOS opens with separate offsets, a conceptual duplicated-descriptor shared offset, and the read copy-out failure window.](../visuals/day-03-shared-offset.svg)
+
+*Offset ownership. ToyOS opens share inode bytes but not position; descriptor duplication and its reference-counted shared offset remain conceptual.*
 
 For a file read:
 

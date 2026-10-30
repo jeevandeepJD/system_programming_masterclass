@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">False sharing coherence traffic and scalability</title>
+<desc id="desc">An adjacent-counter cache line bounces between two cores while padded counters remain on private lines, followed by a scaling comparison between independent work and one shared written line.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#ffd166"/></marker><style>text{font-family:Arial,sans-serif;fill:#f8fbff}.t{font-size:37px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:19px}.core{fill:#143f5a;stroke:#83d9ff;stroke-width:3}.line{fill:#612e3c;stroke:#ff8d9e;stroke-width:3}.private{fill:#174f45;stroke:#7ce2bc;stroke-width:3}.panel{fill:#10283a;stroke:#607f98;stroke-width:3}.edge{stroke:#ffd166;stroke-width:5;fill:none;marker-end:url(#a)}.bounce{stroke:#ff8d9e;stroke-width:7;fill:none;marker-end:url(#a)}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="70">False sharing: different objects, one coherence granule</text>
+<rect class="panel" x="55" y="135" width="1080" height="640" rx="28"/><text class="h" x="95" y="185">ADJACENT ATOMICS  |  one 64-byte line</text>
+<rect class="core" x="100" y="275" width="260" height="160" rx="22"/><text class="h" x="145" y="330">CORE 0</text><text class="b" x="145" y="378">writes value[0]</text>
+<rect class="core" x="830" y="275" width="260" height="160" rx="22"/><text class="h" x="875" y="330">CORE 1</text><text class="b" x="875" y="378">writes value[1]</text>
+<rect class="line" x="200" y="535" width="790" height="120" rx="16"/><line x1="400" y1="535" x2="400" y2="655" stroke="#ff8d9e" stroke-width="3"/><line x1="600" y1="535" x2="600" y2="655" stroke="#ff8d9e" stroke-width="3"/><text class="b" x="235" y="605">value[0]</text><text class="b" x="435" y="605">value[1]</text><text class="b" x="655" y="605">unused bytes</text>
+<path class="bounce" d="M300 455C390 500 430 500 490 455"/><path class="bounce" d="M900 455C810 500 770 500 710 455"/><text class="b" x="285" y="710">each write invalidates the other core's copy; line ownership ping-pongs</text>
+<rect class="panel" x="55" y="840" width="1080" height="430" rx="28"/><text class="h" x="95" y="890">PADDED ATOMICS  |  independent writable lines</text>
+<rect class="private" x="105" y="980" width="430" height="145" rx="20"/><text class="h" x="145" y="1030">LINE A  |  core 0</text><text class="b" x="145" y="1075">value[0] + padding</text>
+<rect class="private" x="655" y="980" width="430" height="145" rx="20"/><text class="h" x="695" y="1030">LINE B  |  core 1</text><text class="b" x="695" y="1075">value[1] + padding</text>
+<text class="b" x="155" y="1205">both counters remain exact; layout changes coherence traffic, not C correctness</text>
+<rect class="private" x="55" y="1335" width="520" height="235" rx="25"/><text class="h" x="95" y="1385">PRIVATE-LINE SCALING</text><text class="b" x="95" y="1430">more cores  ->  more independent work</text><text class="b" x="95" y="1472">until bandwidth / serial fraction dominates</text>
+<rect class="line" x="615" y="1335" width="520" height="235" rx="25"/><text class="h" x="655" y="1385">SHARED-LINE SCALING</text><text class="b" x="655" y="1430">more writers  ->  more invalidations</text><text class="b" x="655" y="1472">new cores become contenders for one line</text>
+<text class="b" x="90" y="1630">Timings describe one placement and run; hardware counters and affinity are separate evidence.</text>
+</svg>

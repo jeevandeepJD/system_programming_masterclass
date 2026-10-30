@@ -191,6 +191,10 @@ Some pipelines expose different load latencies or schedule assumptions. One
 stall is the result for this teaching model, not a universal law for every
 core.
 
+![RAW forwarding paths and the one-cycle load-use interlock](../visuals/day-006-forwarding-load-use-interlock.svg)
+
+*Forwarding selects an existing newer value; the load-use interlock waits until data exists.*
+
 ---
 
 ## 5. WAR and WAW: real names, absent timing hazards here
@@ -339,6 +343,10 @@ would reveal learning and its own first/last-iteration failures.
 Current processors use substantially richer predictors. Their structures are
 microarchitectural and vendor-specific. The architectural requirement remains:
 wrong-path work must not alter architectural state.
+
+![Branch prediction, EX resolution, redirect, flush, and precise state](../visuals/day-006-branch-redirect-precise-state.svg)
+
+*A control recovery kills wrong-path identity; structural arbitration solves a different conflict.*
 
 ### Architecture comparison — branch dependencies and memory order
 

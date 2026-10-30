@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">ToyOS int 0x80 versus x86-64 SYSCALL</title>
+  <desc id="desc">A side-by-side boundary comparison shows that ToyOS uses an IDT DPL3 interrupt gate, automatic TSS stack switch, hardware frame, and iretq, unlike the separate SYSCALL and SYSRET mechanism.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.yes{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.no{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.row{fill:#f5f8fc;stroke:#6b7c93;stroke-width:2}</style>
+  <text class="h" x="397" y="62" text-anchor="middle">Two mechanisms with different contracts</text>
+  <text class="sub" x="397" y="98" text-anchor="middle">Calling both &quot;a syscall&quot; does not make their entry machinery interchangeable.</text>
+  <rect class="yes" x="48" y="145" width="330" height="95" rx="12"/>
+  <text x="213" y="185" text-anchor="middle" font-weight="700">ToyOS Week 8</text>
+  <text class="sub" x="213" y="218" text-anchor="middle">int 0x80 / iretq</text>
+  <rect class="no" x="416" y="145" width="330" height="95" rx="12"/>
+  <text x="581" y="185" text-anchor="middle" font-weight="700">x86-64 fast path</text>
+  <text class="sub" x="581" y="218" text-anchor="middle">SYSCALL / SYSRET</text>
+  <g>
+    <rect class="row" x="48" y="280" width="698" height="105" rx="8"/>
+    <text x="70" y="316" font-weight="700">Entry target</text>
+    <text x="70" y="354">IDT[128], DPL3 gate</text><text x="438" y="354">MSR-programmed RIP/selectors</text>
+    <rect class="row" x="48" y="400" width="698" height="105" rx="8"/>
+    <text x="70" y="436" font-weight="700">Kernel stack</text>
+    <text x="70" y="474">CPU loads TSS RSP0</text><text x="438" y="474">software must replace user RSP</text>
+    <rect class="row" x="48" y="520" width="698" height="125" rx="8"/>
+    <text x="70" y="556" font-weight="700">Saved return state</text>
+    <text x="70" y="594">hardware stack frame:</text><text x="438" y="594">RCX gets RIP; R11 gets flags;</text>
+    <text x="70" y="624">SS/RSP/RFLAGS/CS/RIP</text><text x="438" y="624">no automatic full stack frame</text>
+    <rect class="row" x="48" y="660" width="698" height="105" rx="8"/>
+    <text x="70" y="696" font-weight="700">Interrupt flags</text>
+    <text x="70" y="734">interrupt gate clears IF</text><text x="438" y="734">MSR flag mask controls entry</text>
+    <rect class="row" x="48" y="780" width="698" height="105" rx="8"/>
+    <text x="70" y="816" font-weight="700">Return</text>
+    <text x="70" y="854">restore frame; iretq</text><text x="438" y="854">SYSRET or validated fallback</text>
+  </g>
+  <rect class="yes" x="75" y="945" width="644" height="110" rx="14"/>
+  <text x="397" y="988" text-anchor="middle" font-weight="700">Week 8 deliberately chooses the interrupt-gate path.</text>
+  <text class="sub" x="397" y="1023" text-anchor="middle">It reuses validated TSS stack entry for a small inspectable boundary.</text>
+</svg>

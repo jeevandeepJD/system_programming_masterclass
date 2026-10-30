@@ -1,5 +1,9 @@
 # Day 6 — Shell Process Groups and Sessions
 
+![Session, process-group, and controlling-terminal topology](../visuals/day-006-session-terminal-topology.svg)
+
+*Job-control topology — SID scopes groups, PGID names a job, and the terminal points at exactly one foreground group.*
+
 **Target time:** approximately 3 hours
 
 > A shell's useful trick is that one keystroke can reach every process in
@@ -422,6 +426,10 @@ Day 5 meet in one place.
 ---
 
 ## 8. A shell is a loop, plus group identity
+
+![Shell pipeline construction and foreground job-control flow](../visuals/day-006-shell-pipeline-job-control.svg)
+
+*Pipeline flow — The shell groups children, wires descriptors, execs images, hands over the terminal, waits by group, and takes the terminal back.*
 
 For one external command the shell:
 

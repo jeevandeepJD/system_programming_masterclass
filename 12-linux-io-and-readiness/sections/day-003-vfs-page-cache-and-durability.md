@@ -241,6 +241,10 @@ and `fsync` pushes them and reports failure.
 
 ## 6. A buffered write copies into a page and marks it dirty
 
+![Buffered write path from syscall through VFS and page cache to device](../visuals/day-003-vfs-page-cache-stack.svg)
+
+*Figure 1. A successful buffered write reaches a dirty page-cache folio first; writeback, the block layer, and the device durability boundary are later stages.*
+
 `generic_perform_write` asks `a_ops->write_begin` for a folio.
 `grab_cache_page_write_begin` is the remaining helper that still returns
 a `struct page` for a page-cache index.
@@ -414,6 +418,10 @@ not grow without bound. That cleaning is writeback. The `write` syscall
 can return while tagged pages remain.
 
 ## 7. Writeback moves dirty pages; `fsync` waits
+
+![Timeline separating write visibility fsync request and durability boundary](../visuals/day-003-fsync-durability-boundary.svg)
+
+*Figure 2. Readback visibility and `fsync` success are distinct observations. `fsync` is a checked durability request and wait, not universal proof against every power-loss mode.*
 
 ```c
 /* mm/filemap.c :: __filemap_fdatawrite_range :: tree adc218676eef

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">Thread lifecycle with join and detach</title>
+<desc id="desc">A state-and-lifetime diagram contrasting a joinable thread whose result and resources are collected by pthread join with a detached thread whose resources are reclaimed automatically and cannot be joined.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#ffd166"/></marker><style>text{font-family:Arial,sans-serif;fill:#f8fbff}.t{font-size:37px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:19px}.state{fill:#173f59;stroke:#7bdcff;stroke-width:3}.join{fill:#195043;stroke:#78e2b9;stroke-width:3}.det{fill:#5c3b24;stroke:#ffc56d;stroke-width:3}.edge{stroke:#ffd166;stroke-width:4;fill:none;marker-end:url(#a)}.hb{stroke:#86f0c4;stroke-width:5;fill:none;marker-end:url(#a)}.no{stroke:#ff8f9d;stroke-width:4;stroke-dasharray:12 8}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="70">Thread lifetime is a protocol, not a schedule</text>
+<rect class="state" x="110" y="150" width="970" height="145" rx="24"/><text class="h" x="145" y="198">pthread_create succeeds</text><text class="b" x="145" y="240">creator's earlier writes synchronize with the new thread's start</text>
+<path class="edge" d="M595 295V380"/>
+<rect class="state" x="110" y="380" width="970" height="155" rx="24"/><text class="h" x="145" y="430">RUNNING</text><text class="b" x="145" y="472">private registers, stack and TLS are live; shared objects follow the program protocol</text>
+<path class="edge" d="M595 535V620"/>
+<rect class="state" x="110" y="620" width="970" height="150" rx="24"/><text class="h" x="145" y="670">start routine returns / pthread_exit</text><text class="b" x="145" y="712">thread execution ends; return value is retained only for the joinable path</text>
+<path class="edge" d="M400 770V860"/><path class="edge" d="M790 770V860"/>
+<rect class="join" x="80" y="860" width="500" height="430" rx="26"/>
+<text class="h" x="115" y="910">JOINABLE (default)</text>
+<text class="b" x="115" y="957">terminated state remains collectable</text><text class="b" x="115" y="996">pthread_join waits if necessary</text><text class="b" x="115" y="1035">join receives the return pointer</text><text class="b" x="115" y="1074">termination synchronizes with join</text>
+<path class="hb" d="M160 1130H500"/><text class="b" x="165" y="1180">then stack/TLS bookkeeping is reclaimed</text>
+<rect class="det" x="610" y="860" width="500" height="430" rx="26"/>
+<text class="h" x="645" y="910">DETACHED</text>
+<text class="b" x="645" y="957">pthread_detach may select this path</text><text class="b" x="645" y="996">resources reclaim automatically at exit</text><text class="b" x="645" y="1035">no future pthread_join is valid</text><text class="b" x="645" y="1074">no result handoff through join</text>
+<path class="no" d="M665 1140H1055"/><text class="b" x="665" y="1180">detachment does not cancel the thread</text>
+<rect class="state" x="120" y="1370" width="950" height="190" rx="24"/>
+<text class="h" x="155" y="1420">Lifetime rule</text>
+<text class="b" x="155" y="1463">Never let a referenced stack or heap object die before the last possible access.</text>
+<text class="b" x="155" y="1502">Join supplies both collection and a happens-before edge; detach supplies neither join result.</text>
+</svg>

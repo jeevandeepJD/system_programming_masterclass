@@ -1,5 +1,9 @@
 # Day 2 — Fork, Copy-on-Write, and Lineage
 
+![Fork lineage and shared open-file descriptions](../visuals/day-002-fork-lineage-open-files.svg)
+
+*Lineage and files — Fork creates a child and a private descriptor table while preserving references to shared open-file descriptions.*
+
 **Target time:** approximately 3 hours
 
 - Why a new task shares frames until a store: 30 minutes
@@ -309,6 +313,10 @@ starts at the child's `pgd` once the scheduler installs it.
 ---
 
 ## 6. Duplicating a page table write-protects a COW mapping
+
+![Copy-on-write page-table write fault](../visuals/day-002-cow-write-fault.svg)
+
+*COW fault path — Both page tables initially name one read-only frame; only the faulting address space receives the copy.*
 
 A shared mapping (`VM_SHARED`) is supposed to make one task's store visible
 to the other. A private mapping keeps the store inside the storing address

@@ -46,6 +46,10 @@ after casts to `size_t` without an explicit multiplication-overflow check.
 validated. The image is trusted build output, but the code should not be
 described as a hardened general ELF loader.
 
+![ELF header and PT_LOAD validation followed by page mapping copying zero fill entry and stack setup](../visuals/05-elf-validation-pipeline.svg)
+
+*Figure 1. The loader treats the embedded ELF as bounded input: validate structure and arithmetic before materializing any segment.*
+
 ## 3. Treat program headers as the load contract
 
 The loader iterates `header->phnum` entries and skips anything not
@@ -67,6 +71,10 @@ The loader rounds the segment start down and end up to page boundaries,
 allocates one frame per page, and maps every leaf `PTE_USER | PTE_WRITE`.
 It then walks the newly built page tables manually for each file byte and
 copies into the corresponding physical frame through the identity map.
+
+![PT_LOAD file bytes copied into mapped user pages with a zero-filled memory tail and separate initial stack](../visuals/06-elf-map-copy-zero-stack.svg)
+
+*Figure 2. Each accepted `PT_LOAD` separates file extent from memory extent; zeroed frames supply the tail before entry begins on the four-page stack.*
 
 ## 4. Identify policy hidden in compact code
 

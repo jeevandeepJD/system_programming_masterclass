@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" role="img" aria-labelledby="title desc">
+  <title id="title">GDT ring descriptors and TSS RSP0</title>
+  <desc id="desc">ToyOS GDT entries identify kernel and user segments plus a two-slot TSS descriptor whose RSP0 points at the process kernel stack.</desc>
+  <rect width="794" height="1123" fill="#fff"/>
+  <style>text{font-family:Arial,sans-serif;fill:#10243e;font-size:20px}.h{font-size:34px;font-weight:700}.sub{font-size:19px;fill:#334e68}.box{fill:#e8f1ff;stroke:#174ea6;stroke-width:3}.user{fill:#e7f7ed;stroke:#176b3a;stroke-width:3}.kernel{fill:#fff1e8;stroke:#9a3412;stroke-width:3}.arrow{stroke:#9a3412;stroke-width:5;fill:none}</style>
+  <text class="h" x="397" y="60" text-anchor="middle">Descriptors name privilege; TSS names entry stack</text>
+  <text class="sub" x="397" y="95" text-anchor="middle">Selector low bits request ring 3; descriptor DPL authorizes it.</text>
+  <text x="88" y="150" font-weight="700">Global Descriptor Table</text>
+  <g>
+    <rect class="kernel" x="88" y="180" width="618" height="75" rx="10"/><text x="112" y="225">Entry 1  |  kernel code  |  selector 0x08  |  DPL0</text>
+    <rect class="kernel" x="88" y="270" width="618" height="75" rx="10"/><text x="112" y="315">Entry 2  |  kernel data  |  selector 0x10  |  DPL0</text>
+    <rect class="user" x="88" y="360" width="618" height="75" rx="10"/><text x="112" y="405">Entry 3  |  user data  |  selector 0x1b  |  DPL3 / RPL3</text>
+    <rect class="user" x="88" y="450" width="618" height="75" rx="10"/><text x="112" y="495">Entry 4  |  user code  |  selector 0x23  |  DPL3 / RPL3</text>
+    <rect class="box" x="88" y="540" width="618" height="75" rx="10"/><text x="112" y="585">Entries 5-6  |  64-bit TSS  |  selector 0x28</text>
+  </g>
+  <path class="arrow" d="M397 615V690"/>
+  <polygon points="397,710 384,684 410,684" fill="#9a3412"/>
+  <rect class="box" x="116" y="710" width="562" height="140" rx="14"/>
+  <text x="145" y="756" font-weight="700">Loaded TSS</text>
+  <text x="145" y="797">RSP0 = aligned process kernel-stack top</text>
+  <text class="sub" x="145" y="831">TSS holds an address; process owns the stack bytes.</text>
+  <path class="arrow" d="M397 850V920"/>
+  <polygon points="397,940 384,914 410,914" fill="#9a3412"/>
+  <rect class="kernel" x="116" y="940" width="562" height="105" rx="14"/>
+  <text x="145" y="983" font-weight="700">Next CPL3 -&gt; CPL0 gate entry</text>
+  <text class="sub" x="145" y="1018">CPU switches to this trusted supervisor stack.</text>
+</svg>

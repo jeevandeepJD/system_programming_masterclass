@@ -16,6 +16,10 @@ fault.
 The heap is 32 KiB. It is virtual contiguous because the mapper installs
 consecutive virtual pages; its physical frames need not be contiguous.
 
+![Physical frames, virtual heap pages, and allocated objects shown as separate ownership layers](../visuals/day-003-frame-page-heap-layers.svg)
+
+*Frame ownership, address translation, and byte-object lifetime are related layers with different invariants.*
+
 ## 2. Read the bump allocator carefully
 
 `kalloc` rejects zero bytes, aligns the next pointer to 16 bytes, checks both
@@ -78,6 +82,10 @@ A next allocator might place headers in blocks, maintain size classes, or
 allocate whole pages for large objects. Then ToyOS would need double-free and
 use-after-free defenses, lock ownership, interrupt-context rules, and a
 clear relationship between virtual heap pages and physical-frame reclamation.
+
+![Current bump allocation contrasted with future block ownership, split, release, and coalescing rules](../visuals/day-003-heap-block-lifetime.svg)
+
+*ToyOS only advances a cursor; splitting and coalescing illustrate the extra ownership machinery a reclaiming heap would require.*
 
 Linux uses multiple allocators and policies rather than one universal heap;
 source landmarks begin in `mm/`. xv6-riscv's `kernel/kalloc.c` is primarily a

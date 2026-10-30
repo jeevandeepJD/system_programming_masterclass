@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 1684" role="img" aria-labelledby="title desc">
+<title id="title">Happens-before graph and the missing worker edge</title>
+<desc id="desc">Two worker timelines show create and join synchronization around conflicting non-atomic counter accesses, with the absent horizontal happens-before edge highlighted as a C data race.</desc>
+<defs><marker id="a" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0 0L11 5.5L0 11Z" fill="#79e2ba"/></marker><style>text{font-family:Arial,sans-serif;fill:#f8fbff}.t{font-size:37px;font-weight:700}.h{font-size:25px;font-weight:700}.b{font-size:19px}.thread{stroke:#8fd8ff;stroke-width:5}.hb{stroke:#79e2ba;stroke-width:5;fill:none;marker-end:url(#a)}.miss{stroke:#ff8294;stroke-width:6;stroke-dasharray:15 10}.op{fill:#173f59;stroke:#8fd8ff;stroke-width:3}.race{fill:#642d3c;stroke:#ff8294;stroke-width:3}.ok{fill:#184e45;stroke:#79e2ba;stroke-width:3}</style></defs>
+<rect width="1190" height="1684" fill="#08131e"/>
+<text class="t" x="55" y="70">A data race is a graph property</text>
+<text class="b" x="55" y="108">Wall-clock overlap and the final printed value do not create an ordering edge.</text>
+<text class="h" x="170" y="180">PARENT</text><line class="thread" x1="235" y1="210" x2="235" y2="1480"/>
+<text class="h" x="475" y="180">WORKER 0</text><line class="thread" x1="560" y1="300" x2="560" y2="1350"/>
+<text class="h" x="825" y="180">WORKER 1</text><line class="thread" x1="910" y1="300" x2="910" y2="1350"/>
+<rect class="op" x="95" y="245" width="280" height="105" rx="16"/><text class="b" x="125" y="292">counter = 0</text><text class="b" x="125" y="325">ordinary store</text>
+<rect class="ok" x="95" y="415" width="280" height="125" rx="16"/><text class="b" x="125" y="462">pthread_create  x  2</text><text class="b" x="125" y="500">synchronizes with starts</text>
+<path class="hb" d="M375 465L515 360"/><path class="hb" d="M375 500L865 360"/>
+<rect class="race" x="425" y="520" width="270" height="240" rx="18"/><text class="h" x="455" y="568">counter++</text><text class="b" x="455" y="612">load N</text><text class="b" x="455" y="650">add  ->  N+1</text><text class="b" x="455" y="688">store N+1</text>
+<rect class="race" x="775" y="520" width="270" height="240" rx="18"/><text class="h" x="805" y="568">counter++</text><text class="b" x="805" y="612">load N</text><text class="b" x="805" y="650">add  ->  N+1</text><text class="b" x="805" y="688">store N+1</text>
+<line class="miss" x1="695" y1="640" x2="775" y2="640"/><text class="b" x="510" y="820">conflict: same location, at least one write</text><text class="b" x="480" y="858">missing happens-before in either direction</text>
+<rect class="ok" x="95" y="1020" width="280" height="125" rx="16"/><text class="b" x="125" y="1067">pthread_join  x  2</text><text class="b" x="125" y="1105">terminations happen-before</text>
+<path class="hb" d="M560 930L375 1060"/><path class="hb" d="M910 930L375 1100"/>
+<rect class="op" x="95" y="1220" width="280" height="105" rx="16"/><text class="b" x="125" y="1267">printf(counter)</text><text class="b" x="125" y="1300">ordered after joins</text>
+<rect class="race" x="430" y="1390" width="650" height="180" rx="24"/><text class="h" x="465" y="1440">C verdict</text><text class="b" x="465" y="1483">conflicting non-atomic accesses + no happens-before = data race</text><text class="b" x="465" y="1522">data race = undefined behavior, even when the total looks correct</text>
+</svg>
