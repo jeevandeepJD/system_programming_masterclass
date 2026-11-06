@@ -171,7 +171,7 @@ Use exercises to expose gaps rather than merely generate a score.
 - Specialization pivots, proof-of-fit sprints, active upstream issue
   selection, and ToyOS expansion are planned but deferred until their
   foundation gates.
-- Weeks 2–15 and their supporting projects are prepared but inactive.
+- Weeks 2–16 and their supporting projects are prepared but inactive.
   Preparation does not advance the Week 1 resume point, prove learner
   understanding, or complete any confidence gate.
 
@@ -236,6 +236,12 @@ explained, drawn, observed, built, or mastered the material.
     topology/NUMA/cgroup/KVM relationships, and an evidence-led debugging
     report. It contains fifteen SVG diagrams and the bounded
     `projects/linux-scheduler/` lab.
+16. `16-kernel-synchronization-memory-ordering-and-rcu/` — execution-context
+    and primitive selection, compiler/CPU memory ordering, spinlocks,
+    mutexes and priority inheritance, refcounts, seqcounts, per-CPU state,
+    RCU publication/grace periods/reclamation, and evidence-led debugging
+    with lockdep, KCSAN, and RCU-stall boundaries. It contains fifteen SVG
+    diagrams and the bounded `projects/linux-kernel-sync/` lab.
 
 ### Prepared implementation and lab continuity
 
@@ -252,6 +258,11 @@ explained, drawn, observed, built, or mastered the material.
   a self-only report, and read-only pinned-source checks. It does not request
   real-time policy, edit cgroups, mount tracefs, offline CPUs, or induce
   sustained host pressure.
+- `projects/linux-kernel-sync/` supports Week 16 with bounded C11/POSIX
+  analogs for primitive selection, acquire/release publication, spinlocks,
+  sleeping locks/PI support, refcounts/seqcounts/per-thread state, and an
+  epoch-based RCU teaching simulator. It does not prove a Linux kernel path,
+  request RT policy, load modules, or enable privileged tracing.
 - The modern teaching source is local Linux 6.12, tag `v6.12`, commit
   `adc218676eef25575469234709c2d87185ca223a`. Linux 5.10 is no longer the
   primary modern reference.
@@ -267,16 +278,16 @@ explained, drawn, observed, built, or mastered the material.
 1. **Learner progress remains at Week 1.** No prepared week may be marked
    complete until the learner provides Explain/Draw/Observe/Build evidence.
    Gates A, B, and C remain open.
-2. **Week 15 is prepared, not mastered.** Its deterministic wrappers and
+2. **Weeks 15–16 are prepared, not mastered.** Their deterministic wrappers and
    source checks are authoring validation only. Learner predictions,
-   Explain/Draw/Observe/Build answers, optional scheduler traces, controlled
-   measurements, and the final debugging report remain unattempted.
-3. **The dedicated visual retrofit is complete for Weeks 1–15.** Each module
+   Explain/Draw/Observe/Build answers, optional traces, controlled
+   measurements, and final debugging reports remain unattempted.
+3. **The dedicated visual retrofit is complete for Weeks 1–16.** Each module
    now has one overview roadmap and two topic-specific diagrams per day.
    Future visual edits should correct a concrete teaching or rendering gap;
    do not regenerate accepted prose or add decorative duplication.
-4. **Post-scheduler kernel depth remains pending:** synchronization/RCU,
-   modules and drivers, device model/sysfs, DMA/IOMMU, storage/block/VFS
+4. **Post-synchronization kernel depth remains pending:** modules and drivers,
+   device model/sysfs, DMA/IOMMU, storage/block/VFS
    depth, networking, eBPF/perf tracing, KVM/virtio/SEV-SNP, namespaces,
    cgroups, and the contribution pathway defined in
    `metadata/COURSE_ROADMAP.md`.
@@ -942,3 +953,16 @@ debugging evidence. Existing lesson prose was preserved. All PDFs and EPUBs
 were rebuilt with embedded visuals. Week 12 required an additional
 renderer-specific typography correction after PDF inspection exposed SVG
 font-shorthand scaling; all Week 12 SVGs now use explicit font properties.
+
+### 2026-11-04 — Week 16 kernel synchronization and RCU prepared
+
+`16-kernel-synchronization-memory-ordering-and-rcu/` and
+`projects/linux-kernel-sync/` are prepared. The module follows the required
+syntax → Linux 0.12 → evolution → ToyOS → Linux 6.12/current sequence and
+covers primitive selection by execution context, atomics and memory
+ordering, spinlocks, sleeping locks and priority inheritance, refcounts,
+seqcounts, per-CPU state, RCU publication/grace periods/reclamation, lockdep,
+KCSAN, and RCU-stall debugging boundaries. It contains fifteen accessible
+SVG diagrams, seven quizzes/wrappers, bounded strict-C labs, and read-only
+pinned-source checks. Preparation and test success do not advance the Week 1
+resume point or establish synchronization mastery.

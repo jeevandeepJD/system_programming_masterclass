@@ -130,6 +130,11 @@ Prepared follow-on Linux modules:
   scheduler evolution through Linux 6.12 EEVDF, scheduler classes and
   guarantees, SMP placement, topology/NUMA/cgroup/KVM relationships, and an
   evidence-led debugging report.
+- [Week 16](../16-kernel-synchronization-memory-ordering-and-rcu/overview.md):
+  execution-context-aware primitive selection, atomics and memory ordering,
+  spinlocks and sleeping locks, priority inheritance, refcounts, seqcounts,
+  per-CPU state, RCU publication/grace periods/reclamation, and
+  synchronization debugging with lockdep, KCSAN, and RCU-stall evidence.
 
 Weeks 10–11 use the shared
 [`projects/linux-system-programming`](../projects/linux-system-programming/)
@@ -138,7 +143,8 @@ C17/POSIX lab. Week 12 uses
 [`projects/linux-vm`](../projects/linux-vm/), and Week 14 uses
 [`projects/linux-kernel-contexts`](../projects/linux-kernel-contexts/).
 Week 15 uses
-[`projects/linux-scheduler`](../projects/linux-scheduler/).
+[`projects/linux-scheduler`](../projects/linux-scheduler/), and Week 16 uses
+[`projects/linux-kernel-sync`](../projects/linux-kernel-sync/).
 These packages are prepared
 navigation targets, not evidence of mastery or permission to bypass Gates A–C.
 The deterministic suites are the portable core; optional analysis tools may be

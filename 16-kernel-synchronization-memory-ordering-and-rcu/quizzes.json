@@ -1,0 +1,355 @@
+{
+  "week": 16,
+  "days": [
+    {
+      "day": 1,
+      "title": "Execution Context and Primitive Selection",
+      "questions": [
+        {
+          "prompt": "A hard-IRQ handler and process context share a short invariant on one CPU. Which process-context primitive prevents self-deadlock from local interrupt re-entry?",
+          "options": [
+            "A plain mutex",
+            "A plain spin_lock with interrupts unchanged",
+            "spin_lock_irqsave with matching restore",
+            "An RCU read-side section"
+          ],
+          "answer": 2,
+          "explanation": "Saving and disabling local interrupts while taking the spinlock prevents that CPU's handler from interrupting the holder and taking the same lock."
+        },
+        {
+          "prompt": "Why is a mutex invalid in hard-IRQ context?",
+          "options": [
+            "Mutex acquisition may sleep, while hard-IRQ context cannot sleep",
+            "Mutexes provide no mutual exclusion on SMP",
+            "A mutex always disables all interrupts",
+            "Mutexes are only for userspace"
+          ],
+          "answer": 0,
+          "explanation": "Contended mutex acquisition can block and schedule; hard-IRQ context is atomic and cannot sleep."
+        },
+        {
+          "prompt": "Which fact must be established before choosing a synchronization primitive?",
+          "options": [
+            "The source file's line count",
+            "Whether every accessor can sleep and which contexts can interrupt each other",
+            "Whether CONFIG_DEBUG_INFO is enabled",
+            "The CPU's marketing name"
+          ],
+          "answer": 1,
+          "explanation": "Context, sleepability, concurrency, critical-section length, and lifetime determine legal primitive choices."
+        },
+        {
+          "prompt": "What does disabling preemption alone fail to prevent?",
+          "options": [
+            "Migration of current task",
+            "A local hard interrupt accessing the same state",
+            "Compiler optimization of local variables",
+            "Execution of the current instruction"
+          ],
+          "answer": 1,
+          "explanation": "Preemption control keeps task context on a CPU but does not mask hard interrupts."
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Atomics, Memory Ordering, and Barriers",
+      "questions": [
+        {
+          "prompt": "In message passing, what does an acquire load that reads from a release store establish?",
+          "options": [
+            "All CPUs stop executing",
+            "Prior writes sequenced before the release happen-before operations after the acquire",
+            "Every relaxed operation becomes sequentially consistent",
+            "The reader owns a lock"
+          ],
+          "answer": 1,
+          "explanation": "The synchronizes-with edge carries earlier published state to the acquiring reader."
+        },
+        {
+          "prompt": "Why is atomicity alone insufficient for publishing related data?",
+          "options": [
+            "Atomic operations cannot be used by threads",
+            "An atomic flag can be indivisible without ordering surrounding data accesses",
+            "Atomic values are always wider than cache lines",
+            "Release stores are not atomic"
+          ],
+          "answer": 1,
+          "explanation": "Atomicity protects the flag operation itself; ordering is required to publish the associated state."
+        },
+        {
+          "prompt": "Which Linux primitive expresses a write-side publication edge paired with smp_load_acquire()?",
+          "options": [
+            "smp_store_release()",
+            "barrier() only",
+            "local_irq_disable()",
+            "preempt_enable()"
+          ],
+          "answer": 0,
+          "explanation": "The release store and acquire load form the intended inter-CPU publication relationship when the value is observed."
+        },
+        {
+          "prompt": "What does compiler barrier() guarantee by itself?",
+          "options": [
+            "A full hardware memory fence on every architecture",
+            "No relevant compiler reordering across the barrier, but no standalone hardware-order guarantee",
+            "Cache coherence completion",
+            "An RCU grace period"
+          ],
+          "answer": 1,
+          "explanation": "A compiler barrier constrains compilation; architecture memory barriers are separate."
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Spinlocks, IRQs, and Preemption",
+      "questions": [
+        {
+          "prompt": "Why must spinlock critical sections be bounded and non-sleeping?",
+          "options": [
+            "The holder executes with no C stack",
+            "A sleeper can retain the lock while waiters burn CPU and may deadlock",
+            "Spinlocks work only for one instruction",
+            "Unlocking requires a system call"
+          ],
+          "answer": 1,
+          "explanation": "Spin waiters make progress only when the holder runs and releases; sleeping while holding violates that progress model."
+        },
+        {
+          "prompt": "What does spin_lock_irqsave(lock, flags) preserve that spin_lock_irq(lock) does not?",
+          "options": [
+            "The lock's previous owner",
+            "The local CPU's prior interrupt-enable state for restoration",
+            "The current task's priority",
+            "The global interrupt state of every CPU"
+          ],
+          "answer": 1,
+          "explanation": "irqsave records local flags so unlock_irqrestore restores the entry state rather than unconditionally enabling interrupts."
+        },
+        {
+          "prompt": "Two paths acquire A then B and B then A. What is the primary risk?",
+          "options": [
+            "False sharing only",
+            "ABBA deadlock",
+            "Lost reference count",
+            "An RCU callback leak"
+          ],
+          "answer": 1,
+          "explanation": "Opposite nested order can leave each holder waiting forever for the other's lock."
+        },
+        {
+          "prompt": "Does a spinlock on CPU 0 disable interrupts on CPU 1?",
+          "options": [
+            "Yes, for the lock's duration",
+            "Only under PREEMPT_RT",
+            "No; local IRQ masking is local, while lock ownership serializes CPUs",
+            "Only if the lock is contended"
+          ],
+          "answer": 2,
+          "explanation": "Local interrupt control affects one CPU; the shared lock provides cross-CPU exclusion."
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Mutexes, rtmutexes, and Sleeping Locks",
+      "questions": [
+        {
+          "prompt": "What distinguishes a Linux mutex from a raw spinlock under contention?",
+          "options": [
+            "The mutex may sleep; the raw spinlock waiter spins",
+            "The mutex disables NMIs",
+            "The raw spinlock transfers ownership",
+            "There is no difference"
+          ],
+          "answer": 0,
+          "explanation": "Mutexes are sleeping locks for sleepable context, whereas raw spinlocks preserve atomic-context semantics."
+        },
+        {
+          "prompt": "What problem does priority inheritance address?",
+          "options": [
+            "Cache-line bouncing",
+            "Unbounded inversion caused when a low-priority owner blocks a higher-priority waiter",
+            "Reference-count overflow",
+            "Reader starvation in seqlocks"
+          ],
+          "answer": 1,
+          "explanation": "PI temporarily boosts the owner so it can run and release the contended lock sooner."
+        },
+        {
+          "prompt": "What does successful pthread_mutexattr_setprotocol(PTHREAD_PRIO_INHERIT) prove in this lab?",
+          "options": [
+            "The process obtained RT scheduling",
+            "The platform accepted creation of a PI-protocol mutex attribute",
+            "Linux rtmutex internals executed exactly once",
+            "A latency bound was measured"
+          ],
+          "answer": 1,
+          "explanation": "The observation is API support only; the lab requests no RT policy and establishes no latency guarantee."
+        },
+        {
+          "prompt": "Why must a condition protected by a mutex be checked in a loop?",
+          "options": [
+            "pthread_cond_wait never reacquires the mutex",
+            "Wakeups can be spurious or another waiter can consume the condition",
+            "Mutex unlock is optional",
+            "The compiler cannot load booleans"
+          ],
+          "answer": 1,
+          "explanation": "The predicate, not the wakeup itself, authorizes progress after mutex reacquisition."
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "title": "Refcounts, Seqlocks, and Per-CPU State",
+      "questions": [
+        {
+          "prompt": "What does refcount_inc_not_zero-style acquisition prevent?",
+          "options": [
+            "Taking a reference after the object has reached its terminal zero state",
+            "Counter cache misses",
+            "All integer overflow in C",
+            "Concurrent reads of the object"
+          ],
+          "answer": 0,
+          "explanation": "Conditional increment avoids resurrecting an object whose final reference has already been dropped."
+        },
+        {
+          "prompt": "Why does a seqlock reader retry when the sequence changed or is odd?",
+          "options": [
+            "The writer may have been active or modified the snapshot during the read",
+            "The reader must become the writer",
+            "Odd numbers denote free memory",
+            "Retries flush every CPU cache"
+          ],
+          "answer": 0,
+          "explanation": "An odd or changed sequence means the fields may not form one stable version."
+        },
+        {
+          "prompt": "What is a key seqlock suitability constraint?",
+          "options": [
+            "Readers may safely retain arbitrary pointers after retry validation",
+            "Writers must be serialized, and copied reader data must tolerate retry",
+            "Writers never need ordering",
+            "Readers may sleep forever inside a kernel read section"
+          ],
+          "answer": 1,
+          "explanation": "Writers require serialization; readers optimistically copy and retry rather than holding unstable pointer lifetimes."
+        },
+        {
+          "prompt": "Why can per-CPU counters scale better than one global counter?",
+          "options": [
+            "They eliminate all synchronization in every operation",
+            "They localize frequent updates and aggregate less frequently, reducing cache-line contention",
+            "They are always exact without aggregation",
+            "They disable preemption globally"
+          ],
+          "answer": 1,
+          "explanation": "Per-CPU state trades immediate global aggregation for locality and less shared-line bouncing."
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "title": "RCU Readers, Grace Periods, and Callbacks",
+      "questions": [
+        {
+          "prompt": "What may an RCU reader assume about an object reached through a protected pointer?",
+          "options": [
+            "It can sleep indefinitely in every RCU flavor",
+            "The object will not be reclaimed before the relevant read-side critical section ends",
+            "No updater can publish a replacement",
+            "The object's fields are automatically immutable"
+          ],
+          "answer": 1,
+          "explanation": "RCU protects lifetime through the read-side section; separate synchronization governs mutation and publication."
+        },
+        {
+          "prompt": "What does an RCU grace period wait for?",
+          "options": [
+            "Every callback ever queued",
+            "All pre-existing relevant readers to pass through a quiescent state or finish",
+            "Every CPU to stop",
+            "A fixed wall-clock delay"
+          ],
+          "answer": 1,
+          "explanation": "Grace periods are reader-progress conditions, not fixed timers."
+        },
+        {
+          "prompt": "Why does call_rcu defer reclamation?",
+          "options": [
+            "To execute the callback before publication",
+            "To run the callback after a grace period so old readers cannot still hold the removed object",
+            "To turn a mutex into a spinlock",
+            "To make readers increment a shared refcount"
+          ],
+          "answer": 1,
+          "explanation": "Removal and reclamation are separated so readers that saw the old pointer can finish."
+        },
+        {
+          "prompt": "What does the userspace epoch lab establish?",
+          "options": [
+            "It implements Linux Tree RCU",
+            "A bounded model can publish a new version, wait for registered old-epoch readers, then reclaim",
+            "Kernel callbacks ran",
+            "Signal handlers are RCU readers"
+          ],
+          "answer": 1,
+          "explanation": "The program teaches the lifetime sequence only and is explicitly not a Linux RCU implementation."
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "title": "Lockdep, KCSAN, RCU Stalls, and Debug Reports",
+      "questions": [
+        {
+          "prompt": "What does lockdep primarily reason about?",
+          "options": [
+            "Measured lock hold time",
+            "Observed lock-class acquisition dependencies and context rules",
+            "C language undefined behavior in userspace",
+            "RCU callback throughput"
+          ],
+          "answer": 1,
+          "explanation": "Lockdep tracks dependency relationships and lock usage to report potential deadlocks and misuse."
+        },
+        {
+          "prompt": "What kind of defect is KCSAN designed to detect?",
+          "options": [
+            "Only deadlocks with two mutexes",
+            "Potential data races through sampled watchpoints and concurrency instrumentation",
+            "Reference leaks from process exit",
+            "All hardware failures"
+          ],
+          "answer": 1,
+          "explanation": "KCSAN dynamically samples conflicting accesses to identify race candidates; absence of a report is not proof of race freedom."
+        },
+        {
+          "prompt": "An RCU stall warning proves which narrow fact?",
+          "options": [
+            "A diagnostic threshold observed insufficient grace-period/read-side progress",
+            "The exact guilty source line is known",
+            "The machine has a deadlock",
+            "Every RCU callback was lost"
+          ],
+          "answer": 0,
+          "explanation": "A stall warning is evidence of delayed progress and context; root cause still requires correlated evidence."
+        },
+        {
+          "prompt": "A privileged tracing tool is unavailable. What should the report say?",
+          "options": [
+            "Infer the expected trace from source",
+            "SKIP with the concrete reason and keep event-level claims unknown",
+            "Change tracefs permissions automatically",
+            "Report that no synchronization occurred"
+          ],
+          "answer": 1,
+          "explanation": "Honest SKIP preserves the boundary between source knowledge, available observations, and unobserved events."
+        }
+      ]
+    }
+  ]
+}
